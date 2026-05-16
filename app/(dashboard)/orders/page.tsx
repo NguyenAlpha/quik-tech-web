@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
+import { useLanguage } from "@/lib/language-context"
 import { formatCurrency } from "@/lib/utils"
 import { getOrders } from "@/lib/api"
 import { OrdersTable } from "@/components/orders-table"
@@ -15,6 +16,8 @@ import {
   X,
   Plus,
 } from "lucide-react"
+import { PageHeader } from "@/components/page-header"
+import { TableFooter } from "@/components/table-footer"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -40,10 +43,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
-import type { Order, OrderItem } from "@/lib/types"
+import type { Order } from "@/lib/types"
 
 const statusConfig: Record<
-  Order["status"],
+  string,
   { label: string; className: string; icon: typeof Clock }
 > = {
   pending: { label: "Pending", className: "bg-amber-50 text-amber-700 hover:bg-amber-50 dark:bg-amber-950 dark:text-amber-400", icon: Clock },
@@ -53,8 +56,15 @@ const statusConfig: Record<
   cancelled: { label: "Cancelled", className: "bg-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-400", icon: XCircle },
 }
 
+const defaultStatusConfig = {
+  label: "Unknown",
+  className: "bg-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-400",
+  icon: Clock,
+}
 
 export default function OrdersPage() {
+  const { t } = useLanguage()
+  const to = t.orders
   const [orders, setOrders] = useState<Order[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
@@ -67,39 +77,30 @@ export default function OrdersPage() {
   const filteredOrders = useMemo(() => {
     return orders.filter((order) => {
       const matchesSearch =
-        order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        order.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        order.email.toLowerCase().includes(searchQuery.toLowerCase())
+        order.orderCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (order.customerPublicId ?? "").toLowerCase().includes(searchQuery.toLowerCase())
       const matchesStatus =
         statusFilter === "all" || order.status === statusFilter
       return matchesSearch && matchesStatus
     })
-  }, [searchQuery, statusFilter])
+  }, [searchQuery, statusFilter, orders])
 
   return (
     <div className="flex flex-1 flex-col gap-8 p-8 lg:p-10">
       {/* Page Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-semibold tracking-tight text-foreground">
-            Orders
-          </h1>
-          <p className="text-base text-muted-foreground">
-            View and manage customer orders
-          </p>
-        </div>
+      <PageHeader title={to.title} subtitle={to.subtitle}>
         <Button className="gap-2 shadow-sm">
           <Plus className="size-4" />
-          Create Order
+          {to.createOrder}
         </Button>
-      </div>
+      </PageHeader>
 
       {/* Filters */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
         <div className="relative flex-1 sm:max-w-sm">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search orders..."
+            placeholder={to.searchPlaceholder}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="h-10 pl-9"
@@ -107,15 +108,15 @@ export default function OrdersPage() {
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="h-10 w-full sm:w-[180px]">
-            <SelectValue placeholder="Filter by status" />
+            <SelectValue placeholder={to.filterByStatus} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="processing">Processing</SelectItem>
-            <SelectItem value="shipped">Shipped</SelectItem>
-            <SelectItem value="completed">Completed</SelectItem>
-            <SelectItem value="cancelled">Cancelled</SelectItem>
+            <SelectItem value="all">{to.allStatus}</SelectItem>
+            <SelectItem value="pending">{to.pending}</SelectItem>
+            <SelectItem value="processing">{to.processing}</SelectItem>
+            <SelectItem value="shipped">{to.shipped}</SelectItem>
+            <SelectItem value="completed">{to.completed}</SelectItem>
+            <SelectItem value="cancelled">{to.cancelled}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -124,17 +125,7 @@ export default function OrdersPage() {
       <OrdersTable orders={filteredOrders} onSelect={setSelectedOrder} />
 
       {/* Table Footer */}
-      <div className="flex items-center justify-between text-sm text-muted-foreground">
-        <p>
-          Showing{" "}
-          <span className="font-medium text-foreground">
-            {filteredOrders.length}
-          </span>{" "}
-          of{" "}
-          <span className="font-medium text-foreground">{orders.length}</span>{" "}
-          orders
-        </p>
-      </div>
+      <TableFooter filtered={filteredOrders.length} total={orders.length} label={to.orders} />
 
       {/* Order Detail Modal */}
       <Dialog open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>
@@ -145,18 +136,21 @@ export default function OrdersPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <DialogTitle className="font-mono text-lg">
-                      {selectedOrder.id}
+                      {selectedOrder.orderCode}
                     </DialogTitle>
-                    <Badge
-                      variant="secondary"
-                      className={`gap-1.5 ${statusConfig[selectedOrder.status].className}`}
-                    >
-                      {(() => {
-                        const StatusIcon = statusConfig[selectedOrder.status].icon
-                        return <StatusIcon className="size-3" />
-                      })()}
-                      {statusConfig[selectedOrder.status].label}
-                    </Badge>
+                    {(() => {
+                      const config = statusConfig[selectedOrder.status] ?? defaultStatusConfig
+                      const StatusIcon = config.icon
+                      return (
+                        <Badge
+                          variant="secondary"
+                          className={`gap-1.5 ${config.className}`}
+                        >
+                          <StatusIcon className="size-3" />
+                          {to[selectedOrder.status as keyof typeof to] ?? selectedOrder.status}
+                        </Badge>
+                      )
+                    })()}
                   </div>
                   <Button
                     variant="ghost"
@@ -172,37 +166,16 @@ export default function OrdersPage() {
 
               <div className="space-y-6 p-6">
                 {/* Customer Info */}
-                <div className="grid gap-6 sm:grid-cols-2">
-                  <div className="space-y-3">
-                    <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                      Customer
-                    </h4>
-                    <div className="flex items-center gap-3">
-                      <Avatar className="size-10 border">
-                        <AvatarFallback className="bg-muted text-sm font-medium">
-                          {getInitials(selectedOrder.customer)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex flex-col">
-                        <span className="font-medium">{selectedOrder.customer}</span>
-                        <span className="text-sm text-muted-foreground">
-                          {selectedOrder.email}
-                        </span>
-                        <span className="text-sm text-muted-foreground">
-                          {selectedOrder.phone}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                      Shipping Address
-                    </h4>
-                    <p className="text-sm leading-relaxed text-muted-foreground">
-                      {selectedOrder.shippingAddress}
-                    </p>
-                  </div>
+                <div className="space-y-3">
+                  <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    {to.modalCustomer}
+                  </h4>
+                  <p className="text-sm font-medium">
+                    {selectedOrder.customerPublicId ?? "Guest"}
+                  </p>
+                  {selectedOrder.note && (
+                    <p className="text-sm text-muted-foreground">{selectedOrder.note}</p>
+                  )}
                 </div>
 
                 <Separator />
@@ -210,40 +183,43 @@ export default function OrdersPage() {
                 {/* Order Items */}
                 <div className="space-y-3">
                   <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Items
+                    {to.modalItems}
                   </h4>
                   <div className="rounded-lg border">
                     <Table>
                       <TableHeader>
                         <TableRow className="hover:bg-transparent">
                           <TableHead className="pl-4 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                            Product
+                            {to.modalProduct}
                           </TableHead>
                           <TableHead className="text-center text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                            Qty
+                            {to.modalQty}
+                          </TableHead>
+                          <TableHead className="text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                            {to.modalPrice}
                           </TableHead>
                           <TableHead className="pr-4 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                            Price
+                            {to.modalTotal ?? "Total"}
                           </TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {selectedOrder.items.map((item, index) => (
-                          <TableRow key={index} className="hover:bg-transparent">
+                        {selectedOrder.items.map((item) => (
+                          <TableRow key={item.id} className="hover:bg-transparent">
                             <TableCell className="pl-4">
-                              <div className="flex flex-col">
-                                <span className="text-sm font-medium">{item.name}</span>
-                                <span className="font-mono text-xs text-muted-foreground">
-                                  {item.sku}
-                                </span>
-                              </div>
+                              <span className="text-sm font-medium">{item.productName}</span>
                             </TableCell>
                             <TableCell className="text-center">
                               <span className="text-sm">{item.quantity}</span>
                             </TableCell>
+                            <TableCell className="text-right">
+                              <span className="font-mono text-sm">
+                                {formatCurrency(item.unitPrice)}
+                              </span>
+                            </TableCell>
                             <TableCell className="pr-4 text-right">
                               <span className="font-mono text-sm font-medium">
-                                {formatCurrency(item.price * item.quantity)}
+                                {formatCurrency(item.totalPrice)}
                               </span>
                             </TableCell>
                           </TableRow>
@@ -258,34 +234,44 @@ export default function OrdersPage() {
                 {/* Order Summary */}
                 <div className="space-y-3">
                   <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Summary
+                    {to.modalSummary}
                   </h4>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Subtotal</span>
-                      <span className="font-mono">
-                        {formatCurrency(selectedOrder.subtotal)}
-                      </span>
+                      <span className="text-muted-foreground">{to.modalSubtotal}</span>
+                      <span className="font-mono">{formatCurrency(selectedOrder.subtotal)}</span>
                     </div>
+                    {selectedOrder.discount > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">{to.modalDiscount ?? "Discount"}</span>
+                        <span className="font-mono text-emerald-600">
+                          -{formatCurrency(selectedOrder.discount)}
+                        </span>
+                      </div>
+                    )}
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Shipping</span>
-                      <span className="font-mono">
-                        {formatCurrency(selectedOrder.shipping)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Tax</span>
-                      <span className="font-mono">
-                        {formatCurrency(selectedOrder.tax)}
-                      </span>
+                      <span className="text-muted-foreground">{to.modalTax}</span>
+                      <span className="font-mono">{formatCurrency(selectedOrder.tax)}</span>
                     </div>
                     <Separator className="my-2" />
                     <div className="flex justify-between text-base font-semibold">
-                      <span>Total</span>
-                      <span className="font-mono">
-                        {formatCurrency(selectedOrder.total)}
+                      <span>{to.modalTotal}</span>
+                      <span className="font-mono">{formatCurrency(selectedOrder.totalAmount)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">{to.modalPaid ?? "Paid"}</span>
+                      <span className="font-mono text-emerald-600">
+                        {formatCurrency(selectedOrder.paidAmount)}
                       </span>
                     </div>
+                    {selectedOrder.debtAmount > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">{to.modalDebt ?? "Outstanding"}</span>
+                        <span className="font-mono text-red-600">
+                          {formatCurrency(selectedOrder.debtAmount)}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -294,15 +280,8 @@ export default function OrdersPage() {
               <div className="flex justify-end gap-3 border-t px-6 py-4">
                 <Button variant="outline" className="gap-2">
                   <Printer className="size-4" />
-                  Print Invoice
+                  {to.modalPrintInvoice}
                 </Button>
-                {selectedOrder.status !== "cancelled" &&
-                  selectedOrder.status !== "completed" && (
-                    <Button variant="destructive" className="gap-2">
-                      <XCircle className="size-4" />
-                      Cancel Order
-                    </Button>
-                  )}
               </div>
             </>
           )}

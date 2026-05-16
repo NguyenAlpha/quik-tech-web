@@ -1,18 +1,31 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Plus } from 'lucide-react'
+import { useState, useEffect, useMemo } from 'react'
+import { Plus, Search } from 'lucide-react'
+import { PageHeader } from '@/components/page-header'
+import { TableFooter } from '@/components/table-footer'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent } from '@/components/ui/card'
 import { useLanguage } from '@/lib/language-context'
 import { AddSupplierModal } from '@/components/add-supplier-modal'
 import { SuppliersTable } from '@/components/suppliers-table'
 import { Supplier, CreateSupplierInput } from '@/lib/types'
 import { getSuppliers, createSupplier, deleteSupplier } from '@/lib/api'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 export default function SuppliersPage() {
   const { t } = useLanguage()
+  const ts = t.suppliers
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
+  const [searchQuery, setSearchQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isDeleting, setIsDeleting] = useState<string | null>(null)
@@ -36,17 +49,34 @@ export default function SuppliersPage() {
     loadData()
   }, [])
 
+  const filteredSuppliers = useMemo(() => {
+    return suppliers.filter((supplier) => {
+      const q = searchQuery.toLowerCase()
+      const matchesSearch =
+        supplier.name.toLowerCase().includes(q) ||
+        supplier.email.toLowerCase().includes(q) ||
+        supplier.phone.includes(q) ||
+        supplier.city.toLowerCase().includes(q) ||
+        supplier.contactPerson.toLowerCase().includes(q)
+      const matchesStatus =
+        statusFilter === 'all' ||
+        (statusFilter === 'active' && supplier.isActive) ||
+        (statusFilter === 'inactive' && !supplier.isActive)
+      return matchesSearch && matchesStatus
+    })
+  }, [suppliers, searchQuery, statusFilter])
+
   const handleAddSupplier = async (data: CreateSupplierInput) => {
     setIsLoading(true)
     setErrorMessage(null)
     try {
       const newSupplier = await createSupplier(data)
       setSuppliers([...suppliers, newSupplier])
-      setSuccessMessage(t.suppliers.supplierAdded)
+      setSuccessMessage(ts.supplierAdded)
       setTimeout(() => setSuccessMessage(null), 3000)
     } catch (error) {
       console.error('Error adding supplier:', error)
-      setErrorMessage(t.suppliers.errorAddingSupplier)
+      setErrorMessage(ts.errorAddingSupplier)
     } finally {
       setIsLoading(false)
     }
@@ -58,11 +88,11 @@ export default function SuppliersPage() {
     try {
       await deleteSupplier(id)
       setSuppliers(suppliers.filter((s) => s.id !== id))
-      setSuccessMessage(t.suppliers.supplierDeleted)
+      setSuccessMessage(ts.supplierDeleted)
       setTimeout(() => setSuccessMessage(null), 3000)
     } catch (error) {
       console.error('Error deleting supplier:', error)
-      setErrorMessage(t.suppliers.errorDeletingSupplier)
+      setErrorMessage(ts.errorDeletingSupplier)
     } finally {
       setIsDeleting(null)
     }
@@ -79,20 +109,12 @@ export default function SuppliersPage() {
   return (
     <div className="flex flex-1 flex-col gap-8 p-8 lg:p-10">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-semibold tracking-tight text-foreground">
-            {t.suppliers.title}
-          </h1>
-          <p className="text-base text-muted-foreground">
-            {t.suppliers.subtitle}
-          </p>
-        </div>
-        <Button onClick={() => setIsModalOpen(true)} className="gap-2">
+      <PageHeader title={ts.title} subtitle={ts.subtitle}>
+        <Button onClick={() => setIsModalOpen(true)} className="gap-2 shadow-sm">
           <Plus className="size-4" />
-          {t.suppliers.addSupplier}
+          {ts.addSupplier}
         </Button>
-      </div>
+      </PageHeader>
 
       {/* Messages */}
       {successMessage && (
@@ -106,21 +128,42 @@ export default function SuppliersPage() {
         </div>
       )}
 
-      {/* Suppliers Card */}
+      {/* Filters */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+        <div className="relative flex-1 sm:max-w-sm">
+          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder={ts.searchPlaceholder}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="h-10 pl-9"
+          />
+        </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="h-10 w-full sm:w-[160px]">
+            <SelectValue placeholder={ts.allStatus} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">{ts.allStatus}</SelectItem>
+            <SelectItem value="active">{ts.active}</SelectItem>
+            <SelectItem value="inactive">{ts.inactive}</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Suppliers Table */}
       <Card>
-        <CardHeader className="pb-4">
-          <CardTitle className="text-lg font-medium">
-            {suppliers.length} {t.suppliers.title.toLowerCase()}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pb-6">
+        <CardContent className="p-0">
           <SuppliersTable
-            suppliers={suppliers}
+            suppliers={filteredSuppliers}
             onDelete={handleDeleteSupplier}
             isDeleting={isDeleting}
           />
         </CardContent>
       </Card>
+
+      {/* Table Footer */}
+      <TableFooter filtered={filteredSuppliers.length} total={suppliers.length} label={ts.suppliers} />
 
       {/* Add Supplier Modal */}
       <AddSupplierModal

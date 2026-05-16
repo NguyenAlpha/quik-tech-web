@@ -1,20 +1,34 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent } from '@/components/ui/card'
 import { useLanguage } from '@/lib/language-context'
 import { AddProductModal } from '@/components/add-product-modal'
 import { ProductsTable } from '@/components/products-table'
 import { Product, Category, Unit, CreateProductInput } from '@/lib/types'
 import { getProducts, getCategories, getUnits, createProduct, deleteProduct } from '@/lib/api'
-import { Plus } from 'lucide-react'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Plus, Search } from 'lucide-react'
+import { PageHeader } from '@/components/page-header'
+import { TableFooter } from '@/components/table-footer'
 
 export default function ProductsPage() {
   const { t } = useLanguage()
+  const tp = t.products
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [units, setUnits] = useState<Unit[]>([])
+  const [searchQuery, setSearchQuery] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState('all')
+  const [statusFilter, setStatusFilter] = useState('all')
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isDeleting, setIsDeleting] = useState<string | null>(null)
@@ -44,17 +58,32 @@ export default function ProductsPage() {
     loadData()
   }, [])
 
+  const filteredProducts = useMemo(() => {
+    return products.filter((product) => {
+      const matchesSearch =
+        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        product.description.toLowerCase().includes(searchQuery.toLowerCase())
+      const matchesCategory =
+        categoryFilter === 'all' || product.categoryId === categoryFilter
+      const matchesStatus =
+        statusFilter === 'all' ||
+        (statusFilter === 'active' && product.isActive) ||
+        (statusFilter === 'inactive' && !product.isActive)
+      return matchesSearch && matchesCategory && matchesStatus
+    })
+  }, [products, searchQuery, categoryFilter, statusFilter])
+
   const handleAddProduct = async (data: CreateProductInput) => {
     setIsLoading(true)
     setErrorMessage(null)
     try {
       const newProduct = await createProduct(data)
       setProducts([...products, newProduct])
-      setSuccessMessage(t.products.productAdded)
+      setSuccessMessage(tp.productAdded)
       setTimeout(() => setSuccessMessage(null), 3000)
     } catch (error) {
       console.error('Error adding product:', error)
-      setErrorMessage(t.products.errorAddingProduct)
+      setErrorMessage(tp.errorAddingProduct)
     } finally {
       setIsLoading(false)
     }
@@ -66,11 +95,11 @@ export default function ProductsPage() {
     try {
       await deleteProduct(id)
       setProducts(products.filter((p) => p.id !== id))
-      setSuccessMessage(t.products.productDeleted)
+      setSuccessMessage(tp.productDeleted)
       setTimeout(() => setSuccessMessage(null), 3000)
     } catch (error) {
       console.error('Error deleting product:', error)
-      setErrorMessage(t.products.errorDeletingProduct)
+      setErrorMessage(tp.errorDeletingProduct)
     } finally {
       setIsDeleting(null)
     }
@@ -87,20 +116,12 @@ export default function ProductsPage() {
   return (
     <div className="flex flex-1 flex-col gap-8 p-8 lg:p-10">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-semibold tracking-tight text-foreground">
-            {t.products.title}
-          </h1>
-          <p className="text-base text-muted-foreground">
-            {t.products.subtitle}
-          </p>
-        </div>
-        <Button onClick={() => setIsModalOpen(true)} className="gap-2">
+      <PageHeader title={tp.title} subtitle={tp.subtitle}>
+        <Button onClick={() => setIsModalOpen(true)} className="gap-2 shadow-sm">
           <Plus className="size-4" />
-          {t.products.addProduct}
+          {tp.addProduct}
         </Button>
-      </div>
+      </PageHeader>
 
       {/* Messages */}
       {successMessage && (
@@ -114,16 +135,47 @@ export default function ProductsPage() {
         </div>
       )}
 
-      {/* Products Card */}
+      {/* Filters */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+        <div className="relative flex-1 sm:max-w-sm">
+          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder={tp.searchPlaceholder}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="h-10 pl-9"
+          />
+        </div>
+        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+          <SelectTrigger className="h-10 w-full sm:w-[180px]">
+            <SelectValue placeholder={tp.allCategories} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">{tp.allCategories}</SelectItem>
+            {categories.map((cat) => (
+              <SelectItem key={cat.id} value={cat.id}>
+                {cat.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="h-10 w-full sm:w-[160px]">
+            <SelectValue placeholder={tp.allStatus} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">{tp.allStatus}</SelectItem>
+            <SelectItem value="active">{tp.active}</SelectItem>
+            <SelectItem value="inactive">{tp.inactive}</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Products Table */}
       <Card>
-        <CardHeader className="pb-4">
-          <CardTitle className="text-lg font-medium">
-            {products.length} {t.products.title.toLowerCase()}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pb-6">
+        <CardContent className="p-0">
           <ProductsTable
-            products={products}
+            products={filteredProducts}
             categories={categories}
             units={units}
             onDelete={handleDeleteProduct}
@@ -131,6 +183,9 @@ export default function ProductsPage() {
           />
         </CardContent>
       </Card>
+
+      {/* Table Footer */}
+      <TableFooter filtered={filteredProducts.length} total={products.length} label={tp.products} />
 
       {/* Add Product Modal */}
       <AddProductModal

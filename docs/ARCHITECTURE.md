@@ -4,63 +4,72 @@
 
 ```
 apps/web/
-├── app/                    # Tất cả các trang (App Router)
-│   ├── layout.tsx          # Root layout — bọc toàn bộ app
-│   ├── page.tsx            # Trang Dashboard (route /)
-│   ├── globals.css         # CSS toàn cục + Tailwind
-│   ├── products/
-│   │   └── page.tsx        # Route /products
-│   ├── suppliers/
-│   │   └── page.tsx        # Route /suppliers
-│   ├── purchase-orders/
-│   │   └── page.tsx        # Route /purchase-orders
-│   ├── orders/
-│   │   └── page.tsx        # Route /orders
-│   ├── customers/
-│   │   └── page.tsx        # Route /customers
-│   ├── inventory/
-│   │   └── page.tsx        # Route /inventory
-│   ├── payments/
-│   │   └── page.tsx        # Route /payments
-│   └── settings/
-│       └── page.tsx        # Route /settings
+├── middleware.ts               # Bảo vệ route — redirect nếu chưa login
 │
-├── components/             # UI components tái sử dụng
-│   ├── ui/                 # Shadcn/ui base components (button, card, table...)
-│   ├── app-sidebar.tsx     # Sidebar điều hướng
-│   ├── dashboard-layout.tsx # Layout chính (sidebar + header + content)
-│   ├── dashboard-header.tsx # Header trên cùng
-│   ├── theme-provider.tsx  # Wrapper cho dark/light mode
-│   ├── language-switcher.tsx # Toggle EN/VI
-│   ├── theme-toggle.tsx    # Toggle dark mode
-│   ├── add-product-modal.tsx # Modal tạo sản phẩm
-│   ├── add-supplier-modal.tsx # Modal tạo nhà cung cấp
-│   ├── add-purchase-order-modal.tsx # Modal tạo đơn nhập
-│   ├── products-table.tsx  # Bảng sản phẩm — props: items, onDelete
-│   ├── suppliers-table.tsx # Bảng nhà cung cấp
-│   ├── purchase-orders-table.tsx # Bảng đơn nhập
-│   ├── inventory-table.tsx # Bảng tồn kho — props: items, onAdjust
-│   ├── customers-table.tsx # Bảng khách hàng — props: customers, onSelect
-│   ├── orders-table.tsx    # Bảng đơn hàng — props: orders, onSelect
-│   ├── payments-table.tsx  # Bảng thu chi — props: payments, onSelect
-│   ├── kpi-cards.tsx       # Thẻ KPI trên dashboard
-│   ├── sales-chart.tsx     # Biểu đồ doanh thu
-│   └── low-stock-alert.tsx # Cảnh báo hàng sắp hết
+├── app/                        # Tất cả các trang (App Router)
+│   ├── layout.tsx              # Root layout — chỉ chứa Providers
+│   ├── globals.css             # CSS toàn cục + Tailwind
+│   │
+│   ├── (auth)/                 # Route group — trang auth (không có sidebar)
+│   │   ├── layout.tsx          # Layout căn giữa màn hình
+│   │   ├── login/page.tsx      # Route /login
+│   │   └── register/page.tsx   # Route /register
+│   │
+│   └── (dashboard)/            # Route group — trang dashboard (có sidebar)
+│       ├── layout.tsx          # Layout bọc DashboardLayout
+│       ├── page.tsx            # Route / (Dashboard)
+│       ├── products/page.tsx
+│       ├── suppliers/page.tsx
+│       ├── purchase-orders/page.tsx
+│       ├── orders/page.tsx
+│       ├── customers/page.tsx
+│       ├── inventory/page.tsx
+│       ├── payments/page.tsx
+│       └── settings/page.tsx
 │
-├── lib/                    # Logic dùng chung
-│   ├── api.ts              # Tất cả API calls (hiện là mock data)
-│   ├── types.ts            # TypeScript interfaces: Product, InventoryItem, Customer, Order, Payment...
-│   ├── language-context.tsx # React Context quản lý ngôn ngữ
-│   ├── translations.ts     # Bản dịch EN + VI
-│   ├── utils.ts            # Hàm tiện ích: cn(), getInitials(), formatCurrency()
-│   └── status-colors.ts    # Mapping màu theo trạng thái
+├── components/                 # UI components tái sử dụng
+│   ├── ui/                     # Shadcn/ui base components (button, card, table...)
+│   ├── app-sidebar.tsx         # Sidebar điều hướng
+│   ├── dashboard-layout.tsx    # Layout chính (sidebar + header + content)
+│   ├── dashboard-header.tsx    # Header — hiển thị user thật, logout hoạt động
+│   ├── page-header.tsx         # Component tiêu đề trang (title + subtitle + action)
+│   ├── table-footer.tsx        # Component footer bảng (showing X of Y)
+│   ├── theme-provider.tsx      # Wrapper cho dark/light mode
+│   ├── language-switcher.tsx   # Toggle EN/VI
+│   ├── theme-toggle.tsx        # Toggle dark mode
+│   ├── add-product-modal.tsx
+│   ├── add-supplier-modal.tsx
+│   ├── add-purchase-order-modal.tsx
+│   ├── products-table.tsx
+│   ├── suppliers-table.tsx
+│   ├── purchase-orders-table.tsx
+│   ├── inventory-table.tsx
+│   ├── customers-table.tsx
+│   ├── orders-table.tsx
+│   ├── payments-table.tsx
+│   ├── kpi-cards.tsx
+│   ├── sales-chart.tsx
+│   └── low-stock-alert.tsx
 │
-├── hooks/                  # Custom React hooks
-│   ├── use-toast.ts        # Hook hiển thị toast notification
-│   └── use-mobile.ts       # Hook detect màn hình mobile
+├── lib/                        # Logic dùng chung
+│   ├── api.ts                  # Tất cả API calls — gọi thật đến Spring Boot
+│   ├── types.ts                # TypeScript interfaces khớp với backend DTO
+│   ├── auth-context.tsx        # React Context quản lý auth (token, user, storeId)
+│   ├── language-context.tsx    # React Context quản lý ngôn ngữ
+│   ├── translations.ts         # Bản dịch EN + VI
+│   ├── utils.ts                # cn(), getInitials(), formatCurrency()
+│   └── status-colors.ts        # Mapping màu theo trạng thái
 │
-└── public/                 # File tĩnh (icon, ảnh)
+├── hooks/
+│   ├── use-toast.ts
+│   └── use-mobile.ts
+│
+└── public/                     # File tĩnh
 ```
+
+> **Route groups** như `(auth)` và `(dashboard)` là tính năng của Next.js App Router.
+> Tên trong ngoặc đơn **không xuất hiện trong URL** — chỉ dùng để nhóm các trang
+> có chung layout mà không ảnh hưởng đến route.
 
 ---
 
@@ -69,13 +78,14 @@ apps/web/
 Next.js App Router dùng **cấu trúc folder để định nghĩa route**:
 
 ```
-app/products/page.tsx  →  URL: /products
-app/orders/page.tsx    →  URL: /orders
-app/page.tsx           →  URL: /   (dashboard)
+app/(dashboard)/products/page.tsx  →  URL: /products
+app/(dashboard)/orders/page.tsx    →  URL: /orders
+app/(auth)/login/page.tsx          →  URL: /login
+app/(dashboard)/page.tsx           →  URL: /   (dashboard)
 ```
 
 Quy tắc:
-- Mỗi folder = 1 segment trong URL
+- Mỗi folder = 1 segment trong URL (trừ route groups trong ngoặc đơn)
 - File `page.tsx` trong folder = nội dung trang đó
 - File `layout.tsx` = khung bọc bên ngoài, **không re-render** khi chuyển trang
 
@@ -83,94 +93,100 @@ Quy tắc:
 
 ## 3. Root Layout — layout.tsx
 
-`app/layout.tsx` là file chạy **đầu tiên và bọc toàn bộ app**:
+`app/layout.tsx` chỉ chứa các **Providers** — không có layout UI nào:
 
 ```tsx
-<ThemeProvider>          // Quản lý dark/light mode
-  <LanguageProvider>     // Quản lý ngôn ngữ EN/VI
-    <DashboardLayout>    // Sidebar + Header + vùng nội dung
-      {children}         // Nội dung từng trang thay vào đây
-    </DashboardLayout>
+<ThemeProvider>        // Quản lý dark/light mode
+  <LanguageProvider>   // Quản lý ngôn ngữ EN/VI
+    <AuthProvider>     // Quản lý auth: token, user, storeId
+      {children}
+    </AuthProvider>
   </LanguageProvider>
 </ThemeProvider>
 ```
 
-Khi bạn chuyển từ `/products` sang `/orders`:
-- `ThemeProvider`, `LanguageProvider`, `DashboardLayout` **giữ nguyên** (không reload)
-- Chỉ phần `{children}` thay đổi — đây là lý do sidebar không nhấp nháy khi chuyển trang
-
----
-
-## 4. Server Component vs Client Component
-
-Đây là khái niệm quan trọng nhất của Next.js App Router.
-
-### Server Component (mặc định)
-- **Chạy trên server**, không có trong trình duyệt
-- Không dùng được: `useState`, `useEffect`, event handlers (`onClick`...)
-- Ưu điểm: nhanh hơn, SEO tốt hơn, không gửi JS xuống browser
-
-### Client Component
-- **Chạy trong trình duyệt**
-- Cần thêm `'use client'` ở đầu file
-- Dùng được mọi thứ của React: state, effect, event handlers
+Layout UI (sidebar, header) nằm trong `app/(dashboard)/layout.tsx`:
 
 ```tsx
-// Server Component — KHÔNG có 'use client'
-export default function ProductsPage() {
-  // Không dùng useState ở đây được
-  return <ProductsTable />
-}
-
-// Client Component — CÓ 'use client'
-'use client'
-export function ProductsTable() {
-  const [products, setProducts] = useState([]) // OK
-  // ...
+// app/(dashboard)/layout.tsx
+export default function Layout({ children }) {
+  return <DashboardLayout>{children}</DashboardLayout>
 }
 ```
 
-**Trong project này:** Hiện tại tất cả `page.tsx` đều là Client Component (có `'use client'`)
-vì các trang dùng `useState`/`useEffect` trực tiếp trong trang. Các table components, modal, form
-cũng là Client Component. Server Component chưa được tận dụng — đây là việc cần refactor khi
-kết nối API thật (các page sẽ fetch data server-side, truyền xuống client component qua props).
+Khi user vào `/products`:
+- Root layout render các Providers (giữ nguyên, không re-render)
+- `(dashboard)/layout.tsx` render `DashboardLayout` (sidebar + header)
+- `products/page.tsx` render nội dung trang
+
+Khi user vào `/login`:
+- Root layout render các Providers
+- `(auth)/layout.tsx` render màn hình căn giữa (không có sidebar)
+- `login/page.tsx` render form đăng nhập
 
 ---
 
-## 5. Luồng render một trang
+## 4. Middleware — Bảo vệ Route
 
-Khi user vào `/products`:
+`middleware.ts` chạy **trước mỗi request**, kiểm tra cookie `auth_token`:
 
+```ts
+// Public routes không cần đăng nhập
+const publicRoutes = ['/login', '/register']
+
+export function middleware(request: NextRequest) {
+  const token = request.cookies.get('auth_token')?.value
+
+  if (publicRoutes.includes(pathname)) {
+    // Đã login rồi → redirect về dashboard
+    if (token) return NextResponse.redirect(new URL('/', request.url))
+    return NextResponse.next()
+  }
+
+  // Chưa login → redirect về /login
+  if (!token) return NextResponse.redirect(new URL('/login', request.url))
+  return NextResponse.next()
+}
 ```
-1. Next.js nhận request /products
-2. Chạy app/layout.tsx (Server) → render khung DashboardLayout
-3. Chạy app/products/page.tsx (Server) → render nội dung trang
-4. Gặp <ProductsTable /> là Client Component
-5. Gửi HTML sẵn + JS của ProductsTable xuống browser
-6. Browser "hydrate" — gắn event listeners vào HTML đã có
-7. ProductsTable chạy useEffect → gọi getProducts() từ lib/api.ts
-8. setState(data) → render lại bảng với dữ liệu
-```
+
+Token được lưu vào cookie khi login (song song với localStorage) để middleware
+có thể đọc phía server — vì middleware không có quyền đọc localStorage.
+
+---
+
+## 5. Server Component vs Client Component
+
+### Server Component (mặc định)
+- Chạy trên server, không có trong trình duyệt
+- Không dùng được: `useState`, `useEffect`, event handlers
+- Ưu điểm: nhanh hơn, SEO tốt hơn
+
+### Client Component
+- Chạy trong trình duyệt
+- Cần thêm `'use client'` ở đầu file
+- Dùng được mọi thứ của React
+
+**Trong project này:** Tất cả `page.tsx` trong `(dashboard)/` đều là Client Component
+vì cần `useState`/`useEffect` để fetch dữ liệu từ API. Đây là trade-off chấp nhận được
+ở giai đoạn hiện tại.
 
 ---
 
 ## 6. Global State — Providers
 
-Project dùng **React Context** cho 2 state toàn cục:
+Project dùng **React Context** cho 3 state toàn cục:
 
 ### ThemeProvider (next-themes)
 - Quản lý dark/light mode
 - Lưu preference vào `localStorage` key `theme-preference`
-- Component `ThemeToggle` ở header để toggle
 
-### LanguageProvider (tự viết — lib/language-context.tsx)
+### LanguageProvider (lib/language-context.tsx)
 - Quản lý ngôn ngữ EN / VI
 - Lưu vào `localStorage` key `language-preference`
-- Hook `useLanguage()` để lấy object dịch `t` trong bất kỳ component nào:
+- Hook `useLanguage()` để lấy object dịch `t`
 
-```tsx
-const { t } = useLanguage()
-return <h1>{t.products.title}</h1>  // "Products" hoặc "Sản phẩm"
-```
-
-Toàn bộ text dịch nằm trong `lib/translations.ts`.
+### AuthProvider (lib/auth-context.tsx)
+- Quản lý JWT token, thông tin user, danh sách store membership
+- Lưu vào `localStorage` và `cookie`
+- Hook `useAuth()` để truy cập `{ user, token, storeId, login, logout }`
+- Xem chi tiết trong `AUTH.md`

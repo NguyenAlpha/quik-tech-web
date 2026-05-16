@@ -1,23 +1,65 @@
+// ─── Auth ────────────────────────────────────────────────────────────────────
+
+export interface AuthUser {
+  id: number
+  publicId: string
+  username: string
+  email: string
+  fullName: string
+  phone: string | null
+  isActive: boolean
+}
+
+export interface StoreMembership {
+  id: number
+  storeId: number
+  role: string
+}
+
+export interface LoginInput {
+  email: string
+  password: string
+}
+
+export interface RegisterInput {
+  username: string
+  email: string
+  password: string
+  fullName: string
+  phone?: string
+}
+
+export interface AuthResponse {
+  accessToken: string
+  tokenType: string
+  expiresIn: number
+  user: AuthUser
+  storeMemberships: StoreMembership[]
+}
+
+// ─── Catalog ─────────────────────────────────────────────────────────────────
+
 export interface Category {
-  id: string
+  id: string   // publicId
   name: string
   description: string
 }
 
 export interface Unit {
-  id: string
+  id: string   // publicId
   name: string
   abbreviation: string
 }
 
 export interface Product {
-  id: string
+  id: string   // publicId
+  sku: string
   name: string
   description: string
   costPrice: number
   sellingPrice: number
-  minimumStock: number
-  currentStock: number
+  minStockLevel: number
+  totalStock: number
   categoryId: string
   unitId: string
   isActive: boolean
@@ -26,11 +68,12 @@ export interface Product {
 }
 
 export interface CreateProductInput {
+  sku: string
   name: string
   description: string
   costPrice: number
   sellingPrice: number
-  minimumStock: number
+  minStockLevel: number
   categoryId: string
   unitId: string
   isActive: boolean
@@ -40,39 +83,104 @@ export interface UpdateProductInput extends CreateProductInput {
   id: string
 }
 
+// ─── Partners ─────────────────────────────────────────────────────────────────
+
 export interface Supplier {
-  id: string
+  id: string   // publicId
+  code: string
   name: string
-  address: string
-  city: string
   phone: string
   email: string
-  contactPerson: string
-  paymentTerms: string
-  totalInvoiceValue: number
-  isActive: boolean
+  address: string
+  debtBalance: number
   createdAt: string
   updatedAt: string
 }
 
 export interface CreateSupplierInput {
+  code?: string
   name: string
-  address: string
-  city: string
   phone: string
   email: string
-  contactPerson: string
-  paymentTerms: string
-  isActive: boolean
+  address?: string
 }
 
 export interface UpdateSupplierInput extends CreateSupplierInput {
   id: string
 }
 
-export interface PurchaseOrderItem {
+export interface Customer {
+  id: string   // publicId
+  code: string
+  name: string
+  phone: string
+  email: string
+  address: string
+  debtBalance: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateCustomerInput {
+  code?: string
+  name: string
+  phone: string
+  email: string
+  address?: string
+}
+
+// ─── Warehouse ────────────────────────────────────────────────────────────────
+
+export interface Warehouse {
+  id: string   // publicId
+  name: string
+  address: string
+  isActive: boolean
+}
+
+// ─── Inventory ────────────────────────────────────────────────────────────────
+
+export interface InventoryItem {
+  id: string   // publicId
+  productPublicId: string
+  productName: string
+  warehousePublicId: string
+  warehouseName: string
+  quantity: number
+  updatedAt: string
+}
+
+// ─── Orders ──────────────────────────────────────────────────────────────────
+
+export interface OrderItem {
   id: string
-  productId: string
+  productPublicId: string
+  productName: string
+  quantity: number
+  unitPrice: number
+  totalPrice: number
+}
+
+export interface Order {
+  id: string   // publicId
+  orderCode: string
+  customerPublicId: string | null
+  status: string
+  subtotal: number
+  discount: number
+  tax: number
+  totalAmount: number
+  paidAmount: number
+  debtAmount: number
+  note: string
+  createdAt: string
+  items: OrderItem[]
+}
+
+// ─── Purchase Orders ──────────────────────────────────────────────────────────
+
+export interface PurchaseOrderItem {
+  productPublicId: string
   productName: string
   quantity: number
   unitPrice: number
@@ -80,98 +188,34 @@ export interface PurchaseOrderItem {
 }
 
 export interface PurchaseOrder {
-  id: string
-  poNumber: string
-  supplierId: string
-  supplierName: string
-  orderDate: string
-  expectedDeliveryDate: string
-  status: "pending" | "received" | "completed"
+  id: string   // publicId
+  orderCode: string
+  supplierPublicId: string
+  status: string
   totalAmount: number
-  notes: string
-  items: PurchaseOrderItem[]
+  paidAmount: number
+  debtAmount: number
+  note: string
   createdAt: string
-  updatedAt: string
+  items: PurchaseOrderItem[]
 }
 
 export interface CreatePurchaseOrderInput {
-  supplierId: string
-  orderDate: string
-  expectedDeliveryDate: string
-  status: "pending" | "received" | "completed"
-  notes: string
-  items: Omit<PurchaseOrderItem, "id">[]
+  orderCode?: string
+  supplierPublicId: string
+  warehousePublicId: string
+  note?: string
+  items: { productPublicId: string; quantity: number; unitPrice: number }[]
 }
 
-export interface UpdatePurchaseOrderInput extends CreatePurchaseOrderInput {
-  id: string
-}
-
-export interface InventoryItem {
-  id: string
-  productName: string
-  sku: string
-  warehouse: string
-  quantity: number
-  unit: string
-  minStock: number
-  maxStock: number
-  lastUpdated: string
-}
-
-export interface CustomerOrder {
-  id: string
-  date: string
-  total: number
-  status: "completed" | "pending" | "cancelled"
-}
-
-export interface Customer {
-  id: string
-  name: string
-  email: string
-  phone: string
-  address: string
-  debtBalance: number
-  totalSpent: number
-  orderCount: number
-  status: "active" | "inactive"
-  joinedDate: string
-  lastOrderDate: string
-  recentOrders: CustomerOrder[]
-}
-
-export interface OrderItem {
-  name: string
-  sku: string
-  quantity: number
-  price: number
-}
-
-export interface Order {
-  id: string
-  customer: string
-  email: string
-  phone: string
-  status: "pending" | "processing" | "shipped" | "completed" | "cancelled"
-  total: number
-  subtotal: number
-  shipping: number
-  tax: number
-  date: string
-  shippingAddress: string
-  items: OrderItem[]
-}
+// ─── Payments ─────────────────────────────────────────────────────────────────
 
 export interface Payment {
-  id: string
-  type: "income" | "expense"
+  id: string   // publicId
+  customerPublicId: string | null
+  supplierPublicId: string | null
   amount: number
-  category: string
-  description: string
-  contactName: string
-  contactType: "customer" | "supplier"
-  date: string
-  reference: string
-  method: "cash" | "bank_transfer" | "credit_card" | "check"
+  paymentMethod: string
+  note: string
+  createdAt: string
 }

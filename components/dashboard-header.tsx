@@ -1,6 +1,6 @@
 "use client"
 
-import { Search, Bell, Command } from "lucide-react"
+import { Search, Bell, Command, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
@@ -16,9 +16,12 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { LanguageSwitcher } from "@/components/language-switcher"
 import { useLanguage } from "@/lib/language-context"
+import { useAuth } from "@/lib/auth-context"
+import { getInitials } from "@/lib/utils"
 
 export function DashboardHeader() {
   const { t } = useLanguage()
+  const { user, logout } = useAuth()
 
   return (
     <header className="flex h-16 shrink-0 items-center gap-3 border-b bg-background/95 px-6 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -92,25 +95,27 @@ export function DashboardHeader() {
             <Button variant="ghost" className="relative h-9 gap-2 pl-2 pr-3">
               <Avatar className="size-7 border">
                 <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-600 text-xs font-medium text-white">
-                  JD
+                  {user ? getInitials(user.fullName) : 'U'}
                 </AvatarFallback>
               </Avatar>
-              <span className="hidden text-sm font-medium sm:inline-block">John Doe</span>
+              <span className="hidden text-sm font-medium sm:inline-block">
+                {user?.fullName ?? ''}
+              </span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel className="font-normal">
               <div className="flex flex-col gap-1">
-                <span className="text-sm font-medium">John Doe</span>
-                <span className="text-xs text-muted-foreground">john@example.com</span>
+                <span className="text-sm font-medium">{user?.fullName}</span>
+                <span className="text-xs text-muted-foreground">{user?.email}</span>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Profile</DropdownMenuItem>
-            <DropdownMenuItem>Settings</DropdownMenuItem>
-            <DropdownMenuItem>Billing</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-red-600 focus:text-red-600">
+            <DropdownMenuItem
+              className="gap-2 text-red-600 focus:text-red-600"
+              onClick={logout}
+            >
+              <LogOut className="size-4" />
               {t.common.logout}
             </DropdownMenuItem>
           </DropdownMenuContent>

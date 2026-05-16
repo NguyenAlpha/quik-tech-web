@@ -52,7 +52,7 @@ export function ProductsTable({ products, categories, units, onDelete, isDeletin
         </TableHeader>
         <TableBody>
           {products.map((product) => {
-            const isLowStock = product.currentStock <= product.minimumStock
+            const isLowStock = product.totalStock <= product.minStockLevel
             const margin = product.sellingPrice - product.costPrice
             const marginPercent = ((margin / product.costPrice) * 100).toFixed(1)
 
@@ -65,6 +65,7 @@ export function ProductsTable({ products, categories, units, onDelete, isDeletin
                     )}
                     <div className="flex-1">
                       <p className="font-medium">{product.name}</p>
+                      <p className="font-mono text-xs text-muted-foreground">{product.sku}</p>
                       <p className="text-sm text-muted-foreground">{product.description}</p>
                     </div>
                   </div>
@@ -83,8 +84,8 @@ export function ProductsTable({ products, categories, units, onDelete, isDeletin
                 </TableCell>
                 <TableCell className="text-center">
                   <div>
-                    <p className="text-sm font-medium">{product.currentStock}</p>
-                    <p className="text-xs text-muted-foreground">Min: {product.minimumStock}</p>
+                    <p className="text-sm font-medium">{product.totalStock}</p>
+                    <p className="text-xs text-muted-foreground">Min: {product.minStockLevel}</p>
                   </div>
                 </TableCell>
                 <TableCell className="text-center">

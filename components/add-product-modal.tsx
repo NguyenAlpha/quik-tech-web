@@ -25,11 +25,12 @@ export function AddProductModal({ open, onOpenChange, onSubmit, isLoading }: Add
   const [units, setUnits] = useState<Unit[]>([])
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [formData, setFormData] = useState({
+    sku: '',
     name: '',
     description: '',
     costPrice: '',
     sellingPrice: '',
-    minimumStock: '',
+    minStockLevel: '',
     categoryId: '',
     unitId: '',
     isActive: true,
@@ -48,10 +49,9 @@ export function AddProductModal({ open, onOpenChange, onSubmit, isLoading }: Add
     const newErrors: Record<string, string> = {}
 
     if (!formData.name.trim()) newErrors.name = t.products.nameRequired
-    if (!formData.description.trim()) newErrors.description = t.products.descriptionRequired
     if (!formData.costPrice || parseFloat(formData.costPrice) <= 0) newErrors.costPrice = t.products.costPriceRequired
     if (!formData.sellingPrice || parseFloat(formData.sellingPrice) <= 0) newErrors.sellingPrice = t.products.sellingPriceRequired
-    if (!formData.minimumStock || parseInt(formData.minimumStock) < 0) newErrors.minimumStock = t.products.minimumStockRequired
+    if (!formData.minStockLevel || parseInt(formData.minStockLevel) < 0) newErrors.minStockLevel = t.products.minimumStockRequired
     if (!formData.categoryId) newErrors.categoryId = t.products.categoryRequired
     if (!formData.unitId) newErrors.unitId = t.products.unitRequired
 
@@ -61,28 +61,29 @@ export function AddProductModal({ open, onOpenChange, onSubmit, isLoading }: Add
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!validateForm()) return
 
     try {
       await onSubmit({
+        sku: formData.sku,
         name: formData.name,
         description: formData.description,
         costPrice: parseFloat(formData.costPrice),
         sellingPrice: parseFloat(formData.sellingPrice),
-        minimumStock: parseInt(formData.minimumStock),
+        minStockLevel: parseInt(formData.minStockLevel),
         categoryId: formData.categoryId,
         unitId: formData.unitId,
         isActive: formData.isActive,
       })
 
-      // Reset form
       setFormData({
+        sku: '',
         name: '',
         description: '',
         costPrice: '',
         sellingPrice: '',
-        minimumStock: '',
+        minStockLevel: '',
         categoryId: '',
         unitId: '',
         isActive: true,
@@ -103,6 +104,17 @@ export function AddProductModal({ open, onOpenChange, onSubmit, isLoading }: Add
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* SKU */}
+          <div className="grid gap-2">
+            <Label htmlFor="sku">SKU</Label>
+            <Input
+              id="sku"
+              placeholder="e.g., PROD-001"
+              value={formData.sku}
+              onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+            />
+          </div>
+
           {/* Name */}
           <div className="grid gap-2">
             <Label htmlFor="name">{t.products.productName}</Label>
@@ -124,10 +136,8 @@ export function AddProductModal({ open, onOpenChange, onSubmit, isLoading }: Add
               placeholder="Product description..."
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className={errors.description ? 'border-red-500' : ''}
               rows={3}
             />
-            {errors.description && <p className="text-sm text-red-500">{errors.description}</p>}
           </div>
 
           {/* Prices */}
@@ -161,18 +171,18 @@ export function AddProductModal({ open, onOpenChange, onSubmit, isLoading }: Add
             </div>
           </div>
 
-          {/* Minimum Stock */}
+          {/* Min Stock Level */}
           <div className="grid gap-2">
-            <Label htmlFor="minimumStock">{t.products.minimumStock}</Label>
+            <Label htmlFor="minStockLevel">{t.products.minimumStock}</Label>
             <Input
-              id="minimumStock"
+              id="minStockLevel"
               type="number"
               placeholder="0"
-              value={formData.minimumStock}
-              onChange={(e) => setFormData({ ...formData, minimumStock: e.target.value })}
-              className={errors.minimumStock ? 'border-red-500' : ''}
+              value={formData.minStockLevel}
+              onChange={(e) => setFormData({ ...formData, minStockLevel: e.target.value })}
+              className={errors.minStockLevel ? 'border-red-500' : ''}
             />
-            {errors.minimumStock && <p className="text-sm text-red-500">{errors.minimumStock}</p>}
+            {errors.minStockLevel && <p className="text-sm text-red-500">{errors.minStockLevel}</p>}
           </div>
 
           {/* Category & Unit */}

@@ -3,8 +3,8 @@
 ## 1. Project là gì
 
 **StockFlow** là giao diện web admin cho hệ thống quản lý bán hàng và kho vận **QuikTech**.
-Được xây dựng bằng Next.js, hiện tại đang ở giai đoạn **UI prototype** — giao diện đã hoàn chỉnh
-nhưng toàn bộ dữ liệu còn là mock (giả), chưa kết nối backend thật.
+Được xây dựng bằng Next.js 15 (App Router), kết nối với backend **Spring Boot** qua REST API,
+xác thực bằng **JWT**.
 
 ---
 
@@ -17,7 +17,6 @@ nhưng toàn bộ dữ liệu còn là mock (giả), chưa kết nối backend t
 | UI Components | Shadcn/ui + Radix UI | Component library |
 | Icons | Lucide React | SVG icon pack |
 | Charts | Recharts | Dashboard charts |
-| Forms | React Hook Form + Zod | Validation |
 | Notifications | Sonner | Toast alerts |
 | Dark mode | next-themes | Light/Dark toggle |
 | Analytics | Vercel Analytics | Chỉ bật ở production |
@@ -29,46 +28,40 @@ nhưng toàn bộ dữ liệu còn là mock (giả), chưa kết nối backend t
 | Tính năng | Trạng thái |
 |:---|:---|
 | Giao diện các trang | Hoàn chỉnh |
-| Mock data (dữ liệu giả) | Có — xem `lib/api.ts` |
-| Kết nối backend API | Chưa có |
-| Đăng nhập / Auth | Chưa có — mọi trang đều public |
-| Phân quyền route | Chưa có |
-| Dữ liệu bền vững | Không — reset khi refresh trang |
-
-> Hiện tại user được hardcode là "John Doe" trong header.
-> Nút Logout có nhưng chưa có chức năng.
+| Kết nối backend API | Hoàn chỉnh — xem `lib/api.ts` |
+| Đăng nhập / Đăng ký | Hoàn chỉnh — JWT từ Spring Boot |
+| Phân quyền route | Hoàn chỉnh — `middleware.ts` bảo vệ tất cả route |
+| Đa ngôn ngữ EN/VI | Hoàn chỉnh |
+| Dark / Light mode | Hoàn chỉnh |
+| Dữ liệu bền vững | Có — lưu trên database qua backend |
 
 ---
 
-## 4. Các trang đang có
+## 4. Các trang hiện có
 
-| Route | Trang |
-|:---|:---|
-| `/` | Dashboard: KPI cards, biểu đồ doanh thu, cảnh báo hàng thấp, đơn gần đây |
-| `/products` | Danh sách sản phẩm, tạo mới, xóa |
-| `/suppliers` | Danh sách nhà cung cấp, tạo mới, xóa |
-| `/purchase-orders` | Đơn nhập hàng, tạo mới, cập nhật trạng thái, xóa |
-| `/orders` | Đơn bán (data cứng, chưa có CRUD) |
-| `/customers` | Khách hàng (UI tĩnh) |
-| `/inventory` | Tồn kho (UI tĩnh) |
-| `/payments` | Thanh toán (UI tĩnh) |
-| `/settings` | Cài đặt (UI tĩnh) |
+| Route | Trang | Tính năng |
+|:---|:---|:---|
+| `/login` | Đăng nhập | Form login, gọi API auth |
+| `/register` | Đăng ký | Form register, tự động login sau khi tạo tài khoản |
+| `/` | Dashboard | KPI cards, biểu đồ doanh thu, cảnh báo hàng thấp, đơn gần đây |
+| `/products` | Sản phẩm | Xem, thêm, xóa, tìm kiếm, lọc theo category/status |
+| `/suppliers` | Nhà cung cấp | Xem, thêm, xóa, tìm kiếm, lọc theo status |
+| `/purchase-orders` | Đơn nhập hàng | Xem, thêm, hủy, đổi trạng thái, tìm kiếm, lọc |
+| `/orders` | Đơn bán hàng | Xem danh sách, xem chi tiết, tìm kiếm, lọc |
+| `/customers` | Khách hàng | Xem, thêm, xem chi tiết, tìm kiếm, lọc |
+| `/inventory` | Tồn kho | Xem tồn kho theo warehouse, tìm kiếm, lọc |
+| `/payments` | Thanh toán | Xem danh sách, tìm kiếm |
+| `/settings` | Cài đặt | UI tĩnh |
 
 ---
 
-## 5. Lộ trình việc cần làm
+## 5. Tính năng chưa làm
 
-### Bước 1 — Kết nối backend
-Thay toàn bộ mock trong `lib/api.ts` bằng `fetch()` gọi đến Spring Boot API.
-
-### Bước 2 — Thêm Authentication
-Tích hợp đăng nhập với JWT từ backend. Dùng middleware.ts để bảo vệ các route cần đăng nhập.
-
-### Bước 3 — Hoàn thiện các trang UI tĩnh
-Các trang Orders, Customers, Inventory, Payments hiện chỉ có layout — cần thêm CRUD thật.
-
-### Bước 4 — Production
-Cấu hình biến môi trường, deploy lên Vercel hoặc server Node.js.
+- **Tạo đơn bán hàng** — chưa có form tạo Order
+- **Tạo payment** — chưa có form thêm Payment
+- **Edit** bất kỳ entity nào — chưa có
+- **Xóa customer** — chưa có
+- **Tạo store** — nếu user mới chưa có store, app sẽ không load được dữ liệu
 
 ---
 
@@ -79,4 +72,11 @@ cd apps/web
 npm install
 npm run dev
 # Mở http://localhost:3000
+```
+
+Cần backend Spring Boot đang chạy ở `http://localhost:8080`.
+Cấu hình URL backend trong `apps/web/.env.local`:
+
+```
+NEXT_PUBLIC_API_URL=http://localhost:8080
 ```

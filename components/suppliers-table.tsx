@@ -3,8 +3,8 @@
 import { Trash2, Package } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Badge } from '@/components/ui/badge'
 import { useLanguage } from '@/lib/language-context'
+import { formatCurrency } from '@/lib/utils'
 import { Supplier } from '@/lib/types'
 
 interface SuppliersTableProps {
@@ -42,25 +42,16 @@ export function SuppliersTable({ suppliers, onDelete, isDeleting }: SuppliersTab
               {t.suppliers.supplierName}
             </TableHead>
             <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              {t.suppliers.city}
+              {t.suppliers.phone}
             </TableHead>
             <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
               {t.suppliers.email}
             </TableHead>
             <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              {t.suppliers.phone}
+              {t.suppliers.address}
             </TableHead>
             <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              {t.suppliers.contactPerson}
-            </TableHead>
-            <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              {t.suppliers.paymentTerms}
-            </TableHead>
-            <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              {t.suppliers.totalInvoiceValue}
-            </TableHead>
-            <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              {t.products.status}
+              {t.suppliers.debtBalance}
             </TableHead>
             <TableHead className="pr-6 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">
               <span className="sr-only">Actions</span>
@@ -71,32 +62,30 @@ export function SuppliersTable({ suppliers, onDelete, isDeleting }: SuppliersTab
           {suppliers.map((supplier) => (
             <TableRow key={supplier.id} className="group">
               <TableCell className="pl-6">
-                <span className="font-medium">{supplier.name}</span>
-              </TableCell>
-              <TableCell>
-                <span className="text-sm text-muted-foreground">{supplier.city}</span>
-              </TableCell>
-              <TableCell>
-                <span className="text-sm text-muted-foreground">{supplier.email}</span>
+                <div className="flex flex-col">
+                  <span className="font-medium">{supplier.name}</span>
+                  <span className="font-mono text-xs text-muted-foreground">{supplier.code}</span>
+                </div>
               </TableCell>
               <TableCell>
                 <span className="text-sm text-muted-foreground">{supplier.phone}</span>
               </TableCell>
               <TableCell>
-                <span className="text-sm text-muted-foreground">{supplier.contactPerson}</span>
+                <span className="text-sm text-muted-foreground">{supplier.email}</span>
               </TableCell>
               <TableCell>
-                <span className="text-sm text-muted-foreground">{supplier.paymentTerms}</span>
+                <span className="text-sm text-muted-foreground">{supplier.address}</span>
               </TableCell>
               <TableCell>
-                <span className="font-mono text-sm font-semibold">
-                  ${supplier.totalInvoiceValue.toLocaleString()}
+                <span
+                  className={`font-mono text-sm font-semibold ${
+                    supplier.debtBalance > 0
+                      ? 'text-red-600 dark:text-red-400'
+                      : 'text-foreground'
+                  }`}
+                >
+                  {formatCurrency(supplier.debtBalance)}
                 </span>
-              </TableCell>
-              <TableCell>
-                <Badge variant="secondary" className={supplier.isActive ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'}>
-                  {supplier.isActive ? t.products.active : t.products.inactive}
-                </Badge>
               </TableCell>
               <TableCell className="pr-6 text-right">
                 <Button

@@ -6,6 +6,7 @@ import { DashboardHeader } from "@/components/dashboard-header"
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
+    //   SidebarProvider dùng để quản lý trạng thái của sidebar
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>

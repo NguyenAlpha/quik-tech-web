@@ -7,115 +7,263 @@ Trang (page.tsx)
     │
     │  gọi hàm từ
     ▼
-lib/api.ts  ──── hiện tại ──→  Mock data trong bộ nhớ
-                               (mất khi refresh trang)
+lib/api.ts
     │
-    │  tương lai sẽ là
+    │  apiFetch<T>()
     ▼
-fetch() → Spring Boot API → PostgreSQL
+fetch() → Spring Boot API (/api/stores/{storeId}/...)
+    │
+    │  ApiResult<T> response
+    ▼
+PostgreSQL
 ```
 
 ---
 
-## 2. Mock API hiện tại (lib/api.ts)
+## 2. apiFetch — Helper gọi API (lib/api.ts)
 
-Toàn bộ "API" được giả lập trong `lib/api.ts`. Dữ liệu lưu trong biến `let` của module —
-tức là chỉ tồn tại trong bộ nhớ, **mất khi refresh trang**.
-
-Mỗi hàm giả lập độ trễ mạng bằng `setTimeout` để cảm giác thật hơn:
+Tất cả API calls đều đi qua hàm `apiFetch<T>()`:
 
 ```ts
-// Ví dụ: getProducts() trả về sau 500ms (giả lập delay mạng)
-export async function getProducts(): Promise<Product[]> {
-  return new Promise((resolve) => {
-    setTimeout(() => resolve(products), 500)
+async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const token = localStorage.getItem('auth_token')
+  const res = await fetch(`${API_BASE}${path}`, {
+    ...init,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...init?.headers,
+    },
   })
+  const body = await res.json()
+  if (!res.ok || !body.success) {
+    throw new Error(body.error?.message || 'Request failed')
+  }
+  return body.data  // Unwrap ApiResult<T>
 }
 ```
 
-### Các hàm hiện có
-
-| Hàm | Mô tả |
-|:---|:---|
-| `getCategories()` | Lấy danh sách danh mục |
-| `getUnits()` | Lấy danh sách đơn vị tính |
-| `getProducts()` | Lấy danh sách sản phẩm |
-| `getProductById(id)` | Lấy 1 sản phẩm theo id |
-| `createProduct(input)` | Tạo sản phẩm mới |
-| `updateProduct(input)` | Cập nhật sản phẩm |
-| `deleteProduct(id)` | Xóa sản phẩm |
-| `getSuppliers()` | Lấy danh sách nhà cung cấp |
-| `getSupplierById(id)` | Lấy 1 nhà cung cấp |
-| `createSupplier(input)` | Tạo nhà cung cấp |
-| `updateSupplier(input)` | Cập nhật nhà cung cấp |
-| `deleteSupplier(id)` | Xóa nhà cung cấp |
-| `getPurchaseOrders()` | Lấy danh sách đơn nhập |
-| `getPurchaseOrderById(id)` | Lấy 1 đơn nhập |
-| `createPurchaseOrder(input)` | Tạo đơn nhập |
-| `updatePurchaseOrderStatus(id, status)` | Cập nhật trạng thái đơn nhập |
-| `deletePurchaseOrder(id)` | Xóa đơn nhập |
+Hàm này tự động:
+- Đính kèm JWT token vào header `Authorization`
+- Unwrap `ApiResult<T>` wrapper từ backend (`body.data`)
+- Throw `Error` với message từ backend nếu request thất bại
 
 ---
 
-## 3. Cách một trang dùng API
+## 3. ApiResult — Response format từ backend
+
+Spring Boot trả về mọi response theo format:
+
+```json
+{
+  "success": true,
+  "data": { ... },
+  "error": null
+}
+```
+
+Khi lỗi:
+```json
+{
+  "success": false,
+  "data": null,
+  "error": { "code": "NOT_FOUND", "message": "Product not found" }
+}
+```
+
+`apiFetch` kiểm tra `body.success` và throw nếu false — trang không cần xử lý format này.
+
+---
+
+## 4. Store-scoped endpoints
+
+Mọi dữ liệu nghiệp vụ đều gắn với một **store** cụ thể.
+URL pattern: `/api/stores/{storeId}/...`
+
+Hai helper trong `api.ts`:
+
+```ts
+function getStoreId(): number {
+  const id = localStorage.getItem('auth_store_id')
+  if (!id) throw new Error('No store selected')
+  return parseInt(id)
+}
+
+function storeUrl(path: string) {
+  return `/api/stores/${getStoreId()}${path}`
+}
+```
+
+Ví dụ sử dụng:
+```ts
+// Thay vì hardcode /api/stores/1/products
+export async function getProducts(): Promise<Product[]> {
+  const data = await apiFetch<any[]>(storeUrl('/products'))
+  return data.map(mapProduct)
+}
+```
+
+`storeId` được lấy từ `storeMemberships[0].storeId` sau khi login và lưu vào localStorage.
+
+---
+
+## 5. Mapper functions
+
+Backend trả về tên field theo convention Java (`publicId`, `costPrice`...).
+Mỗi entity có một mapper function chuyển đổi sang TypeScript type của frontend:
+
+```ts
+function mapProduct(p: any): Product {
+  return {
+    id: p.publicId,        // publicId → id
+    sku: p.sku ?? '',
+    name: p.name,
+    costPrice: Number(p.costPrice),
+    sellingPrice: Number(p.sellingPrice),
+    minStockLevel: p.minStockLevel ?? 0,
+    totalStock: Number(p.totalStock ?? 0),
+    categoryId: p.categoryId ? String(p.categoryId) : '',
+    unitId: p.unitId ? String(p.unitId) : '',
+    isActive: p.isActive ?? true,
+    createdAt: p.createdAt ?? '',
+    updatedAt: p.updatedAt ?? '',
+  }
+}
+```
+
+Tương tự: `mapSupplier()`, `mapCustomer()`, `mapOrder()`, `mapPurchaseOrder()`.
+
+---
+
+## 6. Các hàm API hiện có
+
+### Auth
+| Hàm | Endpoint | Mô tả |
+|:---|:---|:---|
+| `loginUser(data)` | `POST /api/auth/login` | Đăng nhập, trả về JWT + user + storeMemberships |
+| `registerUser(data)` | `POST /api/auth/register` | Đăng ký tài khoản mới |
+
+### Catalog
+| Hàm | Endpoint | Mô tả |
+|:---|:---|:---|
+| `getCategories()` | `GET /categories` | Danh sách danh mục |
+| `getUnits()` | `GET /units` | Danh sách đơn vị tính |
+
+### Products
+| Hàm | Endpoint | Mô tả |
+|:---|:---|:---|
+| `getProducts()` | `GET /products` | Danh sách sản phẩm |
+| `createProduct(input)` | `POST /products` | Tạo sản phẩm |
+| `deleteProduct(id)` | `DELETE /products/{id}` | Xóa sản phẩm |
+
+### Suppliers
+| Hàm | Endpoint | Mô tả |
+|:---|:---|:---|
+| `getSuppliers()` | `GET /suppliers` | Danh sách nhà cung cấp |
+| `createSupplier(input)` | `POST /suppliers` | Tạo nhà cung cấp |
+| `deleteSupplier(id)` | `DELETE /suppliers/{id}` | Xóa nhà cung cấp |
+
+### Customers
+| Hàm | Endpoint | Mô tả |
+|:---|:---|:---|
+| `getCustomers()` | `GET /customers` | Danh sách khách hàng |
+| `createCustomer(input)` | `POST /customers` | Tạo khách hàng |
+
+### Warehouses & Inventory
+| Hàm | Endpoint | Mô tả |
+|:---|:---|:---|
+| `getWarehouses()` | `GET /warehouses` | Danh sách kho |
+| `getInventoryItems()` | `GET /inventory` | Tồn kho theo warehouse |
+
+### Orders
+| Hàm | Endpoint | Mô tả |
+|:---|:---|:---|
+| `getOrders()` | `GET /orders` | Danh sách đơn bán |
+
+### Purchase Orders
+| Hàm | Endpoint | Mô tả |
+|:---|:---|:---|
+| `getPurchaseOrders()` | `GET /purchases` | Danh sách đơn nhập |
+| `createPurchaseOrder(input)` | `POST /purchases` | Tạo đơn nhập |
+| `deletePurchaseOrder(id)` | `PUT /purchases/{id}/cancel` | Hủy đơn nhập |
+| `updatePurchaseOrderStatus(id, status)` | `PUT /purchases/{id}/receive` | Xác nhận nhận hàng |
+
+### Payments
+| Hàm | Endpoint | Mô tả |
+|:---|:---|:---|
+| `getPayments()` | `GET /payments` | Danh sách thanh toán |
+
+> Tất cả endpoint trên đều có prefix `/api/stores/{storeId}` — được xử lý bởi `storeUrl()`.
+
+---
+
+## 7. Cách một trang dùng API
 
 Pattern chung trong tất cả các trang có dữ liệu:
 
 ```tsx
 'use client'
-import { useEffect, useState } from 'react'
-import { getProducts } from '@/lib/api'
-import type { Product } from '@/lib/types'
+import { useState, useEffect, useMemo } from 'react'
+import { getProducts, createProduct, deleteProduct } from '@/lib/api'
+import type { Product, CreateProductInput } from '@/lib/types'
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [isPageLoading, setIsPageLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState('')
 
-  // Chạy 1 lần khi component mount — lấy dữ liệu ban đầu
+  // Fetch dữ liệu khi component mount
   useEffect(() => {
     getProducts()
       .then(setProducts)
-      .finally(() => setIsLoading(false))
+      .finally(() => setIsPageLoading(false))
   }, [])
 
-  // Sau khi tạo mới: thêm vào state mà không cần fetch lại
-  async function handleCreate(input) {
+  // Filter client-side bằng useMemo
+  const filtered = useMemo(() =>
+    products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase())),
+    [products, searchQuery]
+  )
+
+  // Sau khi tạo mới: thêm vào state, không fetch lại
+  async function handleCreate(input: CreateProductInput) {
     const newProduct = await createProduct(input)
     setProducts(prev => [...prev, newProduct])
   }
 
   // Sau khi xóa: lọc ra khỏi state
-  async function handleDelete(id) {
+  async function handleDelete(id: string) {
     await deleteProduct(id)
     setProducts(prev => prev.filter(p => p.id !== id))
   }
 }
 ```
 
-**Không có global state** — mỗi trang tự quản lý dữ liệu của mình bằng `useState`.
-Khi chuyển sang trang khác rồi quay lại, dữ liệu sẽ được fetch lại từ đầu.
+**Không có global state** — mỗi trang tự quản lý dữ liệu bằng `useState`.
+Filter/search đều thực hiện **client-side** bằng `useMemo`.
 
 ---
 
-## 4. TypeScript Types (lib/types.ts)
+## 8. TypeScript Types (lib/types.ts)
 
-Tất cả kiểu dữ liệu được định nghĩa trong `lib/types.ts`. Mỗi entity có 3 interface:
+Tất cả types khớp với backend DTO. Pattern đặt tên:
 
 ```
-Product            — dữ liệu đầy đủ từ API (có id, createdAt...)
-CreateProductInput — dữ liệu khi tạo mới (không có id)
-UpdateProductInput — dữ liệu khi cập nhật (có id, các field còn lại giống Create)
+Product            — dữ liệu đầy đủ từ API (có id = publicId, createdAt...)
+CreateProductInput — payload khi tạo mới (không có id)
+UpdateProductInput — payload khi cập nhật (extends Create + có id)
 ```
 
-Ví dụ:
+Ví dụ thực tế:
 ```ts
 interface Product {
-  id: string
+  id: string          // = publicId từ backend
+  sku: string
   name: string
   costPrice: number
   sellingPrice: number
-  currentStock: number
-  minimumStock: number
+  minStockLevel: number
+  totalStock: number
   categoryId: string
   unitId: string
   isActive: boolean
@@ -124,63 +272,27 @@ interface Product {
 }
 
 interface CreateProductInput {
+  sku: string
   name: string
+  description: string
   costPrice: number
   sellingPrice: number
-  minimumStock: number
+  minStockLevel: number
   categoryId: string
   unitId: string
   isActive: boolean
-  // currentStock không có — backend tự set = 0
 }
 ```
 
 ---
 
-## 5. Kết nối backend thật (việc cần làm)
+## 9. Biến môi trường
 
-Khi sẵn sàng kết nối Spring Boot API, chỉ cần **sửa `lib/api.ts`** — phần còn lại của app không cần đổi.
+| Biến | Mặc định | Mô tả |
+|:---|:---|:---|
+| `NEXT_PUBLIC_API_URL` | `http://localhost:8080` | URL của Spring Boot backend |
 
-### Bước 1: Thêm biến môi trường
-
-Tạo file `.env.local` ở thư mục `apps/web/`:
+Tạo file `apps/web/.env.local` để override:
 ```
 NEXT_PUBLIC_API_URL=http://localhost:8080
 ```
-
-### Bước 2: Thay mock bằng fetch thật
-
-```ts
-// TRƯỚC (mock)
-export async function getProducts(): Promise<Product[]> {
-  return new Promise(resolve => setTimeout(() => resolve(mockProducts), 500))
-}
-
-// SAU (gọi API thật)
-export async function getProducts(token: string): Promise<Product[]> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/products`, {
-    headers: { Authorization: `Bearer ${token}` }
-  })
-  if (!res.ok) throw new Error('Failed to fetch products')
-  const json = await res.json()
-  return json.data  // ApiResult<List<ProductResponse>> từ Spring Boot
-}
-```
-
-### Bước 3: Truyền token vào mọi hàm API
-
-Token JWT lấy từ auth session (sau khi tích hợp đăng nhập).
-
----
-
-## 6. Mock data có sẵn
-
-**Categories:** Electronics, Office Supplies, Furniture, Consumables, Tools
-
-**Units:** Piece (pcs), Box (box), Kilogram (kg), Meter (m), Liter (L)
-
-**Products:** 3 sản phẩm mẫu — Wireless Mouse, USB-C Hub, A4 Paper Ream
-
-**Suppliers:** 3 nhà cung cấp mẫu — Tech Distributors Inc., Office Solutions Ltd., Global Imports Co.
-
-**Purchase Orders:** 3 đơn mẫu với status: pending, received, completed

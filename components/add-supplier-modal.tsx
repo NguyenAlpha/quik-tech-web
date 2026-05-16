@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Checkbox } from '@/components/ui/checkbox'
 import { useLanguage } from '@/lib/language-context'
 import { CreateSupplierInput } from '@/lib/types'
 
@@ -22,40 +21,16 @@ export function AddSupplierModal({ open, onOpenChange, onSubmit, isLoading = fal
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState<CreateSupplierInput>({
     name: '',
-    address: '',
-    city: '',
     phone: '',
     email: '',
-    contactPerson: '',
-    paymentTerms: '',
-    isActive: true,
+    address: '',
   })
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {}
-
-    if (!formData.name.trim()) {
-      newErrors.name = t.common.cancel
-    }
-    if (!formData.address.trim()) {
-      newErrors.address = 'Address is required'
-    }
-    if (!formData.city.trim()) {
-      newErrors.city = 'City is required'
-    }
-    if (!formData.phone.trim()) {
-      newErrors.phone = 'Phone is required'
-    }
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required'
-    }
-    if (!formData.contactPerson.trim()) {
-      newErrors.contactPerson = 'Contact person is required'
-    }
-    if (!formData.paymentTerms.trim()) {
-      newErrors.paymentTerms = 'Payment terms is required'
-    }
-
+    if (!formData.name.trim()) newErrors.name = 'Name is required'
+    if (!formData.phone.trim()) newErrors.phone = 'Phone is required'
+    if (!formData.email.trim()) newErrors.email = 'Email is required'
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -66,16 +41,8 @@ export function AddSupplierModal({ open, onOpenChange, onSubmit, isLoading = fal
     setIsSubmitting(true)
     try {
       await onSubmit(formData)
-      setFormData({
-        name: '',
-        address: '',
-        city: '',
-        phone: '',
-        email: '',
-        contactPerson: '',
-        paymentTerms: '',
-        isActive: true,
-      })
+      setFormData({ name: '', phone: '', email: '', address: '' })
+      setErrors({})
       onOpenChange(false)
     } finally {
       setIsSubmitting(false)
@@ -102,28 +69,6 @@ export function AddSupplierModal({ open, onOpenChange, onSubmit, isLoading = fal
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="address">{t.suppliers.address}</Label>
-            <Input
-              id="address"
-              value={formData.address}
-              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-              placeholder="Street address"
-            />
-            {errors.address && <p className="text-sm text-red-500">{errors.address}</p>}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="city">{t.suppliers.city}</Label>
-            <Input
-              id="city"
-              value={formData.city}
-              onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-              placeholder="City"
-            />
-            {errors.city && <p className="text-sm text-red-500">{errors.city}</p>}
-          </div>
-
-          <div className="space-y-2">
             <Label htmlFor="phone">{t.suppliers.phone}</Label>
             <Input
               id="phone"
@@ -147,36 +92,13 @@ export function AddSupplierModal({ open, onOpenChange, onSubmit, isLoading = fal
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="contactPerson">{t.suppliers.contactPerson}</Label>
+            <Label htmlFor="address">{t.suppliers.address}</Label>
             <Input
-              id="contactPerson"
-              value={formData.contactPerson}
-              onChange={(e) => setFormData({ ...formData, contactPerson: e.target.value })}
-              placeholder="Contact person name"
+              id="address"
+              value={formData.address ?? ''}
+              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+              placeholder="Street address"
             />
-            {errors.contactPerson && <p className="text-sm text-red-500">{errors.contactPerson}</p>}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="paymentTerms">{t.suppliers.paymentTerms}</Label>
-            <Input
-              id="paymentTerms"
-              value={formData.paymentTerms}
-              onChange={(e) => setFormData({ ...formData, paymentTerms: e.target.value })}
-              placeholder="Net 30"
-            />
-            {errors.paymentTerms && <p className="text-sm text-red-500">{errors.paymentTerms}</p>}
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="isActive"
-              checked={formData.isActive}
-              onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked as boolean })}
-            />
-            <Label htmlFor="isActive" className="text-sm font-normal cursor-pointer">
-              {t.products.active}
-            </Label>
           </div>
         </div>
 

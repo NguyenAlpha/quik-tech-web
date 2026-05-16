@@ -25,16 +25,17 @@ Các component nền tảng từ Shadcn/ui — dùng trực tiếp trong toàn a
 | `card.tsx` | Thẻ nội dung có border |
 | `table.tsx` | Bảng dữ liệu |
 | `dialog.tsx` | Modal popup |
-| `form.tsx` | Wrapper form tích hợp React Hook Form |
 | `input.tsx` | Ô nhập liệu |
 | `select.tsx` | Dropdown chọn |
 | `badge.tsx` | Tag / nhãn trạng thái |
 | `sidebar.tsx` | Sidebar điều hướng |
-| `toast.tsx` | Thông báo (dùng qua hook `useToast`) |
 | `dropdown-menu.tsx` | Menu dropdown |
 | `separator.tsx` | Đường kẻ phân cách |
 | `skeleton.tsx` | Loading placeholder |
 | `tooltip.tsx` | Tooltip khi hover |
+| `avatar.tsx` | Avatar chữ cái đầu tên |
+| `checkbox.tsx` | Checkbox |
+| `textarea.tsx` | Ô nhập nhiều dòng |
 
 Cách dùng điển hình:
 ```tsx
@@ -56,122 +57,169 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 ## 3. Layout Components
 
 ### DashboardLayout (components/dashboard-layout.tsx)
-Khung bố cục chính của toàn app. Bao gồm sidebar bên trái và vùng nội dung bên phải.
-Được dùng **một lần** trong `app/layout.tsx` — không cần import lại trong từng trang.
+Khung bố cục chính. Bao gồm sidebar bên trái và vùng nội dung bên phải.
+Được dùng trong `app/(dashboard)/layout.tsx` — tự động áp dụng cho tất cả trang dashboard.
 
 ### AppSidebar (components/app-sidebar.tsx)
 Sidebar điều hướng bên trái. Chứa logo, danh sách menu, và thông tin user.
-Các menu item map trực tiếp đến các route trong `app/`.
 
 ### DashboardHeader (components/dashboard-header.tsx)
 Header trên cùng. Chứa:
-- Ô tìm kiếm
+- Ô tìm kiếm (UI)
 - Toggle ngôn ngữ EN/VI
 - Toggle dark/light mode
-- Avatar user + dropdown (logout — chưa có chức năng)
+- Chuông thông báo (UI tĩnh)
+- Avatar + tên user thật (lấy từ `useAuth()`)
+- Dropdown: nút Logout hoạt động — gọi `logout()` từ `AuthContext`
+
+### PageHeader (components/page-header.tsx)
+Component tiêu đề dùng chung ở đầu mỗi trang dashboard:
+
+```tsx
+<PageHeader title="Products" subtitle="Manage your product catalog">
+  <Button>Add Product</Button>  {/* optional */}
+</PageHeader>
+```
+
+Props: `title: string`, `subtitle: string`, `children?: React.ReactNode`
+
+### TableFooter (components/table-footer.tsx)
+Component hiển thị số lượng bản ghi ở cuối mỗi bảng:
+
+```tsx
+<TableFooter filtered={12} total={50} label="products">
+  <Badge>3 low stock</Badge>  {/* optional */}
+</TableFooter>
+// Hiển thị: "Showing 12 of 50 products"
+```
+
+Props: `filtered: number`, `total: number`, `label: string`, `children?: React.ReactNode`
 
 ---
 
-## 4. Page-specific Components
+## 4. Table Components
 
-### KPI Cards (components/kpi-cards.tsx)
-Hiển thị các chỉ số tổng quan trên dashboard: doanh thu, số đơn, khách hàng, tồn kho.
-Dữ liệu hiện tại là hardcode.
-
-### SalesChart (components/sales-chart.tsx)
-Biểu đồ doanh thu theo tháng, dùng thư viện **Recharts**.
-Dữ liệu hiện tại là hardcode.
-
-### LowStockAlert (components/low-stock-alert.tsx)
-Hiển thị danh sách sản phẩm sắp hết hàng (currentStock < minimumStock).
+Mỗi table component nhận dữ liệu qua props và hiển thị trong `Card > Table`.
+Trang cha chịu trách nhiệm fetch data và truyền xuống.
 
 ### ProductsTable (components/products-table.tsx)
-Bảng danh sách sản phẩm. Props: `items: Product[]`, `onDelete: (id) => void`.
+Props: `products: Product[]`, `onDelete: (id: string) => void`
 
-### SuppliersTable / PurchaseOrdersTable
-Tương tự ProductsTable cho nhà cung cấp và đơn nhập hàng.
+Hiển thị: SKU, tên, giá vốn, giá bán, tồn kho (so với minStockLevel), trạng thái, actions.
+Badge tồn kho chuyển đỏ khi `totalStock <= minStockLevel`.
 
-### InventoryTable (components/inventory-table.tsx)
-Bảng tồn kho. Props: `items: InventoryItem[]`, `onAdjust: (item, type) => void`.
+### SuppliersTable (components/suppliers-table.tsx)
+Props: `suppliers: Supplier[]`, `onDelete: (id: string) => void`
 
-Chứa logic phân loại trạng thái tồn kho (`getStockStatus`) và config màu badge (`stockStatusConfig`).
-Dropdown menu mỗi row cho phép "Add Stock" / "Remove Stock" — gọi `onAdjust` để mở modal ở trang cha.
+Hiển thị: tên (+ mã), SĐT, email, địa chỉ, dư nợ, actions.
 
 ### CustomersTable (components/customers-table.tsx)
-Bảng khách hàng. Props: `customers: Customer[]`, `onSelect: (customer) => void`.
+Props: `customers: Customer[]`, `onSelect: (customer: Customer) => void`
 
-Tô màu row theo mức nợ: đỏ nếu > $1000, vàng nếu có nợ, trắng nếu không nợ.
+Hiển thị: tên (+ mã), SĐT, email, địa chỉ, dư nợ, actions.
+
+### InventoryTable (components/inventory-table.tsx)
+Props: `items: InventoryItem[]`, `onAdjust: (item, type) => void`
+
+Hiển thị: tên sản phẩm, warehouse, số lượng, lần cập nhật cuối.
+Dropdown menu: Add Stock / Remove Stock → gọi `onAdjust` để mở modal ở trang cha.
 
 ### OrdersTable (components/orders-table.tsx)
-Bảng đơn hàng. Props: `orders: Order[]`, `onSelect: (order) => void`.
+Props: `orders: Order[]`, `onSelect: (order: Order) => void`
 
-Badge trạng thái: pending / processing / shipped / completed / cancelled — mỗi trạng thái có màu và icon riêng.
+Hiển thị: mã đơn (`orderCode`), customer (publicId hoặc "Guest"), ngày tạo, status badge, tổng tiền.
+Status badge: `pending / processing / shipped / completed / cancelled` — mỗi loại có màu và icon.
+
+### PurchaseOrdersTable (components/purchase-orders-table.tsx)
+Props: `purchaseOrders: PurchaseOrder[]`, `onDelete`, `onStatusChange`, `isDeleting`
+
+Hiển thị: mã đơn, supplier publicId, ngày tạo, số items, tổng tiền, status selector, nút xóa.
+Có thể expand từng row để xem chi tiết items và ghi chú.
 
 ### PaymentsTable (components/payments-table.tsx)
-Bảng thu chi. Props: `payments: Payment[]`, `onSelect: (payment) => void`.
+Props: `payments: Payment[]`, `onSelect: (payment: Payment) => void`
 
-Hiển thị income màu xanh (prefix `+`), expense màu đỏ (prefix `-`).
+Hiển thị: id, đối tác (customerPublicId hoặc supplierPublicId), phương thức thanh toán, ghi chú, ngày, số tiền.
 
 ---
 
 ## 5. Modal Components
 
-Các thao tác tạo mới đều dùng modal (Dialog từ Radix UI):
+Các thao tác tạo mới đều dùng `Dialog` từ Radix UI.
+Pattern chung: trang cha quản lý `open` state và truyền callback `onSubmit`.
 
-### AddProductModal (components/add-product-modal.tsx)
-Form tạo sản phẩm mới với:
-- Validation bằng **Zod** schema
-- Quản lý form state bằng **React Hook Form**
-- Dropdown chọn Category và Unit (lấy từ `getCategories()`, `getUnits()`)
-
-Pattern chung của modal:
 ```tsx
-// Trang cha quản lý state mở/đóng modal
 const [isModalOpen, setIsModalOpen] = useState(false)
 
-// Callback sau khi tạo thành công
-function handleProductCreated(newProduct: Product) {
-  setProducts(prev => [...prev, newProduct])
-  setIsModalOpen(false)
+async function handleCreate(data: CreateProductInput) {
+  const newItem = await createProduct(data)
+  setProducts(prev => [...prev, newItem])
 }
 
 <AddProductModal
   open={isModalOpen}
   onOpenChange={setIsModalOpen}
-  onProductCreated={handleProductCreated}
+  onSubmit={handleCreate}
+  isLoading={isLoading}
 />
 ```
 
+### AddProductModal (components/add-product-modal.tsx)
+Fields: SKU, tên, mô tả, giá vốn, giá bán, minStockLevel, category (dropdown từ API), unit (dropdown từ API), isActive.
+
+### AddSupplierModal (components/add-supplier-modal.tsx)
+Fields: tên, SĐT, email, địa chỉ.
+
+### AddPurchaseOrderModal (components/add-purchase-order-modal.tsx)
+Fields: supplier (dropdown), warehouse (dropdown), order code (optional), ghi chú.
+Phần Items: chọn product → tự điền đơn giá → nhập số lượng → tính tổng.
+
+Props bổ sung: `suppliers: Supplier[]`, `products: Product[]`, `warehouses: Warehouse[]`
+
 ---
 
-## 6. Utility Functions
+## 6. Dashboard Components
+
+### KPI Cards (components/kpi-cards.tsx)
+Hiển thị các chỉ số tổng quan: doanh thu, số đơn, khách hàng, tồn kho.
+**Hiện tại dữ liệu vẫn hardcode** — chưa kết nối API.
+
+### SalesChart (components/sales-chart.tsx)
+Biểu đồ doanh thu theo tháng, dùng **Recharts**.
+**Hiện tại dữ liệu vẫn hardcode** — chưa kết nối API.
+
+### LowStockAlert (components/low-stock-alert.tsx)
+Hiển thị danh sách sản phẩm sắp hết hàng.
+**Hiện tại dữ liệu vẫn hardcode** — chưa kết nối API.
+
+---
+
+## 7. Utility Functions
 
 ### cn() — lib/utils.ts
 Hàm merge Tailwind CSS class, tránh xung đột:
 ```tsx
 import { cn } from '@/lib/utils'
 
-// Kết hợp class cố định + class điều kiện
 <div className={cn(
-  "px-4 py-2 rounded",           // luôn có
-  isActive && "bg-green-100",    // chỉ khi active
-  isError && "border-red-500"    // chỉ khi có lỗi
+  "px-4 py-2 rounded",
+  isActive && "bg-green-100",
+  isError && "border-red-500"
 )}>
 ```
 
-### useToast() — hooks/use-toast.ts
-Hook hiển thị toast notification:
+### formatCurrency() — lib/utils.ts
 ```tsx
-const { toast } = useToast()
+formatCurrency(1234567)  // "1,234,567 ₫" hoặc tùy locale
+```
 
-toast({
-  title: "Thành công",
-  description: "Sản phẩm đã được tạo.",
-})
+### getInitials() — lib/utils.ts
+```tsx
+getInitials("Nguyen Van A")  // "NVA"
+getInitials("John Doe")      // "JD"
 ```
 
 ### useLanguage() — lib/language-context.tsx
-Hook lấy bản dịch:
 ```tsx
 const { t, language, setLanguage } = useLanguage()
 
@@ -179,9 +227,17 @@ const { t, language, setLanguage } = useLanguage()
 <button>{t.common.save}</button>  // "Save" hoặc "Lưu"
 ```
 
+### useAuth() — lib/auth-context.tsx
+```tsx
+const { user, token, storeId, login, logout } = useAuth()
+
+// user: { id, publicId, username, email, fullName, ... }
+// storeId: number | null — ID của store đang hoạt động
+```
+
 ---
 
-## 7. Thêm component mới từ Shadcn/ui
+## 8. Thêm component mới từ Shadcn/ui
 
 Nếu cần dùng component chưa có (ví dụ: Calendar, Tabs):
 

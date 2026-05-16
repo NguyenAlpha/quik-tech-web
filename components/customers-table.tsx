@@ -1,10 +1,10 @@
 "use client"
 
+import { useLanguage } from "@/lib/language-context"
 import { getInitials, formatCurrency } from "@/lib/utils"
 import {
   MoreHorizontal,
   Eye,
-  Pencil,
   Trash2,
   ArrowUpDown,
   Users,
@@ -20,7 +20,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -31,25 +30,15 @@ import {
 } from "@/components/ui/dropdown-menu"
 import type { Customer } from "@/lib/types"
 
-const statusStyles: Record<string, { label: string; className: string }> = {
-  active: {
-    label: "Active",
-    className:
-      "bg-emerald-50 text-emerald-700 hover:bg-emerald-50 dark:bg-emerald-950 dark:text-emerald-400",
-  },
-  inactive: {
-    label: "Inactive",
-    className:
-      "bg-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-400",
-  },
-}
-
 interface CustomersTableProps {
   customers: Customer[]
   onSelect: (customer: Customer) => void
 }
 
 export function CustomersTable({ customers, onSelect }: CustomersTableProps) {
+  const { t } = useLanguage()
+  const tc = t.customers
+
   return (
     <Card>
       <CardContent className="p-0">
@@ -58,33 +47,24 @@ export function CustomersTable({ customers, onSelect }: CustomersTableProps) {
             <TableRow className="hover:bg-transparent">
               <TableHead className="w-[30%] pl-6 text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 <button className="flex items-center gap-1.5 hover:text-foreground">
-                  Customer
+                  {tc.colCustomer}
                   <ArrowUpDown className="size-3.5" />
                 </button>
               </TableHead>
               <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Phone
+                {tc.colPhone}
+              </TableHead>
+              <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                {tc.colEmail}
+              </TableHead>
+              <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                {tc.colAddress}
               </TableHead>
               <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 <button className="flex items-center gap-1.5 hover:text-foreground">
-                  Orders
+                  {tc.colDebtBalance}
                   <ArrowUpDown className="size-3.5" />
                 </button>
-              </TableHead>
-              <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                <button className="flex items-center gap-1.5 hover:text-foreground">
-                  Total Spent
-                  <ArrowUpDown className="size-3.5" />
-                </button>
-              </TableHead>
-              <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                <button className="flex items-center gap-1.5 hover:text-foreground">
-                  Debt Balance
-                  <ArrowUpDown className="size-3.5" />
-                </button>
-              </TableHead>
-              <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Status
               </TableHead>
               <TableHead className="w-[60px] pr-6 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 <span className="sr-only">Actions</span>
@@ -94,12 +74,10 @@ export function CustomersTable({ customers, onSelect }: CustomersTableProps) {
           <TableBody>
             {customers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-32 text-center">
+                <TableCell colSpan={6} className="h-32 text-center">
                   <div className="flex flex-col items-center gap-2">
                     <Users className="size-8 text-muted-foreground/50" />
-                    <p className="text-sm text-muted-foreground">
-                      No customers found
-                    </p>
+                    <p className="text-sm text-muted-foreground">{tc.noCustomers}</p>
                   </div>
                 </TableCell>
               </TableRow>
@@ -124,29 +102,19 @@ export function CustomersTable({ customers, onSelect }: CustomersTableProps) {
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex flex-col">
-                        <span className="text-sm font-medium">
-                          {customer.name}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {customer.email}
-                        </span>
+                        <span className="text-sm font-medium">{customer.name}</span>
+                        <span className="font-mono text-xs text-muted-foreground">{customer.code}</span>
                       </div>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span className="text-sm text-muted-foreground">
-                      {customer.phone}
-                    </span>
+                    <span className="text-sm text-muted-foreground">{customer.phone}</span>
                   </TableCell>
                   <TableCell>
-                    <span className="font-mono text-sm">
-                      {customer.orderCount}
-                    </span>
+                    <span className="text-sm text-muted-foreground">{customer.email}</span>
                   </TableCell>
                   <TableCell>
-                    <span className="font-mono text-sm font-medium">
-                      {formatCurrency(customer.totalSpent)}
-                    </span>
+                    <span className="text-sm text-muted-foreground">{customer.address}</span>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
@@ -166,14 +134,6 @@ export function CustomersTable({ customers, onSelect }: CustomersTableProps) {
                       </span>
                     </div>
                   </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant="secondary"
-                      className={statusStyles[customer.status].className}
-                    >
-                      {statusStyles[customer.status].label}
-                    </Badge>
-                  </TableCell>
                   <TableCell className="pr-6 text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -190,22 +150,15 @@ export function CustomersTable({ customers, onSelect }: CustomersTableProps) {
                       <DropdownMenuContent align="end" className="w-44">
                         <DropdownMenuItem
                           className="gap-2"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            onSelect(customer)
-                          }}
+                          onClick={(e) => { e.stopPropagation(); onSelect(customer) }}
                         >
                           <Eye className="size-4" />
-                          View details
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="gap-2">
-                          <Pencil className="size-4" />
-                          Edit customer
+                          {tc.viewDetails}
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem className="gap-2 text-red-600 focus:text-red-600">
                           <Trash2 className="size-4" />
-                          Delete
+                          {t.common.delete}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>

@@ -3,9 +3,9 @@ import type { Metadata } from 'next'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 import { Inter as V0_Font_Inter, Geist_Mono as V0_Font_Geist_Mono, Source_Serif_4 as V0_Font_Source_Serif_4 } from 'next/font/google'
-import { DashboardLayout } from "@/components/dashboard-layout"
 import { ThemeProvider } from "@/components/theme-provider"
 import { LanguageProvider } from "@/lib/language-context"
+import { AuthProvider } from "@/lib/auth-context"
 
 // Initialize fonts
 const _inter = V0_Font_Inter({ subsets: ['latin'], weight: ["100","200","300","400","500","600","700","800","900"] })
@@ -41,7 +41,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className="bg-background" suppressHydrationWarning>
+    <html lang="vi" className="bg-background" suppressHydrationWarning>
       <body className="font-sans antialiased">
         <ThemeProvider
           attribute="class"
@@ -50,9 +50,9 @@ export default function RootLayout({
           storageKey="theme-preference"
         >
           <LanguageProvider>
-            <DashboardLayout>
+            <AuthProvider>
               {children}
-            </DashboardLayout>
+            </AuthProvider>
           </LanguageProvider>
         </ThemeProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}

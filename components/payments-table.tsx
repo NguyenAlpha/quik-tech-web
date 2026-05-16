@@ -1,14 +1,13 @@
 "use client"
 
-import { getInitials, formatCurrency } from "@/lib/utils"
+import { useLanguage } from "@/lib/language-context"
+import { formatCurrency } from "@/lib/utils"
 import {
   MoreHorizontal,
   Eye,
   Trash2,
   ArrowUpDown,
   Receipt,
-  ArrowDownLeft,
-  ArrowUpRight,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -20,8 +19,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,36 +28,22 @@ import {
 } from "@/components/ui/dropdown-menu"
 import type { Payment } from "@/lib/types"
 
-const typeStyles = {
-  income: {
-    label: "Income",
-    className:
-      "bg-emerald-50 text-emerald-700 hover:bg-emerald-50 dark:bg-emerald-950 dark:text-emerald-400",
-    icon: ArrowDownLeft,
-    iconClass: "text-emerald-600 dark:text-emerald-400",
-  },
-  expense: {
-    label: "Expense",
-    className:
-      "bg-red-50 text-red-700 hover:bg-red-50 dark:bg-red-950 dark:text-red-400",
-    icon: ArrowUpRight,
-    iconClass: "text-red-600 dark:text-red-400",
-  },
-}
-
-const methodLabels: Record<string, string> = {
-  cash: "Cash",
-  bank_transfer: "Bank Transfer",
-  credit_card: "Credit Card",
-  check: "Check",
-}
-
 interface PaymentsTableProps {
   payments: Payment[]
   onSelect: (payment: Payment) => void
 }
 
 export function PaymentsTable({ payments, onSelect }: PaymentsTableProps) {
+  const { t } = useLanguage()
+  const tp = t.payments
+
+  const methodLabels: Record<string, string> = {
+    cash: tp.methodCash,
+    bank_transfer: tp.methodBankTransfer,
+    credit_card: tp.methodCreditCard,
+    check: tp.methodCheck,
+  }
+
   return (
     <Card>
       <CardContent className="p-0">
@@ -69,31 +52,28 @@ export function PaymentsTable({ payments, onSelect }: PaymentsTableProps) {
             <TableRow className="hover:bg-transparent">
               <TableHead className="w-[12%] pl-6 text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 <button className="flex items-center gap-1.5 hover:text-foreground">
-                  ID
+                  {tp.colId}
                   <ArrowUpDown className="size-3.5" />
                 </button>
               </TableHead>
-              <TableHead className="w-[10%] text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Type
-              </TableHead>
               <TableHead className="w-[20%] text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Contact
+                {tp.colContact}
               </TableHead>
               <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Description
+                {tp.colMethod}
+              </TableHead>
+              <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                {tp.colDescription}
               </TableHead>
               <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 <button className="flex items-center gap-1.5 hover:text-foreground">
-                  Date
+                  {tp.colDate}
                   <ArrowUpDown className="size-3.5" />
                 </button>
               </TableHead>
-              <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Method
-              </TableHead>
               <TableHead className="text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 <button className="flex items-center gap-1.5 justify-end hover:text-foreground">
-                  Amount
+                  {tp.colAmount}
                   <ArrowUpDown className="size-3.5" />
                 </button>
               </TableHead>
@@ -105,18 +85,16 @@ export function PaymentsTable({ payments, onSelect }: PaymentsTableProps) {
           <TableBody>
             {payments.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="h-32 text-center">
+                <TableCell colSpan={7} className="h-32 text-center">
                   <div className="flex flex-col items-center gap-2">
                     <Receipt className="size-8 text-muted-foreground/50" />
-                    <p className="text-sm text-muted-foreground">
-                      No payments found
-                    </p>
+                    <p className="text-sm text-muted-foreground">{tp.noPayments}</p>
                   </div>
                 </TableCell>
               </TableRow>
             ) : (
               payments.map((payment) => {
-                const TypeIcon = typeStyles[payment.type].icon
+                const contact = payment.customerPublicId ?? payment.supplierPublicId ?? "—"
                 return (
                   <TableRow
                     key={payment.id}
@@ -124,68 +102,28 @@ export function PaymentsTable({ payments, onSelect }: PaymentsTableProps) {
                     onClick={() => onSelect(payment)}
                   >
                     <TableCell className="pl-6">
-                      <span className="font-mono text-sm font-medium">
-                        {payment.id}
-                      </span>
+                      <span className="font-mono text-sm font-medium">{payment.id}</span>
                     </TableCell>
                     <TableCell>
-                      <Badge
-                        variant="secondary"
-                        className={`gap-1.5 ${typeStyles[payment.type].className}`}
-                      >
-                        <TypeIcon className="size-3" />
-                        {typeStyles[payment.type].label}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Avatar className="size-9 border">
-                          <AvatarFallback className="bg-muted text-xs font-medium">
-                            {getInitials(payment.contactName)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex flex-col">
-                          <span className="text-sm font-medium">
-                            {payment.contactName}
-                          </span>
-                          <span className="text-xs capitalize text-muted-foreground">
-                            {payment.contactType}
-                          </span>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <span className="text-sm line-clamp-1">
-                          {payment.description}
-                        </span>
-                        <span className="font-mono text-xs text-muted-foreground">
-                          {payment.reference}
-                        </span>
-                      </div>
+                      <span className="text-sm text-muted-foreground">{contact}</span>
                     </TableCell>
                     <TableCell>
                       <span className="text-sm text-muted-foreground">
-                        {payment.date}
+                        {methodLabels[payment.paymentMethod] ?? payment.paymentMethod}
                       </span>
                     </TableCell>
                     <TableCell>
+                      <span className="text-sm line-clamp-1 text-muted-foreground">{payment.note || "—"}</span>
+                    </TableCell>
+                    <TableCell>
                       <span className="text-sm text-muted-foreground">
-                        {methodLabels[payment.method]}
+                        {payment.createdAt ? new Date(payment.createdAt).toLocaleDateString() : "—"}
                       </span>
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <TypeIcon className={`size-4 ${typeStyles[payment.type].iconClass}`} />
-                        <span className={`font-mono text-sm font-semibold ${
-                          payment.type === "income"
-                            ? "text-emerald-600 dark:text-emerald-400"
-                            : "text-red-600 dark:text-red-400"
-                        }`}>
-                          {payment.type === "income" ? "+" : "-"}
-                          {formatCurrency(payment.amount)}
-                        </span>
-                      </div>
+                      <span className="font-mono text-sm font-semibold">
+                        {formatCurrency(payment.amount)}
+                      </span>
                     </TableCell>
                     <TableCell className="pr-6 text-right">
                       <DropdownMenu>
@@ -203,18 +141,15 @@ export function PaymentsTable({ payments, onSelect }: PaymentsTableProps) {
                         <DropdownMenuContent align="end" className="w-40">
                           <DropdownMenuItem
                             className="gap-2"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              onSelect(payment)
-                            }}
+                            onClick={(e) => { e.stopPropagation(); onSelect(payment) }}
                           >
                             <Eye className="size-4" />
-                            View details
+                            {tp.viewDetails}
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem className="gap-2 text-red-600 focus:text-red-600">
                             <Trash2 className="size-4" />
-                            Delete
+                            {t.common.delete}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>

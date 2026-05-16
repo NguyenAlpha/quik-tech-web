@@ -8,7 +8,15 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useLanguage } from '@/lib/language-context'
-import { CreatePurchaseOrderInput, Supplier, Product, PurchaseOrderItem } from '@/lib/types'
+import { CreatePurchaseOrderInput, Supplier, Product, Warehouse } from '@/lib/types'
+
+interface LocalItem {
+  productPublicId: string
+  productName: string
+  quantity: number
+  unitPrice: number
+  totalPrice: number
+}
 
 interface AddPurchaseOrderModalProps {
   open: boolean
@@ -16,6 +24,7 @@ interface AddPurchaseOrderModalProps {
   onSubmit: (data: CreatePurchaseOrderInput) => Promise<void>
   suppliers: Supplier[]
   products: Product[]
+  warehouses: Warehouse[]
   isLoading?: boolean
 }
 
@@ -25,42 +34,31 @@ export function AddPurchaseOrderModal({
   onSubmit,
   suppliers,
   products,
+  warehouses,
   isLoading = false,
 }: AddPurchaseOrderModalProps) {
   const { t } = useLanguage()
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [items, setItems] = useState<Omit<PurchaseOrderItem, 'id'>[]>([])
+  const [items, setItems] = useState<LocalItem[]>([])
   const [formData, setFormData] = useState({
-    supplierId: '',
-    orderDate: new Date().toISOString().split('T')[0],
-    expectedDeliveryDate: '',
-    status: 'pending' as const,
-    notes: '',
+    orderCode: '',
+    supplierPublicId: '',
+    warehousePublicId: '',
+    note: '',
   })
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {}
-
-    if (!formData.supplierId) newErrors.supplierId = 'Supplier is required'
-    if (!formData.expectedDeliveryDate) newErrors.expectedDeliveryDate = 'Delivery date is required'
+    if (!formData.supplierPublicId) newErrors.supplierPublicId = 'Supplier is required'
+    if (!formData.warehousePublicId) newErrors.warehousePublicId = 'Warehouse is required'
     if (items.length === 0) newErrors.items = 'At least one item is required'
-
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
   const handleAddItem = () => {
-    setItems([
-      ...items,
-      {
-        productId: '',
-        productName: '',
-        quantity: 1,
-        unitPrice: 0,
-        totalPrice: 0,
-      },
-    ])
+    setItems([...items, { productPublicId: '', productName: '', quantity: 1, unitPrice: 0, totalPrice: 0 }])
   }
 
   const handleRemoveItem = (index: number) => {
@@ -71,11 +69,9 @@ export function AddPurchaseOrderModal({
     const newItems = [...items]
     const item = newItems[index] as any
     item[field] = value
-
     if (field === 'quantity' || field === 'unitPrice') {
       item.totalPrice = (item.quantity || 0) * (item.unitPrice || 0)
     }
-
     setItems(newItems)
   }
 
@@ -85,17 +81,19 @@ export function AddPurchaseOrderModal({
     setIsSubmitting(true)
     try {
       await onSubmit({
-        ...formData,
-        items,
+        ...(formData.orderCode ? { orderCode: formData.orderCode } : {}),
+        supplierPublicId: formData.supplierPublicId,
+        warehousePublicId: formData.warehousePublicId,
+        note: formData.note || undefined,
+        items: items.map((item) => ({
+          productPublicId: item.productPublicId,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+        })),
       })
-      setFormData({
-        supplierId: '',
-        orderDate: new Date().toISOString().split('T')[0],
-        expectedDeliveryDate: '',
-        status: 'pending',
-        notes: '',
-      })
+      setFormData({ orderCode: '', supplierPublicId: '', warehousePublicId: '', note: '' })
       setItems([])
+      setErrors({})
       onOpenChange(false)
     } finally {
       setIsSubmitting(false)
@@ -113,7 +111,7 @@ export function AddPurchaseOrderModal({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="supplier">{t.purchaseOrders.supplier}</Label>
-              <Select value={formData.supplierId} onValueChange={(value) => setFormData({ ...formData, supplierId: value })}>
+              <Select value={formData.supplierPublicId} onValueChange={(value) => setFormData({ ...formData, supplierPublicId: value })}>
                 <SelectTrigger id="supplier">
                   <SelectValue placeholder={t.suppliers.selectSupplier} />
                 </SelectTrigger>
@@ -125,51 +123,43 @@ export function AddPurchaseOrderModal({
                   ))}
                 </SelectContent>
               </Select>
-              {errors.supplierId && <p className="text-sm text-red-500">{errors.supplierId}</p>}
+              {errors.supplierPublicId && <p className="text-sm text-red-500">{errors.supplierPublicId}</p>}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="orderDate">{t.purchaseOrders.orderDate}</Label>
-              <Input
-                id="orderDate"
-                type="date"
-                value={formData.orderDate}
-                onChange={(e) => setFormData({ ...formData, orderDate: e.target.value })}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="expectedDeliveryDate">{t.purchaseOrders.expectedDeliveryDate}</Label>
-              <Input
-                id="expectedDeliveryDate"
-                type="date"
-                value={formData.expectedDeliveryDate}
-                onChange={(e) => setFormData({ ...formData, expectedDeliveryDate: e.target.value })}
-              />
-              {errors.expectedDeliveryDate && <p className="text-sm text-red-500">{errors.expectedDeliveryDate}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="status">{t.purchaseOrders.status}</Label>
-              <Select value={formData.status} onValueChange={(value: any) => setFormData({ ...formData, status: value })}>
-                <SelectTrigger id="status">
-                  <SelectValue />
+              <Label htmlFor="warehouse">Warehouse</Label>
+              <Select value={formData.warehousePublicId} onValueChange={(value) => setFormData({ ...formData, warehousePublicId: value })}>
+                <SelectTrigger id="warehouse">
+                  <SelectValue placeholder="Select warehouse" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="pending">{t.purchaseOrders.pending}</SelectItem>
-                  <SelectItem value="received">{t.purchaseOrders.received}</SelectItem>
-                  <SelectItem value="completed">{t.purchaseOrders.completed}</SelectItem>
+                  {warehouses.map((wh) => (
+                    <SelectItem key={wh.id} value={wh.id}>
+                      {wh.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
+              {errors.warehousePublicId && <p className="text-sm text-red-500">{errors.warehousePublicId}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="orderCode">Order Code (optional)</Label>
+              <Input
+                id="orderCode"
+                value={formData.orderCode}
+                onChange={(e) => setFormData({ ...formData, orderCode: e.target.value })}
+                placeholder="Auto-generated if empty"
+              />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="notes">{t.purchaseOrders.notes}</Label>
+            <Label htmlFor="note">{t.purchaseOrders.notes}</Label>
             <Textarea
-              id="notes"
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              id="note"
+              value={formData.note}
+              onChange={(e) => setFormData({ ...formData, note: e.target.value })}
               placeholder="Order notes..."
               rows={2}
             />
@@ -190,11 +180,11 @@ export function AddPurchaseOrderModal({
               {items.map((item, index) => (
                 <div key={index} className="grid grid-cols-5 gap-2 items-end border p-2 rounded">
                   <Select
-                    value={item.productId}
+                    value={item.productPublicId}
                     onValueChange={(value) => {
                       const product = products.find((p) => p.id === value)
                       if (product) {
-                        handleItemChange(index, 'productId', value)
+                        handleItemChange(index, 'productPublicId', value)
                         handleItemChange(index, 'productName', product.name)
                         handleItemChange(index, 'unitPrice', product.costPrice)
                       }
