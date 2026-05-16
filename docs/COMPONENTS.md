@@ -86,13 +86,31 @@ Dữ liệu hiện tại là hardcode.
 Hiển thị danh sách sản phẩm sắp hết hàng (currentStock < minimumStock).
 
 ### ProductsTable (components/products-table.tsx)
-Bảng danh sách sản phẩm có:
-- Tìm kiếm theo tên
-- Xóa sản phẩm (với confirm)
-- Hiển thị badge trạng thái active/inactive
+Bảng danh sách sản phẩm. Props: `items: Product[]`, `onDelete: (id) => void`.
 
 ### SuppliersTable / PurchaseOrdersTable
-Tương tự ProductsTable nhưng cho nhà cung cấp và đơn nhập.
+Tương tự ProductsTable cho nhà cung cấp và đơn nhập hàng.
+
+### InventoryTable (components/inventory-table.tsx)
+Bảng tồn kho. Props: `items: InventoryItem[]`, `onAdjust: (item, type) => void`.
+
+Chứa logic phân loại trạng thái tồn kho (`getStockStatus`) và config màu badge (`stockStatusConfig`).
+Dropdown menu mỗi row cho phép "Add Stock" / "Remove Stock" — gọi `onAdjust` để mở modal ở trang cha.
+
+### CustomersTable (components/customers-table.tsx)
+Bảng khách hàng. Props: `customers: Customer[]`, `onSelect: (customer) => void`.
+
+Tô màu row theo mức nợ: đỏ nếu > $1000, vàng nếu có nợ, trắng nếu không nợ.
+
+### OrdersTable (components/orders-table.tsx)
+Bảng đơn hàng. Props: `orders: Order[]`, `onSelect: (order) => void`.
+
+Badge trạng thái: pending / processing / shipped / completed / cancelled — mỗi trạng thái có màu và icon riêng.
+
+### PaymentsTable (components/payments-table.tsx)
+Bảng thu chi. Props: `payments: Payment[]`, `onSelect: (payment) => void`.
+
+Hiển thị income màu xanh (prefix `+`), expense màu đỏ (prefix `-`).
 
 ---
 

@@ -36,19 +36,23 @@ apps/web/
 │   ├── add-product-modal.tsx # Modal tạo sản phẩm
 │   ├── add-supplier-modal.tsx # Modal tạo nhà cung cấp
 │   ├── add-purchase-order-modal.tsx # Modal tạo đơn nhập
-│   ├── products-table.tsx  # Bảng danh sách sản phẩm
-│   ├── suppliers-table.tsx # Bảng danh sách nhà cung cấp
+│   ├── products-table.tsx  # Bảng sản phẩm — props: items, onDelete
+│   ├── suppliers-table.tsx # Bảng nhà cung cấp
 │   ├── purchase-orders-table.tsx # Bảng đơn nhập
+│   ├── inventory-table.tsx # Bảng tồn kho — props: items, onAdjust
+│   ├── customers-table.tsx # Bảng khách hàng — props: customers, onSelect
+│   ├── orders-table.tsx    # Bảng đơn hàng — props: orders, onSelect
+│   ├── payments-table.tsx  # Bảng thu chi — props: payments, onSelect
 │   ├── kpi-cards.tsx       # Thẻ KPI trên dashboard
 │   ├── sales-chart.tsx     # Biểu đồ doanh thu
 │   └── low-stock-alert.tsx # Cảnh báo hàng sắp hết
 │
 ├── lib/                    # Logic dùng chung
 │   ├── api.ts              # Tất cả API calls (hiện là mock data)
-│   ├── types.ts            # TypeScript interfaces cho tất cả entity
+│   ├── types.ts            # TypeScript interfaces: Product, InventoryItem, Customer, Order, Payment...
 │   ├── language-context.tsx # React Context quản lý ngôn ngữ
 │   ├── translations.ts     # Bản dịch EN + VI
-│   ├── utils.ts            # Hàm tiện ích (cn để merge Tailwind class)
+│   ├── utils.ts            # Hàm tiện ích: cn(), getInitials(), formatCurrency()
 │   └── status-colors.ts    # Mapping màu theo trạng thái
 │
 ├── hooks/                  # Custom React hooks
@@ -126,8 +130,10 @@ export function ProductsTable() {
 }
 ```
 
-**Trong project này:** Hầu hết `page.tsx` là Server Component (chỉ render layout),
-còn các component có tương tác (bảng, modal, form) đều là Client Component với `'use client'`.
+**Trong project này:** Hiện tại tất cả `page.tsx` đều là Client Component (có `'use client'`)
+vì các trang dùng `useState`/`useEffect` trực tiếp trong trang. Các table components, modal, form
+cũng là Client Component. Server Component chưa được tận dụng — đây là việc cần refactor khi
+kết nối API thật (các page sẽ fetch data server-side, truyền xuống client component qua props).
 
 ---
 
