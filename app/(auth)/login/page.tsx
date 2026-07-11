@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
+import { useLanguage } from '@/lib/language-context'
 import { loginUser } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -13,8 +14,10 @@ import { AlertCircle, Loader2 } from 'lucide-react'
 
 export default function LoginPage() {
   const { login } = useAuth()
+  const { t } = useLanguage()
+  const ta = t.auth
   const router = useRouter()
-  const [email, setEmail] = useState('')
+  const [usernameOrEmail, setUsernameOrEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -24,9 +27,9 @@ export default function LoginPage() {
     setError(null)
     setIsLoading(true)
     try {
-      const { accessToken, user, storeMemberships } = await loginUser({ email, password })
-      login(accessToken, user, storeMemberships)
-      router.push('/')
+      const { accessToken, user, memberships, refreshToken } = await loginUser({ usernameOrEmail, password })
+      login(accessToken, user, memberships, refreshToken)
+      router.push(memberships.length === 0 ? '/setup' : '/')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
     } finally {
@@ -45,8 +48,8 @@ export default function LoginPage() {
             <span className="font-semibold text-lg">QuikTech</span>
           </div>
         </div>
-        <CardTitle className="text-xl">Sign in</CardTitle>
-        <CardDescription>Enter your credentials to access your account</CardDescription>
+        <CardTitle className="text-xl">{ta.loginTitle}</CardTitle>
+        <CardDescription>{ta.loginSubtitle}</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -58,26 +61,24 @@ export default function LoginPage() {
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="usernameOrEmail">{ta.emailLabel}</Label>
             <Input
-              id="email"
-              type="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              id="usernameOrEmail"
+              type="text"
+              placeholder={ta.emailPlaceholder}
+              value={usernameOrEmail}
+              onChange={(e) => setUsernameOrEmail(e.target.value)}
               required
-              autoComplete="email"
+              autoComplete="username"
             />
           </div>
 
           <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="password">Password</Label>
-            </div>
+            <Label htmlFor="password">{ta.passwordLabel}</Label>
             <Input
               id="password"
               type="password"
-              placeholder="••••••••"
+              placeholder={ta.passwordPlaceholder}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -87,14 +88,14 @@ export default function LoginPage() {
 
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading && <Loader2 className="mr-2 size-4 animate-spin" />}
-            Sign in
+            {ta.loginButton}
           </Button>
         </form>
 
         <p className="mt-4 text-center text-sm text-muted-foreground">
-          Don&apos;t have an account?{' '}
+          {ta.noAccount}{' '}
           <Link href="/register" className="font-medium text-primary hover:underline">
-            Register
+            {ta.registerLink}
           </Link>
         </p>
       </CardContent>

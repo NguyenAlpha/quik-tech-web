@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
+import { useLanguage } from '@/lib/language-context'
 import { registerUser } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -13,6 +14,8 @@ import { AlertCircle, Loader2 } from 'lucide-react'
 
 export default function RegisterPage() {
   const { login } = useAuth()
+  const { t } = useLanguage()
+  const ta = t.auth
   const router = useRouter()
   const [form, setForm] = useState({
     fullName: '',
@@ -32,24 +35,33 @@ export default function RegisterPage() {
     setError(null)
 
     if (form.password !== form.confirmPassword) {
-      setError('Passwords do not match')
+      setError(ta.passwordMismatch)
       return
     }
     if (form.password.length < 6) {
-      setError('Password must be at least 6 characters')
+      setError(ta.passwordTooShort)
+      return
+    }
+    // Backend giới hạn 72 ký tự (BCrypt) và username không cho ký tự đặc biệt/@
+    if (form.password.length > 72) {
+      setError(ta.passwordTooLong)
+      return
+    }
+    if (!/^[a-zA-Z0-9._-]+$/.test(form.username)) {
+      setError(ta.usernameInvalid)
       return
     }
 
     setIsLoading(true)
     try {
-      const { accessToken, user, storeMemberships } = await registerUser({
+      const { accessToken, user, memberships, refreshToken } = await registerUser({
         fullName: form.fullName,
         username: form.username,
         email: form.email,
         password: form.password,
       })
-      login(accessToken, user, storeMemberships)
-      router.push('/')
+      login(accessToken, user, memberships, refreshToken)
+      router.push(memberships.length === 0 ? '/setup' : '/')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
     } finally {
@@ -68,8 +80,8 @@ export default function RegisterPage() {
             <span className="font-semibold text-lg">QuikTech</span>
           </div>
         </div>
-        <CardTitle className="text-xl">Create account</CardTitle>
-        <CardDescription>Sign up to get started</CardDescription>
+        <CardTitle className="text-xl">{ta.registerTitle}</CardTitle>
+        <CardDescription>{ta.registerSubtitle}</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -81,10 +93,10 @@ export default function RegisterPage() {
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="fullName">Full Name</Label>
+            <Label htmlFor="fullName">{ta.fullNameLabel}</Label>
             <Input
               id="fullName"
-              placeholder="John Doe"
+              placeholder={ta.fullNamePlaceholder}
               value={form.fullName}
               onChange={set('fullName')}
               required
@@ -92,10 +104,10 @@ export default function RegisterPage() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="username">Username</Label>
+            <Label htmlFor="username">{ta.usernameLabel}</Label>
             <Input
               id="username"
-              placeholder="johndoe"
+              placeholder={ta.usernamePlaceholder}
               value={form.username}
               onChange={set('username')}
               required
@@ -104,11 +116,11 @@ export default function RegisterPage() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{ta.emailLabel}</Label>
             <Input
               id="email"
               type="email"
-              placeholder="you@example.com"
+              placeholder={ta.emailPlaceholder}
               value={form.email}
               onChange={set('email')}
               required
@@ -117,11 +129,11 @@ export default function RegisterPage() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">{ta.passwordLabel}</Label>
             <Input
               id="password"
               type="password"
-              placeholder="••••••••"
+              placeholder={ta.passwordPlaceholder}
               value={form.password}
               onChange={set('password')}
               required
@@ -130,11 +142,11 @@ export default function RegisterPage() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Confirm Password</Label>
+            <Label htmlFor="confirmPassword">{ta.confirmPasswordLabel}</Label>
             <Input
               id="confirmPassword"
               type="password"
-              placeholder="••••••••"
+              placeholder={ta.passwordPlaceholder}
               value={form.confirmPassword}
               onChange={set('confirmPassword')}
               required
@@ -144,14 +156,14 @@ export default function RegisterPage() {
 
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading && <Loader2 className="mr-2 size-4 animate-spin" />}
-            Create account
+            {ta.registerButton}
           </Button>
         </form>
 
         <p className="mt-4 text-center text-sm text-muted-foreground">
-          Already have an account?{' '}
+          {ta.hasAccount}{' '}
           <Link href="/login" className="font-medium text-primary hover:underline">
-            Sign in
+            {ta.loginLink}
           </Link>
         </p>
       </CardContent>

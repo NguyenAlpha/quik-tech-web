@@ -4,21 +4,8 @@ import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { useLanguage } from "@/lib/language-context"
-
-const salesData = [
-  { month: "Jan", revenue: 18600 },
-  { month: "Feb", revenue: 21000 },
-  { month: "Mar", revenue: 19400 },
-  { month: "Apr", revenue: 24800 },
-  { month: "May", revenue: 28300 },
-  { month: "Jun", revenue: 32100 },
-  { month: "Jul", revenue: 35400 },
-  { month: "Aug", revenue: 38700 },
-  { month: "Sep", revenue: 36200 },
-  { month: "Oct", revenue: 42100 },
-  { month: "Nov", revenue: 45200 },
-  { month: "Dec", revenue: 48900 },
-]
+import { formatCurrency } from "@/lib/utils"
+import type { DashboardSalesMonth } from "@/lib/types"
 
 const chartConfig = {
   revenue: {
@@ -27,8 +14,22 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
-export function SalesChart() {
+function formatMonthLabel(yearMonth: string): string {
+  const [year, month] = yearMonth.split('-')
+  return new Date(Number(year), Number(month) - 1, 1).toLocaleDateString('en', { month: 'short' })
+}
+
+interface SalesChartProps {
+  data: DashboardSalesMonth[]
+}
+
+export function SalesChart({ data }: SalesChartProps) {
   const { t } = useLanguage()
+
+  const chartData = data.map(m => ({
+    month: formatMonthLabel(m.month),
+    revenue: m.revenue,
+  }))
 
   return (
     <Card className="h-full">
@@ -51,7 +52,7 @@ export function SalesChart() {
       <CardContent className="pt-4">
         <ChartContainer config={chartConfig} className="h-[280px] w-full">
           <AreaChart
-            data={salesData}
+            data={chartData}
             margin={{ top: 10, right: 10, left: -10, bottom: 0 }}
           >
             <defs>
@@ -60,9 +61,9 @@ export function SalesChart() {
                 <stop offset="100%" stopColor="var(--color-revenue)" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid 
-              strokeDasharray="3 3" 
-              vertical={false} 
+            <CartesianGrid
+              strokeDasharray="3 3"
+              vertical={false}
               stroke="hsl(var(--border))"
               strokeOpacity={0.5}
             />
@@ -78,7 +79,12 @@ export function SalesChart() {
               axisLine={false}
               tickMargin={12}
               tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
-              tickFormatter={(value) => `$${value / 1000}k`}
+              tickFormatter={(value) => {
+                const n = Number(value)
+                if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(0)}tr`
+                if (n >= 1_000) return `${(n / 1_000).toFixed(0)}k`
+                return String(n)
+              }}
             />
             <ChartTooltip
               cursor={{ stroke: "hsl(var(--border))", strokeDasharray: "4 4" }}
@@ -86,7 +92,7 @@ export function SalesChart() {
                 <ChartTooltipContent
                   formatter={(value) => (
                     <span className="font-semibold">
-                      ${Number(value).toLocaleString()}
+                      {formatCurrency(Number(value))}
                     </span>
                   )}
                 />

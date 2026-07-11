@@ -1,14 +1,19 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
+import { toast } from 'sonner'
 import { useLanguage } from "@/lib/language-context"
-import { getInventoryItems, getWarehouses } from "@/lib/api"
+import { getInventoryItems, getWarehouses, adjustInventory, transferInventory, exportInventoryExcel, ApiError } from "@/lib/api"
 import { InventoryTable } from "@/components/inventory-table"
+import { PageSkeleton } from "@/components/page-skeleton"
+import { PageError } from "@/components/page-error"
 import {
   Search,
   ArrowUpCircle,
   ArrowDownCircle,
   Minus,
+  ArrowRightLeft,
+  Download,
 } from "lucide-react"
 import { PageHeader } from "@/components/page-header"
 import { TableFooter } from "@/components/table-footer"
@@ -52,11 +57,34 @@ export default function InventoryPage() {
   }>({ open: false, item: null, type: "add" })
   const [adjustmentQuantity, setAdjustmentQuantity] = useState("")
   const [adjustmentReason, setAdjustmentReason] = useState("")
+  const [adjusting, setAdjusting] = useState(false)
+  const [adjustError, setAdjustError] = useState<string | null>(null)
+  const [transferModal, setTransferModal] = useState<{ open: boolean; item: InventoryItem | null }>({ open: false, item: null })
+  const [transferFromId, setTransferFromId] = useState('')
+  const [transferToId, setTransferToId] = useState('')
+  const [transferQty, setTransferQty] = useState('')
+  const [transferNote, setTransferNote] = useState('')
+  const [transferring, setTransferring] = useState(false)
+  const [transferError, setTransferError] = useState<string | null>(null)
+  const [isExporting, setIsExporting] = useState(false)
+  const [isPageLoading, setIsPageLoading] = useState(true)
+  const [pageError, setPageError] = useState<string | null>(null)
 
-  useEffect(() => {
-    getInventoryItems().then(setInventoryData)
-    getWarehouses().then(setWarehouses)
-  }, [])
+  const init = async () => {
+    setIsPageLoading(true)
+    setPageError(null)
+    try {
+      const [items, whs] = await Promise.all([getInventoryItems(), getWarehouses()])
+      setInventoryData(items)
+      setWarehouses(whs)
+    } catch (err) {
+      setPageError(err instanceof ApiError ? err.message : 'Failed to load data')
+    } finally {
+      setIsPageLoading(false)
+    }
+  }
+
+  useEffect(() => { init() }, [])
 
   const filteredInventory = useMemo(() => {
     return inventoryData.filter((item) => {
@@ -72,23 +100,118 @@ export default function InventoryPage() {
     setAdjustmentModal({ open: true, item, type })
     setAdjustmentQuantity("")
     setAdjustmentReason("")
+    setAdjustError(null)
   }
 
   const closeAdjustmentModal = () => {
     setAdjustmentModal({ open: false, item: null, type: "add" })
     setAdjustmentQuantity("")
     setAdjustmentReason("")
+    setAdjustError(null)
   }
 
-  const handleAdjustment = () => {
-    // In a real app, this would make an API call
-    closeAdjustmentModal()
+  const openTransferModal = (item: InventoryItem) => {
+    setTransferModal({ open: true, item })
+    setTransferFromId(item.warehousePublicId)
+    setTransferToId('')
+    setTransferQty('')
+    setTransferNote('')
+    setTransferError(null)
   }
+
+  const closeTransferModal = () => {
+    setTransferModal({ open: false, item: null })
+    setTransferError(null)
+  }
+
+  const handleTransfer = async () => {
+    if (!transferModal.item || !transferToId || !transferQty || Number(transferQty) <= 0) return
+    if (transferFromId === transferToId) {
+      setTransferError(ti.sameWarehouseError)
+      return
+    }
+    setTransferring(true)
+    setTransferError(null)
+    try {
+      await transferInventory(
+        transferModal.item.productPublicId,
+        transferFromId,
+        transferToId,
+        Number(transferQty),
+        transferNote.trim() || undefined,
+      )
+      const updated = await getInventoryItems()
+      setInventoryData(updated)
+      closeTransferModal()
+      toast.success(ti.transferSuccess)
+    } catch (err) {
+      setTransferError(err instanceof Error ? err.message : ti.transferError)
+    } finally {
+      setTransferring(false)
+    }
+  }
+
+  const handleAdjustment = async () => {
+    if (!adjustmentModal.item || !adjustmentQuantity || parseInt(adjustmentQuantity) <= 0) return
+    const delta = adjustmentModal.type === "add"
+      ? parseInt(adjustmentQuantity)
+      : -parseInt(adjustmentQuantity)
+    setAdjusting(true)
+    setAdjustError(null)
+    try {
+      await adjustInventory(
+        adjustmentModal.item.productPublicId,
+        adjustmentModal.item.warehousePublicId,
+        delta,
+        adjustmentReason.trim() || undefined,
+      )
+      const updated = await getInventoryItems()
+      setInventoryData(updated)
+      closeAdjustmentModal()
+      toast.success(ti.adjustSuccess)
+    } catch (err) {
+      setAdjustError(err instanceof Error ? err.message : ti.adjustError)
+    } finally {
+      setAdjusting(false)
+    }
+  }
+
+  if (isPageLoading) return <PageSkeleton />
+  if (pageError) return <PageError message={pageError} onRetry={init} />
 
   return (
-    <div className="flex flex-1 flex-col gap-8 p-8 lg:p-10">
+    <div className="flex flex-1 flex-col gap-4 p-4 sm:gap-6 sm:p-6 lg:gap-8 lg:p-10">
       {/* Page Header */}
       <PageHeader title={ti.title} subtitle={ti.subtitle}>
+        <Button
+          variant="outline"
+          className="gap-2 shadow-sm"
+          disabled={isExporting}
+          onClick={async () => {
+            setIsExporting(true)
+            try {
+              await exportInventoryExcel()
+              toast.success(ti.exportSuccess)
+            } catch {
+              toast.error(ti.exportError)
+            } finally {
+              setIsExporting(false)
+            }
+          }}
+        >
+          <Download className="size-4" />
+          {isExporting ? ti.exporting : ti.exportExcel}
+        </Button>
+        <Button
+          variant="outline"
+          className="gap-2 shadow-sm"
+          onClick={() => {
+            if (filteredInventory.length > 0) openTransferModal(filteredInventory[0])
+          }}
+        >
+          <ArrowRightLeft className="size-4" />
+          {ti.transferStock}
+        </Button>
         <Button
           className="gap-2 shadow-sm"
           onClick={() => {
@@ -141,6 +264,97 @@ export default function InventoryPage() {
           </span>
         </div>
       </TableFooter>
+
+      {/* Transfer Modal */}
+      <Dialog open={transferModal.open} onOpenChange={closeTransferModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ArrowRightLeft className="size-5 text-blue-600" />
+              {ti.modalTransferTitle}
+            </DialogTitle>
+            <DialogDescription>{ti.modalTransferDesc}</DialogDescription>
+          </DialogHeader>
+
+          {transferModal.item && (
+            <div className="space-y-4 py-4">
+              <div className="rounded-lg border bg-muted/30 p-4">
+                <p className="font-medium">{transferModal.item.productName}</p>
+                <p className="text-xs text-muted-foreground font-mono">{transferModal.item.productPublicId}</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label>{ti.fromWarehouse}</Label>
+                <Select value={transferFromId} onValueChange={setTransferFromId}>
+                  <SelectTrigger className="h-10">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {warehouses.map(w => (
+                      <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>{ti.toWarehouse}</Label>
+                <Select value={transferToId} onValueChange={setTransferToId}>
+                  <SelectTrigger className="h-10">
+                    <SelectValue placeholder="Select warehouse" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {warehouses.filter(w => w.id !== transferFromId).map(w => (
+                      <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>{ti.quantityToTransfer}</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  value={transferQty}
+                  onChange={e => setTransferQty(e.target.value)}
+                  className="h-10"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>{ti.reason}</Label>
+                <Input
+                  value={transferNote}
+                  onChange={e => setTransferNote(e.target.value)}
+                  placeholder={ti.reasonAddPlaceholder}
+                  className="h-10"
+                />
+              </div>
+
+              {transferError && <p className="text-sm text-red-500">{transferError}</p>}
+            </div>
+          )}
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={closeTransferModal} disabled={transferring}>
+              {t.common.cancel}
+            </Button>
+            <Button
+              onClick={handleTransfer}
+              disabled={!transferToId || !transferQty || Number(transferQty) <= 0 || transferring}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {transferring ? ti.transferring : (
+                <>
+                  <ArrowRightLeft className="mr-2 size-4" />
+                  {ti.transferStock}
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Stock Adjustment Modal */}
       <Dialog open={adjustmentModal.open} onOpenChange={closeAdjustmentModal}>
@@ -216,6 +430,11 @@ export default function InventoryPage() {
                 </div>
               </div>
 
+              {/* Error */}
+              {adjustError && (
+                <p className="text-sm text-red-500">{adjustError}</p>
+              )}
+
               {/* New Total Preview */}
               {adjustmentQuantity && parseInt(adjustmentQuantity) > 0 && (
                 <div className="rounded-lg border border-dashed p-4">
@@ -246,19 +465,19 @@ export default function InventoryPage() {
           )}
 
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={closeAdjustmentModal}>
+            <Button variant="outline" onClick={closeAdjustmentModal} disabled={adjusting}>
               {t.common.cancel}
             </Button>
             <Button
               onClick={handleAdjustment}
-              disabled={!adjustmentQuantity || parseInt(adjustmentQuantity) <= 0}
+              disabled={!adjustmentQuantity || parseInt(adjustmentQuantity) <= 0 || adjusting}
               className={
                 adjustmentModal.type === "add"
                   ? "bg-emerald-600 hover:bg-emerald-700"
                   : "bg-red-600 hover:bg-red-700"
               }
             >
-              {adjustmentModal.type === "add" ? (
+              {adjusting ? ti.adjusting : adjustmentModal.type === "add" ? (
                 <>
                   <ArrowUpCircle className="mr-2 size-4" />
                   {ti.addStock}

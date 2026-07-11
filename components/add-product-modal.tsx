@@ -10,40 +10,39 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox'
 import { useLanguage } from '@/lib/language-context'
 import { Category, Unit, CreateProductInput } from '@/lib/types'
-import { getCategories, getUnits } from '@/lib/api'
 
 interface AddProductModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSubmit: (data: CreateProductInput) => Promise<void>
   isLoading: boolean
+  categories: Category[]
+  units: Unit[]
 }
 
-export function AddProductModal({ open, onOpenChange, onSubmit, isLoading }: AddProductModalProps) {
+const EMPTY_FORM = {
+  sku: '',
+  name: '',
+  description: '',
+  costPrice: '',
+  sellingPrice: '',
+  minStockLevel: '',
+  categoryId: '',
+  unitId: '',
+  isActive: true,
+}
+
+export function AddProductModal({ open, onOpenChange, onSubmit, isLoading, categories, units }: AddProductModalProps) {
   const { t } = useLanguage()
-  const [categories, setCategories] = useState<Category[]>([])
-  const [units, setUnits] = useState<Unit[]>([])
   const [errors, setErrors] = useState<Record<string, string>>({})
-  const [formData, setFormData] = useState({
-    sku: '',
-    name: '',
-    description: '',
-    costPrice: '',
-    sellingPrice: '',
-    minStockLevel: '',
-    categoryId: '',
-    unitId: '',
-    isActive: true,
-  })
+  const [formData, setFormData] = useState(EMPTY_FORM)
 
   useEffect(() => {
-    const loadData = async () => {
-      const [catsData, unitsData] = await Promise.all([getCategories(), getUnits()])
-      setCategories(catsData)
-      setUnits(unitsData)
+    if (!open) {
+      setFormData(EMPTY_FORM)
+      setErrors({})
     }
-    loadData()
-  }, [])
+  }, [open])
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
@@ -64,35 +63,17 @@ export function AddProductModal({ open, onOpenChange, onSubmit, isLoading }: Add
 
     if (!validateForm()) return
 
-    try {
-      await onSubmit({
-        sku: formData.sku,
-        name: formData.name,
-        description: formData.description,
-        costPrice: parseFloat(formData.costPrice),
-        sellingPrice: parseFloat(formData.sellingPrice),
-        minStockLevel: parseInt(formData.minStockLevel),
-        categoryId: formData.categoryId,
-        unitId: formData.unitId,
-        isActive: formData.isActive,
-      })
-
-      setFormData({
-        sku: '',
-        name: '',
-        description: '',
-        costPrice: '',
-        sellingPrice: '',
-        minStockLevel: '',
-        categoryId: '',
-        unitId: '',
-        isActive: true,
-      })
-      setErrors({})
-      onOpenChange(false)
-    } catch (error) {
-      console.error('Error submitting form:', error)
-    }
+    await onSubmit({
+      sku: formData.sku,
+      name: formData.name,
+      description: formData.description,
+      costPrice: parseFloat(formData.costPrice),
+      sellingPrice: parseFloat(formData.sellingPrice),
+      minStockLevel: parseInt(formData.minStockLevel),
+      categoryId: formData.categoryId,
+      unitId: formData.unitId,
+      isActive: formData.isActive,
+    })
   }
 
   return (

@@ -25,7 +25,8 @@ apps/web/
 │       ├── customers/page.tsx
 │       ├── inventory/page.tsx
 │       ├── payments/page.tsx
-│       └── settings/page.tsx
+│       ├── settings/page.tsx   # Business info + subscription + invoice history
+│       └── admin/page.tsx      # SUPER_ADMIN — duyệt subscription invoices
 │
 ├── components/                 # UI components tái sử dụng
 │   ├── ui/                     # Shadcn/ui base components (button, card, table...)

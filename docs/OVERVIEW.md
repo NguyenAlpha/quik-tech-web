@@ -12,7 +12,7 @@ xác thực bằng **JWT**.
 
 | Thành phần | Công nghệ | Ghi chú |
 |:---|:---|:---|
-| Framework | Next.js 15 (App Router) | React 19 |
+| Framework | Next.js 16 (App Router) | React 19 |
 | Styling | Tailwind CSS 4 | Utility-first CSS |
 | UI Components | Shadcn/ui + Radix UI | Component library |
 | Icons | Lucide React | SVG icon pack |
@@ -34,6 +34,7 @@ xác thực bằng **JWT**.
 | Đa ngôn ngữ EN/VI | Hoàn chỉnh |
 | Dark / Light mode | Hoàn chỉnh |
 | Dữ liệu bền vững | Có — lưu trên database qua backend |
+| Subscription / Billing | Hoàn chỉnh — upgrade plan, invoice history, admin confirm/reject |
 
 ---
 
@@ -47,21 +48,25 @@ xác thực bằng **JWT**.
 | `/products` | Sản phẩm | Xem, thêm, xóa, tìm kiếm, lọc theo category/status |
 | `/suppliers` | Nhà cung cấp | Xem, thêm, xóa, tìm kiếm, lọc theo status |
 | `/purchase-orders` | Đơn nhập hàng | Xem, thêm, hủy, đổi trạng thái, tìm kiếm, lọc |
-| `/orders` | Đơn bán hàng | Xem danh sách, xem chi tiết, tìm kiếm, lọc |
+| `/orders` | Đơn bán hàng | Xem danh sách, xem chi tiết, tạo đơn, tìm kiếm, lọc |
 | `/customers` | Khách hàng | Xem, thêm, xem chi tiết, tìm kiếm, lọc |
 | `/inventory` | Tồn kho | Xem tồn kho theo warehouse, tìm kiếm, lọc |
 | `/payments` | Thanh toán | Xem danh sách, tìm kiếm |
-| `/settings` | Cài đặt | UI tĩnh |
+| `/settings` | Cài đặt | Thông tin business, subscription + invoice history, tạo store |
+| `/admin` | Admin | Quản lý subscription — duyệt/từ chối hóa đơn (SUPER_ADMIN) |
 
 ---
 
-## 5. Tính năng chưa làm
+## 5. Tính năng chưa làm / chưa hoàn thiện
 
-- **Tạo đơn bán hàng** — chưa có form tạo Order
-- **Tạo payment** — chưa có form thêm Payment
-- **Edit** bất kỳ entity nào — chưa có
-- **Xóa customer** — chưa có
-- **Tạo store** — nếu user mới chưa có store, app sẽ không load được dữ liệu
+- **Tạo payment** — chưa có form thêm Payment thủ công
+- **Xóa / chỉnh sửa customer** — chưa có
+- **Điều chỉnh tồn kho** — UI có nút nhưng chưa gọi API
+- **Dashboard** — KPI cards và biểu đồ đang dùng dữ liệu hardcode
+- **Downgrade / cancel subscription** — backend chưa có, frontend chưa có
+- **Admin override plan** — có backend endpoint nhưng chưa có UI
+- **SUPER_ADMIN detection** — link Admin hiện trên sidebar cho tất cả user; backend enforce 403 nếu không có quyền
+- **Refresh token** — token hết hạn thì user bị đẩy về login, không tự gia hạn
 
 ---
 

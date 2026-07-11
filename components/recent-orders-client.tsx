@@ -13,7 +13,7 @@ interface Order {
   id: string
   customer: string
   email: string
-  status: "completed" | "processing" | "pending"
+  status: "completed" | "processing" | "pending" | "cancelled"
   total: string
   date: string
 }
@@ -28,6 +28,7 @@ const statusStyleMap: Record<string, keyof typeof statusColorMap> = {
   completed: "completed",
   processing: "processing",
   pending: "pending",
+  cancelled: "error",
 }
 
 function getInitials(name: string) {
@@ -43,6 +44,7 @@ function getStatusLabel(status: string, t: any): string {
     completed: t.recentOrders.completed,
     processing: t.recentOrders.processing,
     pending: t.recentOrders.pending,
+    cancelled: t.recentOrders.cancelled,
   }
   return statusMap[status] || status
 }
@@ -67,7 +69,35 @@ export function RecentOrdersClient({ orders }: RecentOrdersClientProps) {
         </div>
       </CardHeader>
       <CardContent className="px-0 pb-0">
-        <Table>
+        {/* Mobile card list */}
+        <div className="flex flex-col divide-y sm:hidden">
+          {orders.map((order) => {
+            const statusKey = statusStyleMap[order.status] || "neutral"
+            const colors = statusColorMap[statusKey]
+            return (
+              <div key={order.id} className="flex items-center gap-3 px-4 py-3">
+                <Avatar className="size-8 shrink-0 border">
+                  <AvatarFallback className="bg-muted text-xs font-medium">
+                    {getInitials(order.customer)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <p className="truncate text-sm font-medium">{order.customer}</p>
+                  <p className="font-mono text-xs text-muted-foreground">{order.id}</p>
+                </div>
+                <div className="flex shrink-0 flex-col items-end gap-1">
+                  <span className="font-mono text-sm font-semibold">{order.total}</span>
+                  <Badge variant="secondary" className={`capitalize text-xs ${colors.badge}`}>
+                    {getStatusLabel(order.status, t)}
+                  </Badge>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Desktop table */}
+        <Table className="hidden sm:table">
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               <TableHead className="pl-6 text-xs font-medium uppercase tracking-wider text-muted-foreground">
@@ -113,8 +143,8 @@ export function RecentOrdersClient({ orders }: RecentOrdersClientProps) {
                     <span className="text-sm text-muted-foreground">{order.date}</span>
                   </TableCell>
                   <TableCell>
-                    <Badge 
-                      variant="secondary" 
+                    <Badge
+                      variant="secondary"
                       className={`capitalize ${colors.badge}`}
                     >
                       {getStatusLabel(order.status, t)}

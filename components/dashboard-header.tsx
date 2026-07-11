@@ -1,6 +1,6 @@
 "use client"
 
-import { Search, Bell, Command, LogOut } from "lucide-react"
+import { Search, Bell, Command, LogOut, Package, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
@@ -18,18 +18,52 @@ import { LanguageSwitcher } from "@/components/language-switcher"
 import { useLanguage } from "@/lib/language-context"
 import { useAuth } from "@/lib/auth-context"
 import { getInitials } from "@/lib/utils"
+import { getNotificationSummary, getLowStockNotifications, type LowStockItem, type NotificationSummary } from "@/lib/api"
+import { useEffect, useState, useCallback } from "react"
 
 export function DashboardHeader() {
   const { t } = useLanguage()
   const { user, logout } = useAuth()
+  const [summary, setSummary] = useState<NotificationSummary | null>(null)
+  const [lowStockItems, setLowStockItems] = useState<LowStockItem[]>([])
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+
+  const fetchSummary = useCallback(async () => {
+    try {
+      const data = await getNotificationSummary()
+      setSummary(data)
+    } catch {
+      // silently ignore — header polling should not disrupt the UI
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchSummary()
+    const id = setInterval(fetchSummary, 60_000)
+    return () => clearInterval(id)
+  }, [fetchSummary])
+
+  const handleDropdownOpen = async (open: boolean) => {
+    setDropdownOpen(open)
+    if (open && (summary?.lowStockCount ?? 0) > 0) {
+      try {
+        const items = await getLowStockNotifications()
+        setLowStockItems(items)
+      } catch {
+        // ignore
+      }
+    }
+  }
+
+  const totalUnread = (summary?.lowStockCount ?? 0) + (summary?.pendingInvoiceCount ?? 0)
 
   return (
-    <header className="flex h-16 shrink-0 items-center gap-3 border-b bg-background/95 px-6 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="flex h-16 shrink-0 items-center gap-3 border-b bg-background/95 px-3 sm:px-6 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <SidebarTrigger className="-ml-2" />
       <Separator orientation="vertical" className="h-5" />
-      
+
       <div className="flex flex-1 items-center gap-4">
-        <button className="group flex h-9 w-full max-w-sm items-center gap-2 rounded-lg border bg-muted/40 px-3 text-sm text-muted-foreground transition-colors hover:bg-muted/60">
+        <button className="group hidden h-9 w-full max-w-sm items-center gap-2 rounded-lg border bg-muted/40 px-3 text-sm text-muted-foreground transition-colors hover:bg-muted/60 sm:flex">
           <Search className="size-4" />
           <span className="flex-1 text-left">{t.header.search}</span>
           <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-background px-1.5 font-mono text-[10px] font-medium text-muted-foreground sm:flex">
@@ -41,50 +75,70 @@ export function DashboardHeader() {
       <div className="flex items-center gap-2">
         <LanguageSwitcher />
         <ThemeToggle />
-        <DropdownMenu>
+        <DropdownMenu open={dropdownOpen} onOpenChange={handleDropdownOpen}>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="relative size-9">
               <Bell className="size-4" />
-              <span className="absolute right-1.5 top-1.5 flex size-2">
-                <span className="absolute inline-flex size-full animate-ping rounded-full bg-blue-400 opacity-75" />
-                <span className="relative inline-flex size-2 rounded-full bg-blue-500" />
-              </span>
+              {totalUnread > 0 && (
+                <span className="absolute right-1 top-1 flex size-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                  {totalUnread > 9 ? "9+" : totalUnread}
+                </span>
+              )}
               <span className="sr-only">{t.header.notifications}</span>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-80">
+          <DropdownMenuContent align="end" className="w-72 sm:w-80">
             <DropdownMenuLabel className="font-normal">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-semibold">{t.header.notifications}</span>
-                <span className="text-xs text-muted-foreground">3 unread</span>
+                {totalUnread > 0 && (
+                  <span className="text-xs text-muted-foreground">
+                    {totalUnread} {t.header.unread}
+                  </span>
+                )}
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="flex flex-col items-start gap-1 py-3">
-              <span className="text-sm font-medium">Low stock alert</span>
-              <span className="text-xs text-muted-foreground">
-                5 products are running low on stock
-              </span>
-              <span className="text-xs text-muted-foreground">2 min ago</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem className="flex flex-col items-start gap-1 py-3">
-              <span className="text-sm font-medium">New order received</span>
-              <span className="text-xs text-muted-foreground">
-                Order #ORD-7893 from John Smith
-              </span>
-              <span className="text-xs text-muted-foreground">15 min ago</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem className="flex flex-col items-start gap-1 py-3">
-              <span className="text-sm font-medium">Payment confirmed</span>
-              <span className="text-xs text-muted-foreground">
-                $2,450.00 received from Acme Corp
-              </span>
-              <span className="text-xs text-muted-foreground">1 hour ago</span>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="justify-center text-sm text-muted-foreground">
-              View all notifications
-            </DropdownMenuItem>
+            {totalUnread === 0 ? (
+              <div className="py-6 text-center text-sm text-muted-foreground">
+                {t.header.noNotifications}
+              </div>
+            ) : (
+              <>
+                {(summary?.lowStockCount ?? 0) > 0 && (
+                  <>
+                    <DropdownMenuItem className="flex flex-col items-start gap-1 py-3 cursor-default" onSelect={(e) => e.preventDefault()}>
+                      <div className="flex items-center gap-2">
+                        <Package className="size-4 text-amber-500" />
+                        <span className="text-sm font-medium">{t.header.lowStockAlert}</span>
+                      </div>
+                      <span className="text-xs text-muted-foreground pl-6">
+                        {summary!.lowStockCount} {t.header.lowStockDesc}
+                      </span>
+                    </DropdownMenuItem>
+                    {lowStockItems.map((item, i) => (
+                      <DropdownMenuItem key={i} className="flex flex-col items-start gap-0.5 py-2 pl-8 cursor-default" onSelect={(e) => e.preventDefault()}>
+                        <span className="text-xs font-medium">{item.productName}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {item.sku} · {item.warehouseName} · {item.quantity}/{item.minStockLevel}
+                        </span>
+                      </DropdownMenuItem>
+                    ))}
+                  </>
+                )}
+                {(summary?.pendingInvoiceCount ?? 0) > 0 && (
+                  <DropdownMenuItem className="flex flex-col items-start gap-1 py-3 cursor-default" onSelect={(e) => e.preventDefault()}>
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="size-4 text-blue-500" />
+                      <span className="text-sm font-medium">{t.header.pendingInvoices}</span>
+                    </div>
+                    <span className="text-xs text-muted-foreground pl-6">
+                      {summary!.pendingInvoiceCount} {t.header.pendingInvoicesDesc}
+                    </span>
+                  </DropdownMenuItem>
+                )}
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
 

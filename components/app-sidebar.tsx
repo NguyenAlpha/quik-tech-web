@@ -3,8 +3,11 @@
 import {
   LayoutDashboard,
   Package,
+  Tag,
+  Ruler,
   Warehouse,
   ShoppingCart,
+  RotateCcw,
   Users,
   Truck,
   CreditCard,
@@ -12,6 +15,10 @@ import {
   ChevronDown,
   Sparkles,
   FileText,
+  ShieldCheck,
+  Crown,
+  HelpCircle,
+  Building2,
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -49,14 +56,34 @@ const menuItems = [
     icon: Package,
   },
   {
+    titleKey: "categories" as const,
+    url: "/categories",
+    icon: Tag,
+  },
+  {
+    titleKey: "units" as const,
+    url: "/units",
+    icon: Ruler,
+  },
+  {
     titleKey: "inventory" as const,
     url: "/inventory",
     icon: Warehouse,
   },
   {
+    titleKey: "warehouses" as const,
+    url: "/warehouses",
+    icon: Building2,
+  },
+  {
     titleKey: "orders" as const,
     url: "/orders",
     icon: ShoppingCart,
+  },
+  {
+    titleKey: "returns" as const,
+    url: "/returns",
+    icon: RotateCcw,
   },
   {
     titleKey: "customers" as const,
@@ -160,10 +187,34 @@ export function AppSidebar() {
       <SidebarFooter className="border-t border-sidebar-border">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip="Settings" className="transition-colors">
+            <SidebarMenuButton asChild tooltip="Help" isActive={pathname === '/help'} className="transition-colors">
+              <Link href="/help">
+                <HelpCircle className="size-4" />
+                <span>{t.help.title}</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild tooltip="Subscription" isActive={pathname === '/subscription'} className="transition-colors">
+              <Link href="/subscription">
+                <Crown className="size-4" />
+                <span>{t.subscription.title}</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild tooltip="Settings" isActive={pathname === '/settings'} className="transition-colors">
               <Link href="/settings">
                 <Settings className="size-4" />
                 <span>{t.common.settings}</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild tooltip="Admin" isActive={pathname === '/admin'} className="transition-colors">
+              <Link href="/admin">
+                <ShieldCheck className="size-4" />
+                <span>Admin</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

@@ -1,249 +1,356 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Separator } from '@/components/ui/separator'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Loader2, Plus, Scan, Trash2 } from 'lucide-react'
+import { formatCurrency } from '@/lib/utils'
 import { useLanguage } from '@/lib/language-context'
-import { CreatePurchaseOrderInput, Supplier, Product, Warehouse } from '@/lib/types'
+import { toast } from 'sonner'
+import { getProductBySku } from '@/lib/api'
+import { BarcodeScanner } from '@/components/barcode-scanner'
+import type { Supplier, Warehouse, Product, CreatePurchaseOrderInput, PurchaseOrder } from '@/lib/types'
 
-interface LocalItem {
+interface ItemDraft {
   productPublicId: string
-  productName: string
   quantity: number
   unitPrice: number
-  totalPrice: number
 }
 
-interface AddPurchaseOrderModalProps {
+interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSubmit: (data: CreatePurchaseOrderInput) => Promise<void>
-  suppliers: Supplier[]
-  products: Product[]
-  warehouses: Warehouse[]
+  onSubmit: (input: CreatePurchaseOrderInput) => Promise<void>
   isLoading?: boolean
+  suppliers: Supplier[]
+  warehouses: Warehouse[]
+  products: Product[]
+  initialData?: PurchaseOrder | null
 }
 
-export function AddPurchaseOrderModal({
-  open,
-  onOpenChange,
-  onSubmit,
-  suppliers,
-  products,
-  warehouses,
-  isLoading = false,
-}: AddPurchaseOrderModalProps) {
+const newItem = (): ItemDraft => ({ productPublicId: '', quantity: 1, unitPrice: 0 })
+
+export function AddPurchaseOrderModal({ open, onOpenChange, onSubmit, isLoading = false, suppliers, warehouses, products, initialData }: Props) {
   const { t } = useLanguage()
-  const [errors, setErrors] = useState<Record<string, string>>({})
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [items, setItems] = useState<LocalItem[]>([])
-  const [formData, setFormData] = useState({
-    orderCode: '',
-    supplierPublicId: '',
-    warehousePublicId: '',
-    note: '',
-  })
+  const tpo = t.purchaseOrders
+  const isEdit = !!initialData
 
-  const validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {}
-    if (!formData.supplierPublicId) newErrors.supplierPublicId = 'Supplier is required'
-    if (!formData.warehousePublicId) newErrors.warehousePublicId = 'Warehouse is required'
-    if (items.length === 0) newErrors.items = 'At least one item is required'
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
+  const [supplierId, setSupplierId] = useState('')
+  const [warehouseId, setWarehouseId] = useState('')
+  const [paidAmount, setPaidAmount] = useState(0)
+  const [paymentMethod, setPaymentMethod] = useState('CASH')
+  const [note, setNote] = useState('')
+  const [items, setItems] = useState<ItemDraft[]>([newItem()])
+  const [isScannerOpen, setIsScannerOpen] = useState(false)
+  const isPaidManual = useRef(false)
 
-  const handleAddItem = () => {
-    setItems([...items, { productPublicId: '', productName: '', quantity: 1, unitPrice: 0, totalPrice: 0 }])
-  }
+  const total = useMemo(
+    () => items.reduce((sum, it) => sum + it.unitPrice * it.quantity, 0),
+    [items]
+  )
 
-  const handleRemoveItem = (index: number) => {
-    setItems(items.filter((_, i) => i !== index))
-  }
-
-  const handleItemChange = (index: number, field: string, value: any) => {
-    const newItems = [...items]
-    const item = newItems[index] as any
-    item[field] = value
-    if (field === 'quantity' || field === 'unitPrice') {
-      item.totalPrice = (item.quantity || 0) * (item.unitPrice || 0)
+  useEffect(() => {
+    if (open) {
+      if (initialData) {
+        setSupplierId(initialData.supplierPublicId)
+        setWarehouseId(initialData.warehousePublicId)
+        setNote(initialData.note ?? '')
+        setItems(
+          initialData.items.length > 0
+            ? initialData.items.map(it => ({ productPublicId: it.productPublicId, quantity: it.quantity, unitPrice: it.unitPrice }))
+            : [newItem()]
+        )
+        setPaidAmount(initialData.paidAmount)
+        isPaidManual.current = true
+      } else {
+        setSupplierId('')
+        setWarehouseId(warehouses[0]?.id ?? '')
+        setPaidAmount(0)
+        setPaymentMethod('CASH')
+        setNote('')
+        setItems([newItem()])
+        isPaidManual.current = false
+      }
     }
-    setItems(newItems)
+  }, [open, warehouses, initialData])
+
+  useEffect(() => {
+    if (!isPaidManual.current) setPaidAmount(total)
+  }, [total])
+
+  const debt = Math.max(0, total - paidAmount)
+
+  const handleBarcodeScan = async (sku: string) => {
+    try {
+      const product = await getProductBySku(sku)
+      setItems(prev => {
+        const existing = prev.findIndex(it => it.productPublicId === product.id)
+        if (existing >= 0) {
+          return prev.map((it, idx) => idx === existing ? { ...it, quantity: it.quantity + 1 } : it)
+        }
+        return [...prev.filter(it => it.productPublicId !== ''), {
+          productPublicId: product.id,
+          quantity: 1,
+          unitPrice: product.costPrice,
+        }]
+      })
+    } catch {
+      toast.error('Không tìm thấy sản phẩm với mã vạch này')
+    }
   }
+
+  const updateItem = (i: number, patch: Partial<ItemDraft>) =>
+    setItems(prev => prev.map((it, idx) => idx === i ? { ...it, ...patch } : it))
+
+  const onProductSelect = (i: number, pid: string) => {
+    const p = products.find(p => p.id === pid)
+    if (p) updateItem(i, { productPublicId: p.id, unitPrice: p.costPrice })
+  }
+
+  const canSubmit = supplierId !== '' &&
+    warehouseId !== '' &&
+    items.some(it => it.productPublicId && it.quantity > 0) &&
+    paidAmount >= 0 &&
+    paidAmount <= total
 
   const handleSubmit = async () => {
-    if (!validateForm()) return
-
-    setIsSubmitting(true)
-    try {
-      await onSubmit({
-        ...(formData.orderCode ? { orderCode: formData.orderCode } : {}),
-        supplierPublicId: formData.supplierPublicId,
-        warehousePublicId: formData.warehousePublicId,
-        note: formData.note || undefined,
-        items: items.map((item) => ({
-          productPublicId: item.productPublicId,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
+    await onSubmit({
+      supplierPublicId: supplierId,
+      warehousePublicId: warehouseId,
+      paidAmount: paidAmount > 0 ? paidAmount : undefined,
+      paymentMethod,
+      note: note.trim() || undefined,
+      items: items
+        .filter(it => it.productPublicId && it.quantity > 0)
+        .map(it => ({
+          productPublicId: it.productPublicId,
+          quantity: it.quantity,
+          unitPrice: it.unitPrice,
         })),
-      })
-      setFormData({ orderCode: '', supplierPublicId: '', warehousePublicId: '', note: '' })
-      setItems([])
-      setErrors({})
-      onOpenChange(false)
-    } finally {
-      setIsSubmitting(false)
-    }
+    })
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{t.purchaseOrders.addNewPurchaseOrder}</DialogTitle>
+      <DialogContent className="!max-w-3xl max-h-[90vh] overflow-y-auto p-0">
+        <DialogHeader className="border-b px-6 py-4">
+          <DialogTitle>{isEdit ? tpo.editPurchaseOrder : tpo.addNewPurchaseOrder}</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-6 p-6">
+          {/* Header fields */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="supplier">{t.purchaseOrders.supplier}</Label>
-              <Select value={formData.supplierPublicId} onValueChange={(value) => setFormData({ ...formData, supplierPublicId: value })}>
-                <SelectTrigger id="supplier">
-                  <SelectValue placeholder={t.suppliers.selectSupplier} />
-                </SelectTrigger>
+            <div className="col-span-2 space-y-2">
+              <label className="text-sm font-medium">{tpo.warehouse}</label>
+              <Select value={warehouseId} onValueChange={setWarehouseId} disabled={warehouses.length === 1}>
+                <SelectTrigger><SelectValue placeholder={t.orders.selectWarehouse} /></SelectTrigger>
                 <SelectContent>
-                  {suppliers.map((supplier) => (
-                    <SelectItem key={supplier.id} value={supplier.id}>
-                      {supplier.name}
-                    </SelectItem>
+                  {warehouses.map(w => (
+                    <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {errors.supplierPublicId && <p className="text-sm text-red-500">{errors.supplierPublicId}</p>}
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="warehouse">Warehouse</Label>
-              <Select value={formData.warehousePublicId} onValueChange={(value) => setFormData({ ...formData, warehousePublicId: value })}>
-                <SelectTrigger id="warehouse">
-                  <SelectValue placeholder="Select warehouse" />
-                </SelectTrigger>
+            <div className="col-span-2 space-y-2">
+              <label className="text-sm font-medium">{tpo.supplier}</label>
+              <Select value={supplierId} onValueChange={setSupplierId}>
+                <SelectTrigger><SelectValue placeholder={t.suppliers.selectSupplier} /></SelectTrigger>
                 <SelectContent>
-                  {warehouses.map((wh) => (
-                    <SelectItem key={wh.id} value={wh.id}>
-                      {wh.name}
-                    </SelectItem>
+                  {suppliers.map(s => (
+                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {errors.warehousePublicId && <p className="text-sm text-red-500">{errors.warehousePublicId}</p>}
             </div>
+          </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="orderCode">Order Code (optional)</Label>
+          <Separator />
+
+          {/* Items */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-medium">{tpo.items}</h4>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => setIsScannerOpen(true)}
+                >
+                  <Scan className="size-3.5" />
+                  Quét mã
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => setItems(prev => [...prev, newItem()])}
+                >
+                  <Plus className="size-3.5" />
+                  {tpo.addItem}
+                </Button>
+              </div>
+            </div>
+            <div className="rounded-lg border">
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="pl-4 text-xs">{tpo.product}</TableHead>
+                    <TableHead className="w-20 text-xs">{tpo.quantity}</TableHead>
+                    <TableHead className="w-32 text-xs">{tpo.unitPrice}</TableHead>
+                    <TableHead className="w-10 pr-4"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {items.map((item, i) => (
+                    <TableRow key={i} className="hover:bg-transparent">
+                      <TableCell className="pl-4">
+                        <Select
+                          value={item.productPublicId || '__none__'}
+                          onValueChange={v => v !== '__none__' && onProductSelect(i, v)}
+                        >
+                          <SelectTrigger className="h-8 text-xs">
+                            <SelectValue placeholder={tpo.selectProduct} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {products.map(p => (
+                              <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          min={0.01}
+                          step={0.01}
+                          className="h-8 w-20 text-xs"
+                          value={item.quantity}
+                          onChange={e => updateItem(i, { quantity: Number(e.target.value) })}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          min={0}
+                          className="h-8 w-32 text-xs"
+                          value={item.unitPrice}
+                          onChange={e => updateItem(i, { unitPrice: Number(e.target.value) })}
+                        />
+                      </TableCell>
+                      <TableCell className="pr-4 text-right">
+                        {items.length > 1 && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="size-8"
+                            onClick={() => setItems(prev => prev.filter((_, idx) => idx !== i))}
+                          >
+                            <Trash2 className="size-3.5 text-red-500" />
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Note + Payment */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="col-span-2 space-y-2">
+              <label className="text-sm font-medium">{tpo.notes}</label>
               <Input
-                id="orderCode"
-                value={formData.orderCode}
-                onChange={(e) => setFormData({ ...formData, orderCode: e.target.value })}
-                placeholder="Auto-generated if empty"
+                value={note}
+                onChange={e => setNote(e.target.value)}
+                placeholder="..."
               />
             </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{tpo.paidAmount}</label>
+              <Input
+                type="number"
+                min={0}
+                value={paidAmount}
+                onChange={e => {
+                  isPaidManual.current = true
+                  setPaidAmount(Number(e.target.value))
+                }}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{tpo.paymentMethodLabel}</label>
+              <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="CASH">{tpo.paymentMethodCash}</SelectItem>
+                  <SelectItem value="TRANSFER">{tpo.paymentMethodTransfer}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="note">{t.purchaseOrders.notes}</Label>
-            <Textarea
-              id="note"
-              value={formData.note}
-              onChange={(e) => setFormData({ ...formData, note: e.target.value })}
-              placeholder="Order notes..."
-              rows={2}
-            />
-          </div>
+          <Separator />
 
-          {/* Items Section */}
-          <div className="space-y-3 border-t pt-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-semibold">{t.purchaseOrders.items}</h3>
-              <Button type="button" variant="outline" size="sm" onClick={handleAddItem}>
-                {t.purchaseOrders.addItem}
-              </Button>
+          {/* Summary */}
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between font-semibold">
+              <span>{tpo.total}</span>
+              <span className="font-mono">{formatCurrency(total)}</span>
             </div>
-
-            {errors.items && <p className="text-sm text-red-500">{errors.items}</p>}
-
-            <div className="space-y-3">
-              {items.map((item, index) => (
-                <div key={index} className="grid grid-cols-5 gap-2 items-end border p-2 rounded">
-                  <Select
-                    value={item.productPublicId}
-                    onValueChange={(value) => {
-                      const product = products.find((p) => p.id === value)
-                      if (product) {
-                        handleItemChange(index, 'productPublicId', value)
-                        handleItemChange(index, 'productName', product.name)
-                        handleItemChange(index, 'unitPrice', product.costPrice)
-                      }
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Product" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {products.map((product) => (
-                        <SelectItem key={product.id} value={product.id}>
-                          {product.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  <Input
-                    type="number"
-                    min="1"
-                    value={item.quantity}
-                    onChange={(e) => handleItemChange(index, 'quantity', parseInt(e.target.value) || 0)}
-                    placeholder="Qty"
-                  />
-
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={item.unitPrice}
-                    onChange={(e) => handleItemChange(index, 'unitPrice', parseFloat(e.target.value) || 0)}
-                    placeholder="Price"
-                  />
-
-                  <Input type="text" value={`$${item.totalPrice.toFixed(2)}`} disabled placeholder="Total" />
-
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleRemoveItem(index)}
-                  >
-                    {t.purchaseOrders.removeItem}
-                  </Button>
-                </div>
-              ))}
-            </div>
+            {paidAmount > 0 && (
+              <div className="flex justify-between text-emerald-600">
+                <span>{tpo.paidAmount}</span>
+                <span className="font-mono">{formatCurrency(paidAmount)}</span>
+              </div>
+            )}
+            {debt > 0 && (
+              <div className="flex justify-between font-semibold text-orange-600">
+                <span>{tpo.remainingDebt}</span>
+                <span className="font-mono">{formatCurrency(debt)}</span>
+              </div>
+            )}
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting || isLoading}>
+        <div className="flex justify-end gap-3 border-t px-6 py-4">
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
             {t.common.cancel}
           </Button>
-          <Button onClick={handleSubmit} disabled={isSubmitting || isLoading}>
-            {isSubmitting || isLoading ? 'Creating...' : t.common.save}
+          <Button onClick={handleSubmit} disabled={isLoading || !canSubmit}>
+            {isLoading && <Loader2 className="mr-2 size-4 animate-spin" />}
+            {isEdit ? t.common.save : tpo.addPurchaseOrder}
           </Button>
-        </DialogFooter>
+        </div>
       </DialogContent>
+      <BarcodeScanner
+        open={isScannerOpen}
+        onScan={handleBarcodeScan}
+        onClose={() => setIsScannerOpen(false)}
+      />
     </Dialog>
   )
 }

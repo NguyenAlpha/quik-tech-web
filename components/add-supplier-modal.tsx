@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
@@ -20,14 +20,23 @@ export function AddSupplierModal({ open, onOpenChange, onSubmit, isLoading = fal
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState<CreateSupplierInput>({
+    code: '',
     name: '',
     phone: '',
     email: '',
     address: '',
   })
 
+  useEffect(() => {
+    if (!open) {
+      setFormData({ code: '', name: '', phone: '', email: '', address: '' })
+      setErrors({})
+    }
+  }, [open])
+
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {}
+    if (!formData.code.trim()) newErrors.code = t.suppliers.codeRequired
     if (!formData.name.trim()) newErrors.name = 'Name is required'
     if (!formData.phone.trim()) newErrors.phone = 'Phone is required'
     if (!formData.email.trim()) newErrors.email = 'Email is required'
@@ -41,7 +50,7 @@ export function AddSupplierModal({ open, onOpenChange, onSubmit, isLoading = fal
     setIsSubmitting(true)
     try {
       await onSubmit(formData)
-      setFormData({ name: '', phone: '', email: '', address: '' })
+      setFormData({ code: '', name: '', phone: '', email: '', address: '' })
       setErrors({})
       onOpenChange(false)
     } finally {
@@ -57,6 +66,17 @@ export function AddSupplierModal({ open, onOpenChange, onSubmit, isLoading = fal
         </DialogHeader>
 
         <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="code">{t.suppliers.code}</Label>
+            <Input
+              id="code"
+              value={formData.code}
+              onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+              placeholder="SUP-001"
+            />
+            {errors.code && <p className="text-sm text-red-500">{errors.code}</p>}
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="name">{t.suppliers.supplierName}</Label>
             <Input
