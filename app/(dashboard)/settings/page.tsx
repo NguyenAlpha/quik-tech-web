@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import {
   Building2, User, Mail, Phone, MapPin, Pencil, Check, Plus,
-  Crown, ShieldCheck, Shield, ExternalLink,
+  Crown, ShieldCheck, Shield, ExternalLink, UserCog,
 } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -39,9 +39,10 @@ const planStyles: Record<string, { label: string; className: string }> = {
 }
 
 const roleStyles: Record<string, { label: string; className: string; icon: React.ElementType }> = {
-  ROLE_OWNER:   { label: 'Owner',   className: 'bg-amber-50 text-amber-700 hover:bg-amber-50 dark:bg-amber-950 dark:text-amber-400',  icon: Crown },
-  ROLE_MANAGER: { label: 'Manager', className: 'bg-blue-50 text-blue-700 hover:bg-blue-50 dark:bg-blue-950 dark:text-blue-400',      icon: ShieldCheck },
-  ROLE_STAFF:   { label: 'Staff',   className: 'bg-gray-100 text-gray-700 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-400',    icon: Shield },
+  ROLE_OWNER:            { label: 'Owner',            className: 'bg-amber-50 text-amber-700 hover:bg-amber-50 dark:bg-amber-950 dark:text-amber-400',  icon: Crown },
+  ROLE_BUSINESS_MANAGER: { label: 'Business Manager', className: 'bg-indigo-50 text-indigo-700 hover:bg-indigo-50 dark:bg-indigo-950 dark:text-indigo-400', icon: UserCog },
+  ROLE_MANAGER:          { label: 'Manager',          className: 'bg-blue-50 text-blue-700 hover:bg-blue-50 dark:bg-blue-950 dark:text-blue-400',      icon: ShieldCheck },
+  ROLE_STAFF:            { label: 'Staff',            className: 'bg-gray-100 text-gray-700 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-400',    icon: Shield },
 }
 
 export default function SettingsPage() {

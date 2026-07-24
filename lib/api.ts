@@ -17,6 +17,7 @@ import type {
   DashboardData,
   AdminUser,
   AdminStats,
+  BusinessMember, UserLookup,
 } from "./types"
 import { PurchaseOrderStatus } from "./types"
 
@@ -239,6 +240,35 @@ export async function updateBusiness(businessId: number, input: UpdateBusinessIn
 
 export async function createStore(businessId: number, input: { name: string; address?: string; phone?: string; email?: string }): Promise<{ id: number; name: string }> {
   return apiFetch(`/api/businesses/${businessId}/stores`, { method: "POST", body: JSON.stringify(input) })
+}
+
+// ─── Business Members (trợ lý cấp business) ─────────────────────────────────────
+
+// Tra user theo username để lấy userId khi thêm trợ lý (owner-only ở tầng thao tác thêm)
+export async function lookupUser(username: string): Promise<UserLookup> {
+  return apiFetch<UserLookup>(`/api/users/lookup?username=${encodeURIComponent(username)}`)
+}
+
+export async function getBusinessMembers(): Promise<BusinessMember[]> {
+  return apiFetch<BusinessMember[]>(businessUrl("/members"))
+}
+
+export async function addBusinessMember(userId: number, isActive = true): Promise<BusinessMember> {
+  return apiFetch<BusinessMember>(businessUrl("/members"), {
+    method: "POST",
+    body: JSON.stringify({ userId, isActive }),
+  })
+}
+
+export async function setBusinessMemberActive(memberId: number, isActive: boolean): Promise<BusinessMember> {
+  return apiFetch<BusinessMember>(businessUrl(`/members/${memberId}`), {
+    method: "PATCH",
+    body: JSON.stringify({ isActive }),
+  })
+}
+
+export async function removeBusinessMember(memberId: number): Promise<void> {
+  await apiFetch<void>(businessUrl(`/members/${memberId}`), { method: "DELETE" })
 }
 
 // ─── Subscription Invoices ────────────────────────────────────────────────────

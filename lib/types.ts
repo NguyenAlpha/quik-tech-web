@@ -31,6 +31,35 @@ export interface BusinessMembership {
   stores: StoreInfo[]
 }
 
+export type RoleName =
+  | 'ROLE_SUPER_ADMIN'
+  | 'ROLE_SUPPORT'
+  | 'ROLE_OWNER'
+  | 'ROLE_BUSINESS_MANAGER'
+  | 'ROLE_MANAGER'
+  | 'ROLE_STAFF'
+
+// Trợ lý cấp business (roster). role = ROLE_OWNER (chủ) hoặc ROLE_BUSINESS_MANAGER (trợ lý).
+export interface BusinessMember {
+  id: number
+  publicId: string
+  userId: number
+  username: string
+  businessId: number
+  role: RoleName
+  joinedDate: string | null
+  isActive: boolean
+  syncVersion: number
+  lastModifiedAt: string
+}
+
+export interface UserLookup {
+  userId: number
+  username: string
+  fullName: string
+  isActive: boolean
+}
+
 export interface LoginInput {
   usernameOrEmail: string
   password: string

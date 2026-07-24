@@ -19,9 +19,11 @@ import {
   Crown,
   HelpCircle,
   Building2,
+  UserCog,
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useMemo } from "react"
 
 import {
   Sidebar,
@@ -43,6 +45,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useLanguage } from "@/lib/language-context"
+import { useAuth } from "@/lib/auth-context"
 
 const menuItems = [
   {
@@ -116,6 +119,13 @@ const stores = [
 export function AppSidebar() {
   const pathname = usePathname()
   const { t } = useLanguage()
+  const { businessId, memberships } = useAuth()
+
+  // Trợ lý & quản lý thành viên chỉ dành cho OWNER — suy ra role từ membership hiện tại
+  const isOwner = useMemo(() => {
+    const m = memberships.find((x) => x.businessId === businessId)
+    return (m?.stores ?? []).some((s) => s.role === "ROLE_OWNER")
+  }, [memberships, businessId])
 
   return (
     <Sidebar collapsible="icon">
@@ -180,6 +190,21 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+              {isOwner && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname === "/team"}
+                    tooltip={t.navigation.team}
+                    className="transition-colors"
+                  >
+                    <Link href="/team">
+                      <UserCog className="size-4" />
+                      <span>{t.navigation.team}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

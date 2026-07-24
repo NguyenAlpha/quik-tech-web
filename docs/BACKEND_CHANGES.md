@@ -117,5 +117,35 @@ Backend giờ chặn xóa và trả `400 VALIDATION_ERROR` (message tiếng Anh)
 ### Không ảnh hưởng
 
 - API quản lý thành viên store (add/update/remove member, role chỉ MANAGER/STAFF,
-  404 khi member không thuộc store) — web **chưa có UI** quản lý thành viên.
+  404 khi member không thuộc store) — web **chưa có UI** quản lý thành viên store.
 - `maxOrdersPerMonth` bị xóa khỏi subscription response — web không dùng field này.
+
+---
+
+## C. Đợt "Trợ lý cấp business" (đã sync)
+
+Backend thêm role `ROLE_BUSINESS_MANAGER` (trợ lý) — quản mọi store trong business,
+KHÔNG đụng billing/subscription, hồ sơ business, tạo store, hay quản lý trợ lý khác.
+
+**Backend mới:**
+- `GET/POST/PATCH/DELETE /api/businesses/{businessId}/members` (owner-only) —
+  POST `{userId, isActive}`, PATCH `{isActive}`. Trợ lý tính vào quota `max_staff`.
+- `GET /api/users/lookup?username=` (authenticated) → `{userId, username, fullName, isActive}` —
+  để owner lấy `userId` khi thêm trợ lý.
+- Auth response: `membership.stores[].role` mang tên business-role thật
+  (`ROLE_OWNER` / `ROLE_BUSINESS_MANAGER`) → web phân biệt được owner vs trợ lý.
+
+**Đã làm ở web:**
+- Trang **Team** `app/(dashboard)/team/page.tsx` (owner-only): list thành viên business,
+  thêm trợ lý (qua lookup username), bật/tắt, gỡ.
+- `lib/api.ts`: `lookupUser`, `getBusinessMembers`, `addBusinessMember`,
+  `setBusinessMemberActive`, `removeBusinessMember`.
+- `lib/types.ts`: `RoleName`, `BusinessMember`, `UserLookup`.
+- Sidebar: mục "Team" chỉ hiện cho OWNER (suy từ `membership.stores[].role`).
+- Settings: badge role cho `ROLE_BUSINESS_MANAGER`.
+- i18n: section `team` (vi/en).
+
+**Ghi chú:**
+- `orders/purchase_orders.paymentMethod` nay là enum 6 giá trị — web đang gửi `CASH`
+  (hợp lệ), không breaking. Dropdown mở rộng để backlog.
+- Gate owner-only ở web chỉ để ẩn UI; backend vẫn enforce owner-only (403) ở tầng API.
