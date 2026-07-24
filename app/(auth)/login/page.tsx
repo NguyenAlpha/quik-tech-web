@@ -29,7 +29,7 @@ export default function LoginPage() {
     try {
       const { accessToken, user, memberships, refreshToken } = await loginUser({ usernameOrEmail, password })
       login(accessToken, user, memberships, refreshToken)
-      router.push(memberships.length === 0 ? '/setup' : '/')
+      router.push(memberships.length === 0 ? '/setup' : '/dashboard')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
     } finally {

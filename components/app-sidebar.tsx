@@ -50,7 +50,7 @@ import { useAuth } from "@/lib/auth-context"
 const menuItems = [
   {
     titleKey: "overview" as const,
-    url: "/",
+    url: "/dashboard",
     icon: LayoutDashboard,
   },
   {

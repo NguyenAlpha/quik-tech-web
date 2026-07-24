@@ -17,7 +17,7 @@ export default function SetupPage() {
 
   useEffect(() => {
     if (!isLoading && storeId) {
-      router.replace('/')
+      router.replace('/dashboard')
     }
   }, [isLoading, storeId, router])
 
@@ -34,7 +34,7 @@ export default function SetupPage() {
       }
       // Truyền businessId tường minh vì memberships lúc này còn rỗng
       selectStore(result.store.id, result.business.id)
-      router.replace('/')
+      router.replace('/dashboard')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
       setIsCreating(false)

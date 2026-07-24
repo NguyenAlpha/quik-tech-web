@@ -61,7 +61,7 @@ export default function RegisterPage() {
         password: form.password,
       })
       login(accessToken, user, memberships, refreshToken)
-      router.push(memberships.length === 0 ? '/setup' : '/')
+      router.push(memberships.length === 0 ? '/setup' : '/dashboard')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
     } finally {

@@ -18,9 +18,16 @@ export function proxy(request: NextRequest) {
     return NextResponse.next()
   }
 
+  // ── / (landing công khai) ────────────────────────────────────────────────
+  if (pathname === '/') {
+    // Đã đăng nhập → vào app; khách chưa đăng nhập → xem landing
+    if (authToken) return NextResponse.redirect(new URL('/dashboard', request.url))
+    return NextResponse.next()
+  }
+
   // ── /login, /register ────────────────────────────────────────────────────
   if (pathname === '/login' || pathname === '/register') {
-    if (authToken) return NextResponse.redirect(new URL('/', request.url))
+    if (authToken) return NextResponse.redirect(new URL('/dashboard', request.url))
     return NextResponse.next()
   }
 
