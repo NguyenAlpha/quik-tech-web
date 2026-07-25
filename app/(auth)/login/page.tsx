@@ -41,12 +41,12 @@ export default function LoginPage() {
     <Card className="w-full max-w-sm shadow-lg">
       <CardHeader className="space-y-1 text-center">
         <div className="flex justify-center mb-2">
-          <div className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2 transition-opacity hover:opacity-80">
             <div className="size-8 rounded-lg bg-primary flex items-center justify-center">
               <span className="text-primary-foreground font-bold text-sm">Q</span>
             </div>
             <span className="font-semibold text-lg">QuikTech</span>
-          </div>
+          </Link>
         </div>
         <CardTitle className="text-xl">{ta.loginTitle}</CardTitle>
         <CardDescription>{ta.loginSubtitle}</CardDescription>

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import { useLanguage } from '@/lib/language-context'
@@ -47,12 +48,12 @@ export default function SetupPage() {
     <div className="w-full max-w-lg space-y-8">
       {/* Logo */}
       <div className="flex flex-col items-center gap-2 text-center">
-        <div className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2 transition-opacity hover:opacity-80">
           <div className="size-9 rounded-lg bg-primary flex items-center justify-center">
             <span className="text-primary-foreground font-bold">Q</span>
           </div>
           <span className="font-semibold text-xl">QuikTech</span>
-        </div>
+        </Link>
         <h1 className="text-2xl font-semibold tracking-tight mt-4">{ta.setupTitle}</h1>
         <p className="text-muted-foreground text-sm">{ta.setupSubtitle}</p>
       </div>
