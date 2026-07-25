@@ -17,11 +17,14 @@ import {
   HelpCircle,
   Building2,
   UserCog,
+  Store,
+  Check,
+  ChevronsUpDown,
 } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useMemo } from "react"
+import { useMemo, Fragment } from "react"
 
 import {
   Sidebar,
@@ -36,6 +39,13 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { useLanguage } from "@/lib/language-context"
 import { useAuth } from "@/lib/auth-context"
 
@@ -105,7 +115,7 @@ const menuItems = [
 export function AppSidebar() {
   const pathname = usePathname()
   const { t } = useLanguage()
-  const { businessId, storeId, memberships } = useAuth()
+  const { businessId, storeId, memberships, selectStore } = useAuth()
 
   // Trợ lý & quản lý thành viên chỉ dành cho OWNER — suy ra role từ membership hiện tại
   const isOwner = useMemo(() => {
@@ -119,32 +129,84 @@ export function AppSidebar() {
     return m?.stores.find((s) => s.storeId === storeId)?.storeName
   }, [memberships, businessId, storeId])
 
+  // Tổng số cửa hàng user có quyền — quyết định hiện store switcher hay không
+  const totalStores = useMemo(
+    () => memberships.reduce((n, m) => n + m.stores.length, 0),
+    [memberships],
+  )
+  const multiBusiness = memberships.length > 1
+
+  // Đổi cửa hàng: cập nhật context rồi hard-navigate về /dashboard để mọi trang
+  // fetch lại dữ liệu theo store mới (các trang store-scoped đọc storeId lúc gọi API,
+  // không tự refetch khi storeId đổi trong SPA).
+  const switchStore = (sid: number, bid: number) => {
+    if (sid === storeId) return
+    selectStore(sid, bid)
+    window.location.href = "/dashboard"
+  }
+
+  const brand = (
+    <>
+      <div className="flex aspect-square size-9 items-center justify-center overflow-hidden rounded-lg">
+        <Image src="/quiktech-logo-qcut.svg" alt="QuikTech POS" width={36} height={36} className="size-9" />
+      </div>
+      <div className="grid flex-1 text-left leading-tight">
+        <span className="truncate text-sm font-semibold">QuikTech POS</span>
+        {currentStoreName && (
+          <span className="truncate text-xs text-sidebar-foreground/60">{currentStoreName}</span>
+        )}
+      </div>
+    </>
+  )
+
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild size="lg">
-              <Link href="/dashboard">
-                <div className="flex aspect-square size-9 items-center justify-center overflow-hidden rounded-lg">
-                  <Image
-                    src="/quiktech-logo-qcut.svg"
-                    alt="QuikTech"
-                    width={36}
-                    height={36}
-                    className="size-9"
-                  />
-                </div>
-                <div className="grid flex-1 text-left leading-tight">
-                  <span className="truncate text-sm font-semibold">QuikTech</span>
-                  {currentStoreName && (
-                    <span className="truncate text-xs text-sidebar-foreground/60">
-                      {currentStoreName}
-                    </span>
-                  )}
-                </div>
-              </Link>
-            </SidebarMenuButton>
+            {totalStores > 1 ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <SidebarMenuButton
+                    size="lg"
+                    className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                  >
+                    {brand}
+                    <ChevronsUpDown className="ml-auto size-4 opacity-50" />
+                  </SidebarMenuButton>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  className="w-[--radix-dropdown-menu-trigger-width] min-w-56"
+                  align="start"
+                  sideOffset={8}
+                >
+                  {memberships.map((m) => (
+                    <Fragment key={m.businessId}>
+                      {multiBusiness && (
+                        <DropdownMenuLabel className="text-xs text-muted-foreground">
+                          {m.businessName}
+                        </DropdownMenuLabel>
+                      )}
+                      {m.stores.map((s) => (
+                        <DropdownMenuItem
+                          key={s.storeId}
+                          className="gap-2 py-2"
+                          onClick={() => switchStore(s.storeId, m.businessId)}
+                        >
+                          <Store className="size-4 text-muted-foreground" />
+                          <span className="flex-1 truncate">{s.storeName}</span>
+                          {s.storeId === storeId && <Check className="size-4 text-primary" />}
+                        </DropdownMenuItem>
+                      ))}
+                    </Fragment>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <SidebarMenuButton asChild size="lg">
+                <Link href="/dashboard">{brand}</Link>
+              </SidebarMenuButton>
+            )}
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>

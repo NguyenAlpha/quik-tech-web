@@ -46,7 +46,7 @@ export default function LandingPage() {
             <div className="flex size-8 items-center justify-center rounded-lg bg-primary">
               <span className="text-sm font-bold text-primary-foreground">Q</span>
             </div>
-            <span className="text-lg font-semibold">QuikTech</span>
+            <span className="text-lg font-semibold">QuikTech POS</span>
           </div>
           <div className="flex items-center gap-2">
             <Button
@@ -173,7 +173,7 @@ export default function LandingPage() {
             <div className="flex size-6 items-center justify-center rounded bg-primary">
               <span className="text-xs font-bold text-primary-foreground">Q</span>
             </div>
-            <span className="font-medium text-foreground">QuikTech</span>
+            <span className="font-medium text-foreground">QuikTech POS</span>
           </div>
           <p>© {new Date().getFullYear()} QuikTech. {tl.footerRights}</p>
         </div>

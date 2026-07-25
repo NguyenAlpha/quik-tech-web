@@ -78,7 +78,7 @@ export default function RegisterPage() {
             <div className="size-8 rounded-lg bg-primary flex items-center justify-center">
               <span className="text-primary-foreground font-bold text-sm">Q</span>
             </div>
-            <span className="font-semibold text-lg">QuikTech</span>
+            <span className="font-semibold text-lg">QuikTech POS</span>
           </Link>
         </div>
         <CardTitle className="text-xl">{ta.registerTitle}</CardTitle>

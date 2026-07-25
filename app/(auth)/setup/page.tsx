@@ -52,7 +52,7 @@ export default function SetupPage() {
           <div className="size-9 rounded-lg bg-primary flex items-center justify-center">
             <span className="text-primary-foreground font-bold">Q</span>
           </div>
-          <span className="font-semibold text-xl">QuikTech</span>
+          <span className="font-semibold text-xl">QuikTech POS</span>
         </Link>
         <h1 className="text-2xl font-semibold tracking-tight mt-4">{ta.setupTitle}</h1>
         <p className="text-muted-foreground text-sm">{ta.setupSubtitle}</p>
