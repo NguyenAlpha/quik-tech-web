@@ -38,17 +38,25 @@ const planStyles: Record<string, { label: string; className: string }> = {
   PRO:   { label: 'Pro',   className: 'bg-amber-50 text-amber-700 hover:bg-amber-50 dark:bg-amber-950 dark:text-amber-400' },
 }
 
-const roleStyles: Record<string, { label: string; className: string; icon: React.ElementType }> = {
-  ROLE_OWNER:            { label: 'Owner',            className: 'bg-amber-50 text-amber-700 hover:bg-amber-50 dark:bg-amber-950 dark:text-amber-400',  icon: Crown },
-  ROLE_BUSINESS_MANAGER: { label: 'Business Manager', className: 'bg-indigo-50 text-indigo-700 hover:bg-indigo-50 dark:bg-indigo-950 dark:text-indigo-400', icon: UserCog },
-  ROLE_MANAGER:          { label: 'Manager',          className: 'bg-blue-50 text-blue-700 hover:bg-blue-50 dark:bg-blue-950 dark:text-blue-400',      icon: ShieldCheck },
-  ROLE_STAFF:            { label: 'Staff',            className: 'bg-gray-100 text-gray-700 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-400',    icon: Shield },
+const roleStyles: Record<string, { className: string; icon: React.ElementType }> = {
+  ROLE_OWNER:            { className: 'bg-amber-50 text-amber-700 hover:bg-amber-50 dark:bg-amber-950 dark:text-amber-400',  icon: Crown },
+  ROLE_BUSINESS_MANAGER: { className: 'bg-indigo-50 text-indigo-700 hover:bg-indigo-50 dark:bg-indigo-950 dark:text-indigo-400', icon: UserCog },
+  ROLE_MANAGER:          { className: 'bg-blue-50 text-blue-700 hover:bg-blue-50 dark:bg-blue-950 dark:text-blue-400',      icon: ShieldCheck },
+  ROLE_STAFF:            { className: 'bg-gray-100 text-gray-700 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-400',    icon: Shield },
 }
 
 export default function SettingsPage() {
   const { user, businessId, memberships } = useAuth()
   const { t } = useLanguage()
   const ts = t.subscription
+  const tset = t.settings
+
+  const roleLabels: Record<string, string> = {
+    ROLE_OWNER: tset.roleOwner,
+    ROLE_BUSINESS_MANAGER: tset.roleBusinessManager,
+    ROLE_MANAGER: tset.roleManager,
+    ROLE_STAFF: tset.roleStaff,
+  }
 
   const [business, setBusiness] = useState<Business | null>(null)
   const [subscription, setSubscription] = useState<BusinessSubscription | null>(null)
@@ -81,7 +89,7 @@ export default function SettingsPage() {
       setBusiness(biz)
       setSubscription(sub)
     } catch (err) {
-      setPageError(err instanceof Error ? err.message : 'Failed to load settings')
+      setPageError(err instanceof Error ? err.message : tset.loadFailed)
     } finally {
       setIsPageLoading(false)
     }
@@ -97,7 +105,7 @@ export default function SettingsPage() {
   }
 
   const handleSave = async () => {
-    if (!form.name.trim()) { setFormError('Business name is required'); return }
+    if (!form.name.trim()) { setFormError(tset.businessNameRequired); return }
     if (!businessId) return
     setIsSaving(true)
     setFormError(null)
@@ -110,9 +118,9 @@ export default function SettingsPage() {
       })
       setBusiness(updated)
       setIsEditOpen(false)
-      toast.success('Business information updated')
+      toast.success(tset.businessUpdated)
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'Failed to save')
+      setFormError(err instanceof Error ? err.message : tset.saveFailed)
     } finally {
       setIsSaving(false)
     }
@@ -125,7 +133,7 @@ export default function SettingsPage() {
   }
 
   const handleCreateStore = async () => {
-    if (!storeForm.name.trim()) { setStoreFormError('Store name is required'); return }
+    if (!storeForm.name.trim()) { setStoreFormError(tset.storeNameRequired); return }
     if (!businessId) return
     setIsStoreSaving(true)
     setStoreFormError(null)
@@ -137,9 +145,9 @@ export default function SettingsPage() {
         email: storeForm.email.trim() || undefined,
       })
       setIsNewStoreOpen(false)
-      toast.success('Store created successfully')
+      toast.success(tset.storeCreated)
     } catch (err) {
-      setStoreFormError(err instanceof Error ? err.message : 'Failed to create store')
+      setStoreFormError(err instanceof Error ? err.message : tset.storeCreateFailed)
     } finally {
       setIsStoreSaving(false)
     }
@@ -151,19 +159,19 @@ export default function SettingsPage() {
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 sm:gap-6 sm:p-6 lg:gap-8 lg:p-10">
       <div className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">Settings</h1>
-        <p className="text-base text-muted-foreground">Manage your business and profile</p>
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">{tset.title}</h1>
+        <p className="text-base text-muted-foreground">{tset.subtitle}</p>
       </div>
 
       <Tabs defaultValue="business" className="space-y-8">
         <TabsList className="h-11 p-1">
           <TabsTrigger value="business" className="gap-2 px-4">
             <Building2 className="size-4" />
-            <span className="hidden sm:inline">Business</span>
+            <span className="hidden sm:inline">{tset.tabBusiness}</span>
           </TabsTrigger>
           <TabsTrigger value="profile" className="gap-2 px-4">
             <User className="size-4" />
-            <span className="hidden sm:inline">Profile</span>
+            <span className="hidden sm:inline">{tset.tabProfile}</span>
           </TabsTrigger>
         </TabsList>
 
@@ -172,7 +180,7 @@ export default function SettingsPage() {
           <div className="flex justify-end">
             <Button size="sm" className="gap-2 shadow-sm" onClick={openNewStore}>
               <Plus className="size-4" />
-              New Store
+              {tset.newStore}
             </Button>
           </div>
 
@@ -180,38 +188,38 @@ export default function SettingsPage() {
           <Card>
             <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-6">
               <div className="space-y-1.5">
-                <CardTitle className="text-xl font-semibold">Business Information</CardTitle>
-                <CardDescription className="text-sm">Basic details about your business</CardDescription>
+                <CardTitle className="text-xl font-semibold">{tset.businessInfo}</CardTitle>
+                <CardDescription className="text-sm">{tset.businessInfoDesc}</CardDescription>
               </div>
               <Button variant="outline" size="sm" className="gap-2" onClick={openEdit}>
                 <Pencil className="size-3.5" />
-                Edit
+                {tset.edit}
               </Button>
             </CardHeader>
             <CardContent>
               <div className="grid gap-6 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <p className="text-sm text-muted-foreground">Business Name</p>
+                  <p className="text-sm text-muted-foreground">{tset.businessName}</p>
                   <p className="text-sm font-medium">{business?.name ?? '—'}</p>
                 </div>
                 <div className="space-y-1.5">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Mail className="size-4" />
-                    Email
+                    {tset.email}
                   </div>
                   <p className="text-sm font-medium">{business?.email ?? '—'}</p>
                 </div>
                 <div className="space-y-1.5">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Phone className="size-4" />
-                    Phone
+                    {tset.phone}
                   </div>
                   <p className="text-sm font-medium">{business?.phone ?? '—'}</p>
                 </div>
                 <div className="space-y-1.5">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <MapPin className="size-4" />
-                    Address
+                    {tset.address}
                   </div>
                   <p className="text-sm font-medium">{business?.address ?? '—'}</p>
                 </div>
@@ -231,7 +239,7 @@ export default function SettingsPage() {
                     </Badge>
                     {subscription.expiresAt && (
                       <span className="text-xs text-muted-foreground">
-                        Expires {new Date(subscription.expiresAt).toLocaleDateString()}
+                        {tset.expires} {new Date(subscription.expiresAt).toLocaleDateString()}
                       </span>
                     )}
                   </div>
@@ -239,7 +247,7 @@ export default function SettingsPage() {
                 <Button asChild variant="outline" size="sm" className="gap-2">
                   <Link href="/subscription">
                     <ExternalLink className="size-4" />
-                    Manage Subscription
+                    {tset.manageSubscription}
                   </Link>
                 </Button>
               </CardContent>
@@ -251,8 +259,8 @@ export default function SettingsPage() {
         <TabsContent value="profile" className="space-y-6">
           <Card>
             <CardHeader className="pb-6">
-              <CardTitle className="text-xl font-semibold">User Profile</CardTitle>
-              <CardDescription className="text-sm">Your personal account information</CardDescription>
+              <CardTitle className="text-xl font-semibold">{tset.userProfile}</CardTitle>
+              <CardDescription className="text-sm">{tset.userProfileDesc}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="flex items-center gap-6">
@@ -268,7 +276,7 @@ export default function SettingsPage() {
                     return (
                       <Badge variant="secondary" className={roleStyle.className}>
                         <RoleIcon className="mr-1 size-3" />
-                        {roleStyle.label}
+                        {roleLabels[userRole] ?? userRole}
                       </Badge>
                     )
                   })()}
@@ -279,20 +287,20 @@ export default function SettingsPage() {
 
               <div className="grid gap-6 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <p className="text-sm text-muted-foreground">Username</p>
+                  <p className="text-sm text-muted-foreground">{tset.username}</p>
                   <p className="text-sm font-medium">{user?.username}</p>
                 </div>
                 <div className="space-y-1.5">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Mail className="size-4" />
-                    Email
+                    {tset.email}
                   </div>
                   <p className="text-sm font-medium">{user?.email}</p>
                 </div>
                 <div className="space-y-1.5">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Phone className="size-4" />
-                    Phone
+                    {tset.phone}
                   </div>
                   <p className="text-sm font-medium">{user?.phone ?? '—'}</p>
                 </div>
@@ -306,34 +314,34 @@ export default function SettingsPage() {
       <Dialog open={isNewStoreOpen} onOpenChange={open => { if (!open) { setIsNewStoreOpen(false); setStoreForm({ name: '', address: '', phone: '', email: '' }); setStoreFormError(null) } }}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle className="text-xl font-semibold">New Store</DialogTitle>
-            <DialogDescription>Create a new store for this business</DialogDescription>
+            <DialogTitle className="text-xl font-semibold">{tset.newStore}</DialogTitle>
+            <DialogDescription>{tset.newStoreDesc}</DialogDescription>
           </DialogHeader>
           <div className="grid gap-5 py-4">
             <div className="space-y-2">
-              <Label htmlFor="store-name">Store Name</Label>
+              <Label htmlFor="store-name">{tset.storeName}</Label>
               <Input id="store-name" value={storeForm.name} onChange={e => setStoreForm(p => ({ ...p, name: e.target.value }))} className="h-10" />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="store-email">Email</Label>
+                <Label htmlFor="store-email">{tset.email}</Label>
                 <Input id="store-email" type="email" value={storeForm.email} onChange={e => setStoreForm(p => ({ ...p, email: e.target.value }))} className="h-10" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="store-phone">Phone</Label>
+                <Label htmlFor="store-phone">{tset.phone}</Label>
                 <Input id="store-phone" value={storeForm.phone} onChange={e => setStoreForm(p => ({ ...p, phone: e.target.value }))} className="h-10" />
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="store-address">Address</Label>
+              <Label htmlFor="store-address">{tset.address}</Label>
               <Input id="store-address" value={storeForm.address} onChange={e => setStoreForm(p => ({ ...p, address: e.target.value }))} className="h-10" />
             </div>
             {storeFormError && <p className="text-sm text-red-500">{storeFormError}</p>}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsNewStoreOpen(false)} disabled={isStoreSaving}>Cancel</Button>
+            <Button variant="outline" onClick={() => setIsNewStoreOpen(false)} disabled={isStoreSaving}>{t.common.cancel}</Button>
             <Button onClick={handleCreateStore} disabled={isStoreSaving} className="gap-2">
-              {isStoreSaving ? 'Creating...' : <><Check className="size-4" />Create Store</>}
+              {isStoreSaving ? tset.creating : <><Check className="size-4" />{tset.createStore}</>}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -343,34 +351,34 @@ export default function SettingsPage() {
       <Dialog open={isEditOpen} onOpenChange={open => { if (!open) { setIsEditOpen(false); setFormError(null) } }}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle className="text-xl font-semibold">Edit Business</DialogTitle>
-            <DialogDescription>Update your business information</DialogDescription>
+            <DialogTitle className="text-xl font-semibold">{tset.editBusiness}</DialogTitle>
+            <DialogDescription>{tset.editBusinessDesc}</DialogDescription>
           </DialogHeader>
           <div className="grid gap-5 py-4">
             <div className="space-y-2">
-              <Label htmlFor="biz-name">Business Name</Label>
+              <Label htmlFor="biz-name">{tset.businessName}</Label>
               <Input id="biz-name" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} className="h-10" />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="biz-email">Email</Label>
+                <Label htmlFor="biz-email">{tset.email}</Label>
                 <Input id="biz-email" type="email" value={form.email ?? ''} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} className="h-10" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="biz-phone">Phone</Label>
+                <Label htmlFor="biz-phone">{tset.phone}</Label>
                 <Input id="biz-phone" value={form.phone ?? ''} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} className="h-10" />
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="biz-address">Address</Label>
+              <Label htmlFor="biz-address">{tset.address}</Label>
               <Input id="biz-address" value={form.address ?? ''} onChange={e => setForm(p => ({ ...p, address: e.target.value }))} className="h-10" />
             </div>
             {formError && <p className="text-sm text-red-500">{formError}</p>}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditOpen(false)} disabled={isSaving}>Cancel</Button>
+            <Button variant="outline" onClick={() => setIsEditOpen(false)} disabled={isSaving}>{t.common.cancel}</Button>
             <Button onClick={handleSave} disabled={isSaving} className="gap-2">
-              {isSaving ? 'Saving...' : <><Check className="size-4" />Save Changes</>}
+              {isSaving ? tset.saving : <><Check className="size-4" />{tset.saveChanges}</>}
             </Button>
           </DialogFooter>
         </DialogContent>
