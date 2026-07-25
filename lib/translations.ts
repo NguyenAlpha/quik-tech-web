@@ -163,7 +163,7 @@ export const translations = {
     },
     dashboard: {
       title: "Dashboard",
-      subtitle: "Welcome back to StockFlow",
+      subtitle: "Welcome back to QuikTech POS",
       totalRevenue: "Total Revenue",
       orders: "Orders",
       inventoryValue: "Inventory Value",
@@ -1144,7 +1144,7 @@ export const translations = {
     },
     dashboard: {
       title: "Bảng điều khiển",
-      subtitle: "Chào mừng bạn quay lại StockFlow",
+      subtitle: "Chào mừng bạn quay lại QuikTech POS",
       totalRevenue: "Tổng doanh thu",
       orders: "Đơn hàng",
       inventoryValue: "Giá trị kho hàng",
