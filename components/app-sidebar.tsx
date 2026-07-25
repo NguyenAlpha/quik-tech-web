@@ -15,7 +15,6 @@ import {
   ChevronDown,
   Sparkles,
   FileText,
-  ShieldCheck,
   Crown,
   HelpCircle,
   Building2,
@@ -232,14 +231,6 @@ export function AppSidebar() {
               <Link href="/settings">
                 <Settings className="size-4" />
                 <span>{t.common.settings}</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip="Admin" isActive={pathname === '/admin'} className="transition-colors">
-              <Link href="/admin">
-                <ShieldCheck className="size-4" />
-                <span>Admin</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
