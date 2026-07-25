@@ -12,14 +12,13 @@ import {
   Truck,
   CreditCard,
   Settings,
-  ChevronDown,
-  Sparkles,
   FileText,
   Crown,
   HelpCircle,
   Building2,
   UserCog,
 } from "lucide-react"
+import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useMemo } from "react"
@@ -37,12 +36,6 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { useLanguage } from "@/lib/language-context"
 import { useAuth } from "@/lib/auth-context"
 
@@ -109,16 +102,10 @@ const menuItems = [
   },
 ]
 
-const stores = [
-  { name: "Downtown Store", id: "store-1" },
-  { name: "Mall Location", id: "store-2" },
-  { name: "Online Store", id: "store-3" },
-]
-
 export function AppSidebar() {
   const pathname = usePathname()
   const { t } = useLanguage()
-  const { businessId, memberships } = useAuth()
+  const { businessId, storeId, memberships } = useAuth()
 
   // Trợ lý & quản lý thành viên chỉ dành cho OWNER — suy ra role từ membership hiện tại
   const isOwner = useMemo(() => {
@@ -126,44 +113,38 @@ export function AppSidebar() {
     return (m?.stores ?? []).some((s) => s.role === "ROLE_OWNER")
   }, [memberships, businessId])
 
+  // Tên cửa hàng đang chọn (hiển thị dưới brand ở header)
+  const currentStoreName = useMemo(() => {
+    const m = memberships.find((x) => x.businessId === businessId)
+    return m?.stores.find((s) => s.storeId === storeId)?.storeName
+  }, [memberships, businessId, storeId])
+
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border">
         <SidebarMenu>
           <SidebarMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuButton
-                  size="lg"
-                  className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-                >
-                  <div className="flex aspect-square size-9 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-sm">
-                    <Sparkles className="size-5" />
-                  </div>
-                  <div className="grid flex-1 text-left leading-tight">
-                    <span className="truncate text-sm font-semibold">StockFlow</span>
+            <SidebarMenuButton asChild size="lg">
+              <Link href="/dashboard">
+                <div className="flex aspect-square size-9 items-center justify-center overflow-hidden rounded-lg">
+                  <Image
+                    src="/quiktech-logo-qcut.svg"
+                    alt="QuikTech"
+                    width={36}
+                    height={36}
+                    className="size-9"
+                  />
+                </div>
+                <div className="grid flex-1 text-left leading-tight">
+                  <span className="truncate text-sm font-semibold">QuikTech</span>
+                  {currentStoreName && (
                     <span className="truncate text-xs text-sidebar-foreground/60">
-                      Downtown Store
+                      {currentStoreName}
                     </span>
-                  </div>
-                  <ChevronDown className="ml-auto size-4 opacity-50" />
-                </SidebarMenuButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                className="w-[--radix-dropdown-menu-trigger-width] min-w-56"
-                align="start"
-                sideOffset={8}
-              >
-                {stores.map((store) => (
-                  <DropdownMenuItem key={store.id} className="gap-2 py-2">
-                    <div className="flex size-6 items-center justify-center rounded bg-muted">
-                      <Sparkles className="size-3" />
-                    </div>
-                    <span>{store.name}</span>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  )}
+                </div>
+              </Link>
+            </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
