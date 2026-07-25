@@ -26,6 +26,7 @@ import { useLanguage } from '@/lib/language-context'
 import {
   getBusiness, getBusinessSubscription, updateBusiness, createStore,
 } from '@/lib/api'
+import { errorMessage } from '@/lib/api-error'
 import type { Business, BusinessSubscription, UpdateBusinessInput } from '@/lib/types'
 
 function getInitials(name: string) {
@@ -89,7 +90,7 @@ export default function SettingsPage() {
       setBusiness(biz)
       setSubscription(sub)
     } catch (err) {
-      setPageError(err instanceof Error ? err.message : tset.loadFailed)
+      setPageError(errorMessage(err, t))
     } finally {
       setIsPageLoading(false)
     }
@@ -120,7 +121,7 @@ export default function SettingsPage() {
       setIsEditOpen(false)
       toast.success(tset.businessUpdated)
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : tset.saveFailed)
+      setFormError(errorMessage(err, t))
     } finally {
       setIsSaving(false)
     }
@@ -147,7 +148,7 @@ export default function SettingsPage() {
       setIsNewStoreOpen(false)
       toast.success(tset.storeCreated)
     } catch (err) {
-      setStoreFormError(err instanceof Error ? err.message : tset.storeCreateFailed)
+      setStoreFormError(errorMessage(err, t))
     } finally {
       setIsStoreSaving(false)
     }
