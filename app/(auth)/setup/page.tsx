@@ -9,7 +9,7 @@ import { createDefaultBusiness } from '@/lib/api'
 import { Store, Layers, Loader2 } from 'lucide-react'
 
 export default function SetupPage() {
-  const { storeId, isLoading, selectStore } = useAuth()
+  const { storeId, isLoading, selectStore, updateMemberships } = useAuth()
   const { t } = useLanguage()
   const ta = t.auth
   const router = useRouter()
@@ -33,7 +33,19 @@ export default function SetupPage() {
         setIsCreating(false)
         return
       }
-      // Truyền businessId tường minh vì memberships lúc này còn rỗng
+      // Nạp membership từ response để Team/tên cửa hàng/switcher hiện ngay,
+      // không phải đợi login lại (login lúc đăng ký trả memberships rỗng).
+      updateMemberships([{
+        businessId: result.business.id,
+        businessName: result.business.name,
+        stores: [{
+          storeId: result.store.id,
+          storeName: result.store.name,
+          role: 'ROLE_OWNER',
+          positionTitle: null,
+        }],
+      }])
+      // Truyền businessId tường minh cho selectStore
       selectStore(result.store.id, result.business.id)
       router.replace('/dashboard')
     } catch (err) {

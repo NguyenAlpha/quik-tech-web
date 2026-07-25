@@ -14,6 +14,7 @@ interface AuthContextValue {
   login: (token: string, user: AuthUser, memberships: BusinessMembership[], refreshToken?: string) => void
   logout: () => void
   selectStore: (storeId: number, businessId?: number) => void
+  updateMemberships: (memberships: BusinessMembership[]) => void
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -94,8 +95,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setStoreId(id)
   }
 
+  // Nạp/ghi đè danh sách membership (dùng khi vừa tạo business ở setup — response
+  // trả về business/store nhưng login trước đó có memberships rỗng nên UI thiếu Team/tên store)
+  const updateMemberships = (m: BusinessMembership[]) => {
+    localStorage.setItem('auth_memberships', JSON.stringify(m))
+    setMemberships(m)
+  }
+
   return (
-    <AuthContext.Provider value={{ user, token, businessId, storeId, memberships, isLoading, login, logout, selectStore }}>
+    <AuthContext.Provider value={{ user, token, businessId, storeId, memberships, isLoading, login, logout, selectStore, updateMemberships }}>
       {children}
     </AuthContext.Provider>
   )
