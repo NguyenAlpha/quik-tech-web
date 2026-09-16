@@ -40,44 +40,38 @@ const PLAN_PRICES: Record<string, Record<string, number>> = {
   PRO:   { MONTHLY: 499000, YEARLY: 4990000 },
 }
 
-const planStyles: Record<string, { label: string; className: string }> = {
-  FREE:  { label: 'Free',  className: 'bg-gray-100 text-gray-700 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300' },
-  BASIC: { label: 'Basic', className: 'bg-blue-50 text-blue-700 hover:bg-blue-50 dark:bg-blue-950 dark:text-blue-400' },
-  PRO:   { label: 'Pro',   className: 'bg-amber-50 text-amber-700 hover:bg-amber-50 dark:bg-amber-950 dark:text-amber-400' },
+const planStyles: Record<string, { className: string }> = {
+  FREE:  { className: 'bg-gray-100 text-gray-700 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300' },
+  BASIC: { className: 'bg-blue-50 text-blue-700 hover:bg-blue-50 dark:bg-blue-950 dark:text-blue-400' },
+  PRO:   { className: 'bg-amber-50 text-amber-700 hover:bg-amber-50 dark:bg-amber-950 dark:text-amber-400' },
 }
 
-const invoiceStatusStyles: Record<string, { label: string; className: string }> = {
-  PENDING: { label: 'Pending', className: 'bg-amber-50 text-amber-700 hover:bg-amber-50 dark:bg-amber-950 dark:text-amber-400' },
-  PAID:    { label: 'Paid',    className: 'bg-emerald-50 text-emerald-700 hover:bg-emerald-50 dark:bg-emerald-950 dark:text-emerald-400' },
-  FAILED:  { label: 'Failed',  className: 'bg-red-50 text-red-700 hover:bg-red-50 dark:bg-red-950 dark:text-red-400' },
+const invoiceStatusStyles: Record<string, { className: string }> = {
+  PENDING: { className: 'bg-amber-50 text-amber-700 hover:bg-amber-50 dark:bg-amber-950 dark:text-amber-400' },
+  PAID:    { className: 'bg-emerald-50 text-emerald-700 hover:bg-emerald-50 dark:bg-emerald-950 dark:text-emerald-400' },
+  FAILED:  { className: 'bg-red-50 text-red-700 hover:bg-red-50 dark:bg-red-950 dark:text-red-400' },
 }
-
-const PLANS = [
-  {
-    id: 'FREE' as const,
-    name: 'Free',
-    description: 'Dành cho cá nhân mới bắt đầu',
-    features: ['1 cửa hàng', 'Chỉ chủ sở hữu (không có nhân viên)', '50 sản phẩm', '1 kho hàng', 'Báo cáo cơ bản'],
-  },
-  {
-    id: 'BASIC' as const,
-    name: 'Basic',
-    description: 'Dành cho doanh nghiệp nhỏ đang phát triển',
-    features: ['2 cửa hàng', 'Tối đa 20 nhân viên', '200 sản phẩm', '20 kho hàng', 'Báo cáo nâng cao', 'Xuất Excel / PDF'],
-    popular: true,
-  },
-  {
-    id: 'PRO' as const,
-    name: 'Pro',
-    description: 'Dành cho doanh nghiệp đã ổn định và mở rộng',
-    features: ['3 cửa hàng', 'Nhân viên không giới hạn', 'Sản phẩm không giới hạn', 'Kho hàng không giới hạn', 'Báo cáo nâng cao', 'Xuất Excel / PDF', 'Hỗ trợ ưu tiên'],
-  },
-]
 
 export default function SubscriptionPage() {
   const { businessId, memberships } = useAuth()
-  const { t } = useLanguage()
+  const { language, t } = useLanguage()
   const ts = t.subscription
+  const planLabels: Record<string, string> = {
+    FREE: ts.planFree,
+    BASIC: ts.planBasic,
+    PRO: ts.planPro,
+  }
+  const statusLabels: Record<string, string> = {
+    PENDING: ts.statusPending,
+    PAID: ts.statusPaid,
+    FAILED: ts.statusFailed,
+  }
+  const plans = [
+    { id: 'FREE', name: ts.planFree, description: ts.freePlanDescription, features: ts.freePlanFeatures },
+    { id: 'BASIC', name: ts.planBasic, description: ts.basicPlanDescription, features: ts.basicPlanFeatures, popular: true },
+    { id: 'PRO', name: ts.planPro, description: ts.proPlanDescription, features: ts.proPlanFeatures },
+  ]
+  const locale = language === 'vi' ? 'vi-VN' : 'en-US'
 
   const [subscription, setSubscription] = useState<BusinessSubscription | null>(null)
   const [invoices, setInvoices] = useState<SubscriptionInvoice[]>([])
@@ -132,7 +126,7 @@ export default function SubscriptionPage() {
       setSubscription(sub)
       setInvoices(inv.content)
     } catch (err) {
-      setPageError(err instanceof Error ? err.message : 'Failed to load subscription')
+      setPageError(err instanceof Error ? err.message : ts.loadError)
     } finally {
       setIsPageLoading(false)
     }
@@ -175,7 +169,7 @@ export default function SubscriptionPage() {
       setCheckoutBankInfo(bankInfo)
       setIsCheckoutOpen(true)
     } catch {
-      toast.error('Không thể tải thông tin thanh toán')
+      toast.error(ts.loadBankInfoError)
     }
   }
 
@@ -188,9 +182,9 @@ export default function SubscriptionPage() {
       setIsCheckoutOpen(false)
       setCheckoutInvoice(null)
       setCheckoutBankInfo(null)
-      toast.success('Đã hủy yêu cầu thanh toán')
+      toast.success(ts.cancelPaymentSuccess)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Hủy thất bại')
+      toast.error(err instanceof Error ? err.message : ts.cancelPaymentError)
     } finally {
       setCancelLoading(false)
     }
@@ -200,7 +194,7 @@ export default function SubscriptionPage() {
     setIsCheckoutOpen(false)
     setCheckoutInvoice(null)
     setCheckoutBankInfo(null)
-    toast.success('Cảm ơn! Chúng tôi sẽ xác nhận thanh toán của bạn sớm nhất có thể.')
+    toast.success(ts.paymentSubmittedSuccess)
   }
 
   const copyRef = () => {
@@ -278,7 +272,7 @@ export default function SubscriptionPage() {
 
       {/* Plan cards */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
-        {PLANS.map(plan => {
+        {plans.map(plan => {
           const isCurrent = subscription?.plan === plan.id
           const canUpgrade = isOwner && upgradeablePlans.includes(plan.id) && !pendingInvoice
           const canDowngrade = isOwner && downgradeablePlans.includes(plan.id) && !subscription?.pendingPlan
@@ -295,7 +289,7 @@ export default function SubscriptionPage() {
               {(isCurrent || plan.popular) && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap">
                   <Badge className={plan.popular && !isCurrent ? 'bg-blue-600 text-white hover:bg-blue-600' : ''}>
-                    {isCurrent ? 'Current Plan' : 'Most Popular'}
+                    {isCurrent ? ts.currentPlan : ts.mostPopular}
                   </Badge>
                 </div>
               )}
@@ -304,14 +298,14 @@ export default function SubscriptionPage() {
                 <CardDescription>{plan.description}</CardDescription>
                 <div className="mt-4">
                   {plan.id === 'FREE' ? (
-                    <span className="text-3xl font-bold">Free</span>
+                    <span className="text-3xl font-bold">{ts.planFree}</span>
                   ) : (
                     <div className="flex items-baseline gap-1">
                       <span className="text-3xl font-bold">
                         {formatCurrency(PLAN_PRICES[plan.id][billingCycle])}
                       </span>
                       <span className="text-sm text-muted-foreground">
-                        /{billingCycle === 'MONTHLY' ? 'tháng' : 'năm'}
+                        /{billingCycle === 'MONTHLY' ? ts.month : ts.year}
                       </span>
                     </div>
                   )}
@@ -328,7 +322,7 @@ export default function SubscriptionPage() {
                 </ul>
                 <div className="mt-auto">
                   {isCurrent ? (
-                    <Button className="w-full" variant="outline" disabled>Current Plan</Button>
+                    <Button className="w-full" variant="outline" disabled>{ts.currentPlan}</Button>
                   ) : canUpgrade ? (
                     <Button className="w-full gap-2" onClick={() => openUpgrade(plan.id)}>
                       <ArrowUpCircle className="size-4" />
@@ -355,8 +349,8 @@ export default function SubscriptionPage() {
             <p className="text-sm font-medium text-red-800 dark:text-red-300">{ts.pendingDowngradeTitle}</p>
             <p className="text-xs text-red-700 dark:text-red-400">
               {ts.pendingDowngradeDesc
-                .replace('{plan}', planStyles[subscription.pendingPlan]?.label ?? subscription.pendingPlan)
-                .replace('{date}', subscription.expiresAt ? new Date(subscription.expiresAt).toLocaleDateString() : '—')}
+                .replace('{plan}', planLabels[subscription.pendingPlan] ?? subscription.pendingPlan)
+                .replace('{date}', subscription.expiresAt ? new Date(subscription.expiresAt).toLocaleDateString(locale) : '—')}
             </p>
           </div>
           {isOwner && (
@@ -378,10 +372,10 @@ export default function SubscriptionPage() {
           <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-400" />
           <div className="flex-1 space-y-0.5">
             <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
-              Đang có thanh toán chờ xác nhận
+              {ts.pendingPaymentTitle}
             </p>
             <p className="text-xs text-amber-700 dark:text-amber-400">
-              Nội dung CK: <span className="font-mono font-semibold">{pendingInvoice.bankTransferRef}</span> — Admin sẽ xác nhận sớm nhất có thể.
+              {ts.transferReference}: <span className="font-mono font-semibold">{pendingInvoice.bankTransferRef}</span> — {ts.pendingPaymentDesc}
             </p>
           </div>
           <Button
@@ -390,7 +384,7 @@ export default function SubscriptionPage() {
             className="shrink-0 border-amber-300 text-amber-700 hover:bg-amber-100 dark:border-amber-700 dark:text-amber-400 dark:hover:bg-amber-950/50"
             onClick={openCheckoutFromBanner}
           >
-            Xem chi tiết
+            {ts.viewDetails}
           </Button>
         </div>
       )}
@@ -418,7 +412,7 @@ export default function SubscriptionPage() {
                   <TableRow key={inv.id}>
                     <TableCell className="py-2">
                       <Badge variant="secondary" className={`text-xs ${planStyles[inv.plan]?.className}`}>
-                        {planStyles[inv.plan]?.label ?? inv.plan}
+                        {planLabels[inv.plan] ?? inv.plan}
                       </Badge>
                     </TableCell>
                     <TableCell className="py-2 text-sm text-muted-foreground">
@@ -427,11 +421,11 @@ export default function SubscriptionPage() {
                     <TableCell className="py-2 text-sm font-medium">{formatCurrency(inv.amount)}</TableCell>
                     <TableCell className="py-2">
                       <Badge variant="secondary" className={`text-xs ${invoiceStatusStyles[inv.status]?.className}`}>
-                        {invoiceStatusStyles[inv.status]?.label ?? inv.status}
+                        {statusLabels[inv.status] ?? inv.status}
                       </Badge>
                     </TableCell>
                     <TableCell className="py-2 text-xs text-muted-foreground">
-                      {new Date(inv.createdAt).toLocaleDateString()}
+                      {new Date(inv.createdAt).toLocaleDateString(locale)}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -455,10 +449,10 @@ export default function SubscriptionPage() {
                 <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {upgradeablePlans.includes('BASIC') && (
-                    <SelectItem value="BASIC">Basic — {formatCurrency(PLAN_PRICES.BASIC.MONTHLY)}/tháng</SelectItem>
+                    <SelectItem value="BASIC">{ts.planBasic} — {formatCurrency(PLAN_PRICES.BASIC.MONTHLY)}/{ts.month}</SelectItem>
                   )}
                   {upgradeablePlans.includes('PRO') && (
-                    <SelectItem value="PRO">Pro — {formatCurrency(PLAN_PRICES.PRO.MONTHLY)}/tháng</SelectItem>
+                    <SelectItem value="PRO">{ts.planPro} — {formatCurrency(PLAN_PRICES.PRO.MONTHLY)}/{ts.month}</SelectItem>
                   )}
                 </SelectContent>
               </Select>
@@ -487,12 +481,12 @@ export default function SubscriptionPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsUpgradeOpen(false)} disabled={upgradeLoading}>
-              Cancel
+              {ts.cancel}
             </Button>
             <Button onClick={handleUpgrade} disabled={upgradeLoading} className="gap-2">
               {upgradeLoading
-                ? <><Loader2 className="size-4 animate-spin" />Đang xử lý...</>
-                : 'Đến bước thanh toán →'}
+                ? <><Loader2 className="size-4 animate-spin" />{ts.processing}</>
+                : ts.continueToPayment}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -502,44 +496,44 @@ export default function SubscriptionPage() {
       <Dialog open={isCheckoutOpen} onOpenChange={open => { if (!open) { setIsCheckoutOpen(false); setCheckoutInvoice(null); setCheckoutBankInfo(null) } }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-xl font-semibold">Thông tin thanh toán</DialogTitle>
+            <DialogTitle className="text-xl font-semibold">{ts.checkoutTitle}</DialogTitle>
             <DialogDescription>
-              Chuyển khoản theo thông tin bên dưới, sau đó bấm <strong>Đã chuyển khoản</strong>.
+              {ts.checkoutDesc}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-2">
             {/* Amount */}
             <div className="rounded-lg bg-muted px-4 py-3 text-center">
-              <p className="text-xs text-muted-foreground">Số tiền cần chuyển</p>
+              <p className="text-xs text-muted-foreground">{ts.amountToTransfer}</p>
               <p className="text-2xl font-bold">{formatCurrency(checkoutInvoice?.amount ?? 0)}</p>
               <p className="text-xs text-muted-foreground">
-                {planStyles[checkoutInvoice?.plan ?? '']?.label} —{' '}
-                {checkoutInvoice?.billingCycle === 'MONTHLY' ? 'Hàng tháng' : 'Hàng năm'}
+                {planLabels[checkoutInvoice?.plan ?? '']} —{' '}
+                {checkoutInvoice?.billingCycle === 'MONTHLY' ? ts.monthly : ts.yearly}
               </p>
             </div>
 
             {/* QR code */}
             <div className="flex justify-center">
               <div className="relative size-48 overflow-hidden rounded-xl border">
-                <Image src="/qr.png" alt="QR chuyển khoản" fill className="object-cover" />
+                <Image src="/qr.png" alt={ts.transferQrAlt} fill className="object-cover" />
               </div>
             </div>
 
             {/* Transfer reference — most important */}
             <div className="rounded-lg border-2 border-primary/20 bg-primary/5 px-4 py-3">
-              <p className="mb-1 text-xs text-muted-foreground">Nội dung chuyển khoản</p>
+              <p className="mb-1 text-xs text-muted-foreground">{ts.transferReference}</p>
               <div className="flex items-center justify-between gap-2">
                 <p className="font-mono text-lg font-bold tracking-wider">
                   {checkoutInvoice?.bankTransferRef ?? '—'}
                 </p>
                 <Button size="sm" variant="outline" className="shrink-0 gap-1" onClick={copyRef}>
                   {copied ? <CheckCheck className="size-3.5 text-emerald-500" /> : <Copy className="size-3.5" />}
-                  {copied ? 'Đã copy' : 'Copy'}
+                  {copied ? ts.copied : ts.copy}
                 </Button>
               </div>
               <p className="mt-2 text-xs text-amber-700 dark:text-amber-400">
-                ⚠ Nhập đúng nội dung này vào phần ghi chú khi chuyển khoản
+                ⚠ {ts.transferReferenceNote}
               </p>
             </div>
 
@@ -569,11 +563,11 @@ export default function SubscriptionPage() {
               disabled={cancelLoading}
             >
               {cancelLoading && <Loader2 className="size-4 animate-spin" />}
-              Hủy thanh toán
+              {ts.cancelPayment}
             </Button>
             <Button onClick={handlePaid} className="gap-2">
               <Check className="size-4" />
-              Đã chuyển khoản
+              {ts.transferred}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -592,7 +586,7 @@ export default function SubscriptionPage() {
               <Select value={downgradeForm.plan} onValueChange={v => setDowngradeForm({ plan: v })}>
                 <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {downgradeablePlans.includes('BASIC') && <SelectItem value="BASIC">Basic</SelectItem>}
+                  {downgradeablePlans.includes('BASIC') && <SelectItem value="BASIC">{ts.planBasic}</SelectItem>}
                   {downgradeablePlans.includes('FREE') && <SelectItem value="FREE">{ts.downgradeFree}</SelectItem>}
                 </SelectContent>
               </Select>
@@ -602,7 +596,7 @@ export default function SubscriptionPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDowngradeOpen(false)} disabled={downgradeLoading}>Cancel</Button>
+            <Button variant="outline" onClick={() => setIsDowngradeOpen(false)} disabled={downgradeLoading}>{ts.cancel}</Button>
             <Button variant="destructive" onClick={handleDowngrade} disabled={downgradeLoading} className="gap-2">
               {downgradeLoading
                 ? <><Loader2 className="size-4 animate-spin" />{ts.downgrading}</>
@@ -621,7 +615,7 @@ export default function SubscriptionPage() {
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsCancelDowngradeOpen(false)} disabled={cancelDowngradeLoading}>
-              Cancel
+              {ts.cancel}
             </Button>
             <Button onClick={handleCancelDowngrade} disabled={cancelDowngradeLoading} className="gap-2">
               {cancelDowngradeLoading
