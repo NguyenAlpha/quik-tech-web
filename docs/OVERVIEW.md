@@ -2,7 +2,7 @@
 
 ## 1. Project là gì
 
-**StockFlow** là giao diện web admin cho hệ thống quản lý bán hàng và kho vận **QuikTech**.
+**QuikTech POS** là giao diện web admin cho hệ thống quản lý bán hàng và kho vận **QuikTech POS**.
 Được xây dựng bằng Next.js 15 (App Router), kết nối với backend **Spring Boot** qua REST API,
 xác thực bằng **JWT**.
 

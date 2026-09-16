@@ -33,7 +33,7 @@ export function AdminSidebar() {
           <ShieldCheck className="size-4 text-white" />
         </div>
         <div className="leading-tight">
-          <p className="text-sm font-semibold text-white">QuikTech</p>
+          <p className="text-sm font-semibold text-white">QuikTech POS</p>
           <p className="text-xs text-slate-500">Admin Panel</p>
         </div>
       </div>

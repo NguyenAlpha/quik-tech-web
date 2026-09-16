@@ -175,7 +175,7 @@ export default function LandingPage() {
             </div>
             <span className="font-medium text-foreground">QuikTech POS</span>
           </div>
-          <p>© {new Date().getFullYear()} QuikTech. {tl.footerRights}</p>
+          <p>© {new Date().getFullYear()} QuikTech POS. {tl.footerRights}</p>
         </div>
       </footer>
     </div>
