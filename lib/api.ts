@@ -166,25 +166,28 @@ function getStoreIdOrNull(): number | null {
 
 async function downloadFile(path: string, filename: string): Promise<void> {
   const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null
-  const res = await fetch(`${API_BASE}${path}`, {
+  let res = await fetch(`${API_BASE}${path}`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   })
   if (res.status === 401) {
     const newToken = await tryRefreshToken()
     if (newToken) {
-      const res2 = await fetch(`${API_BASE}${path}`, {
+      res = await fetch(`${API_BASE}${path}`, {
         headers: { Authorization: `Bearer ${newToken}` },
       })
-      if (res2.ok) {
-        const blob = await res2.blob()
-        triggerDownload(blob, filename)
-        return
-      }
     }
-    clearAuthAndRedirect()
-    throw new ApiError("UNAUTHORIZED", "Session expired")
+    if (res.status === 401) {
+      clearAuthAndRedirect()
+      throw new ApiError("UNAUTHORIZED", "Session expired")
+    }
   }
-  if (!res.ok) throw new ApiError("EXPORT_FAILED", "Export failed")
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    throw new ApiError(
+      body?.error?.code ?? "EXPORT_FAILED",
+      body?.error?.message ?? "Export failed",
+    )
+  }
   const blob = await res.blob()
   triggerDownload(blob, filename)
 }
