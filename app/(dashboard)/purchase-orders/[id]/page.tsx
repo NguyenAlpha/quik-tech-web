@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useLanguage } from '@/lib/language-context'
+import { errorMessage } from '@/lib/api-error'
 import { PurchaseOrder, PurchaseOrderStatus } from '@/lib/types'
 import { getPurchaseOrder } from '@/lib/api'
 import { formatCurrency } from '@/lib/utils'
@@ -30,7 +31,7 @@ export default function PurchaseOrderDetailPage() {
   useEffect(() => {
     getPurchaseOrder(id)
       .then(setPo)
-      .catch(() => toast.error(tpo.errorLoadingPO))
+      .catch(err => toast.error(errorMessage(err, t, tpo.errorLoadingPO)))
       .finally(() => setIsPageLoading(false))
   }, [id])
 

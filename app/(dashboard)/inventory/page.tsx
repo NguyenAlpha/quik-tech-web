@@ -3,7 +3,9 @@
 import { useState, useMemo, useEffect } from "react"
 import { toast } from 'sonner'
 import { useLanguage } from "@/lib/language-context"
-import { getInventoryItems, getWarehouses, adjustInventory, transferInventory, exportInventoryExcel, ApiError } from "@/lib/api"
+import { getInventoryItems, getWarehouses, adjustInventory, transferInventory, exportInventoryExcel } from "@/lib/api"
+import { errorMessage } from '@/lib/api-error'
+import { useRateLimitCooldown } from '@/hooks/use-rate-limit-cooldown'
 import { InventoryTable } from "@/components/inventory-table"
 import { PageSkeleton } from "@/components/page-skeleton"
 import { PageError } from "@/components/page-error"
@@ -67,6 +69,7 @@ export default function InventoryPage() {
   const [transferring, setTransferring] = useState(false)
   const [transferError, setTransferError] = useState<string | null>(null)
   const [isExporting, setIsExporting] = useState(false)
+  const exportCooldown = useRateLimitCooldown()
   const [isPageLoading, setIsPageLoading] = useState(true)
   const [pageError, setPageError] = useState<string | null>(null)
 
@@ -78,7 +81,7 @@ export default function InventoryPage() {
       setInventoryData(items)
       setWarehouses(whs)
     } catch (err) {
-      setPageError(err instanceof ApiError ? err.message : 'Failed to load data')
+      setPageError(errorMessage(err, t))
     } finally {
       setIsPageLoading(false)
     }
@@ -145,7 +148,7 @@ export default function InventoryPage() {
       closeTransferModal()
       toast.success(ti.transferSuccess)
     } catch (err) {
-      setTransferError(err instanceof Error ? err.message : ti.transferError)
+      setTransferError(errorMessage(err, t, ti.transferError))
     } finally {
       setTransferring(false)
     }
@@ -170,7 +173,7 @@ export default function InventoryPage() {
       closeAdjustmentModal()
       toast.success(ti.adjustSuccess)
     } catch (err) {
-      setAdjustError(err instanceof Error ? err.message : ti.adjustError)
+      setAdjustError(errorMessage(err, t, ti.adjustError))
     } finally {
       setAdjusting(false)
     }
@@ -186,21 +189,23 @@ export default function InventoryPage() {
         <Button
           variant="outline"
           className="gap-2 shadow-sm"
-          disabled={isExporting}
+          disabled={isExporting || exportCooldown.isCoolingDown}
           onClick={async () => {
+            if (isExporting || exportCooldown.isCoolingDown) return
             setIsExporting(true)
             try {
               await exportInventoryExcel()
               toast.success(ti.exportSuccess)
-            } catch {
-              toast.error(ti.exportError)
+            } catch (err) {
+              exportCooldown.record(err)
+              toast.error(errorMessage(err, t, ti.exportError))
             } finally {
               setIsExporting(false)
             }
           }}
         >
           <Download className="size-4" />
-          {isExporting ? ti.exporting : ti.exportExcel}
+          {isExporting ? ti.exporting : exportCooldown.isCoolingDown ? t.common.retryIn.replace('{seconds}', String(exportCooldown.remainingSeconds)) : ti.exportExcel}
         </Button>
         <Button
           variant="outline"

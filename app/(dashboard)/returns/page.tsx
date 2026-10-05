@@ -3,10 +3,11 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { toast } from 'sonner'
 import { useLanguage } from '@/lib/language-context'
+import { errorMessage } from '@/lib/api-error'
 import { formatCurrency } from '@/lib/utils'
 import {
   getReturnOrders, getReturnOrder, createReturnOrder, completeReturnOrder, cancelReturnOrder,
-  getWarehouses, searchProducts, getOrders, ApiError,
+  getWarehouses, searchProducts, getOrders,
 } from '@/lib/api'
 import { PageSkeleton } from '@/components/page-skeleton'
 import { PageError } from '@/components/page-error'
@@ -119,7 +120,7 @@ export default function ReturnsPage() {
       setReturns(data)
       hasLoaded.current = true
     } catch (err) {
-      setPageError(err instanceof ApiError ? err.message : 'Failed to load data')
+      setPageError(errorMessage(err, t, 'Failed to load data'))
     } finally {
       setIsPageLoading(false)
     }
@@ -129,7 +130,7 @@ export default function ReturnsPage() {
     if (refreshKey === 0 && !hasLoaded.current) { init(); return }
     getReturnOrders()
       .then(data => setReturns(data))
-      .catch(() => toast.error('Failed to load returns'))
+      .catch(err => toast.error(errorMessage(err, t, 'Failed to load returns')))
   }, [refreshKey])
 
   useEffect(() => {
@@ -157,7 +158,7 @@ export default function ReturnsPage() {
       setSelectedReturn(null)
       setRefreshKey(k => k + 1)
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : tr.errorCompleting)
+      toast.error(errorMessage(error, t, tr.errorCompleting))
     } finally {
       setIsActionLoading(false)
     }
@@ -172,7 +173,7 @@ export default function ReturnsPage() {
       setSelectedReturn(null)
       setRefreshKey(k => k + 1)
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : tr.errorCancelling)
+      toast.error(errorMessage(error, t, tr.errorCancelling))
     } finally {
       setIsActionLoading(false)
     }
@@ -197,7 +198,7 @@ export default function ReturnsPage() {
       setCreateItems([emptyItem()])
       setRefreshKey(k => k + 1)
     } catch (error) {
-      setCreateError(error instanceof ApiError ? error.message : tr.errorCreating)
+      setCreateError(errorMessage(error, t, tr.errorCreating))
     } finally {
       setIsCreateLoading(false)
     }

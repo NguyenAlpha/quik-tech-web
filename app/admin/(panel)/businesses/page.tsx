@@ -18,6 +18,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
 import { useLanguage } from '@/lib/language-context'
+import { errorMessage } from '@/lib/api-error'
 import { adminGetBusinesses, adminGetSubscription, adminChangePlan } from '@/lib/api'
 import type { Business, BusinessSubscription } from '@/lib/types'
 
@@ -60,7 +61,7 @@ export default function AdminBusinessesPage() {
           return r.status === 'fulfilled' ? { ...b, sub: r.value } : { ...b }
         }))
       })
-      .catch(() => toast.error(ts.businessesLoadError))
+      .catch(err => toast.error(errorMessage(err, t, ts.businessesLoadError)))
       .finally(() => setIsLoading(false))
   }, [])
 
@@ -97,7 +98,7 @@ export default function AdminBusinessesPage() {
       setSelected(updatedBusiness)
       toast.success(ts.changePlanSuccess)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : ts.changePlanError)
+      toast.error(errorMessage(err, t, ts.changePlanError))
     } finally {
       setIsChangingPlan(false)
     }

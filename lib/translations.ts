@@ -24,6 +24,7 @@ export const translations = {
       add: "Add",
       back: "Back",
       retry: "Try again",
+      retryIn: "Try again in {seconds}s",
       pageLoadError: "Failed to load data",
     },
     navigation: {
@@ -152,6 +153,7 @@ export const translations = {
       SUBSCRIPTION_LIMIT_EXCEEDED: "You've reached your current plan's limit.",
       FORBIDDEN: "You don't have permission to do this.",
       RATE_LIMIT_EXCEEDED: "Too many requests. Please try again shortly.",
+      RATE_LIMIT_RETRY_AFTER: "Too many requests. Please try again in {seconds} seconds.",
       CONCURRENT_MODIFICATION: "This record was just changed by someone else. Please reload and try again.",
       INSUFFICIENT_STOCK: "Not enough stock.",
       INTERNAL_ERROR: "Something went wrong. Please try again.",
@@ -1038,6 +1040,7 @@ export const translations = {
       add: "Thêm",
       back: "Quay lại",
       retry: "Thử lại",
+      retryIn: "Thử lại sau {seconds} giây",
       pageLoadError: "Không thể tải dữ liệu",
     },
     navigation: {
@@ -1166,6 +1169,7 @@ export const translations = {
       SUBSCRIPTION_LIMIT_EXCEEDED: "Bạn đã đạt giới hạn của gói hiện tại.",
       FORBIDDEN: "Bạn không có quyền thực hiện thao tác này.",
       RATE_LIMIT_EXCEEDED: "Quá nhiều yêu cầu. Vui lòng thử lại sau giây lát.",
+      RATE_LIMIT_RETRY_AFTER: "Quá nhiều yêu cầu. Vui lòng thử lại sau {seconds} giây.",
       CONCURRENT_MODIFICATION: "Bản ghi vừa bị thay đổi bởi người khác. Vui lòng tải lại và thử lại.",
       INSUFFICIENT_STOCK: "Không đủ tồn kho.",
       INTERNAL_ERROR: "Có lỗi xảy ra. Vui lòng thử lại.",

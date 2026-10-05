@@ -3,6 +3,9 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { loginUser } from '@/lib/api'
+import { errorMessage } from '@/lib/api-error'
+import { useLanguage } from '@/lib/language-context'
+import { useRateLimitCooldown } from '@/hooks/use-rate-limit-cooldown'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -10,6 +13,8 @@ import { AlertCircle, Loader2, ShieldCheck } from 'lucide-react'
 
 export default function AdminLoginPage() {
   const router = useRouter()
+  const { t } = useLanguage()
+  const cooldown = useRateLimitCooldown()
   const [usernameOrEmail, setUsernameOrEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -17,6 +22,7 @@ export default function AdminLoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (isLoading || cooldown.isCoolingDown) return
     setError(null)
     setIsLoading(true)
     try {
@@ -26,7 +32,8 @@ export default function AdminLoginPage() {
       document.cookie = `admin_token=${accessToken}; path=/admin; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`
       router.push('/admin/stats')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Invalid credentials')
+      cooldown.record(err)
+      setError(errorMessage(err, t))
     } finally {
       setIsLoading(false)
     }
@@ -91,10 +98,10 @@ export default function AdminLoginPage() {
             <Button
               type="submit"
               className="w-full bg-red-600 hover:bg-red-700 text-white mt-2"
-              disabled={isLoading}
+              disabled={isLoading || cooldown.isCoolingDown}
             >
               {isLoading && <Loader2 className="mr-2 size-4 animate-spin" />}
-              Sign in to Admin
+              {cooldown.isCoolingDown ? t.common.retryIn.replace('{seconds}', String(cooldown.remainingSeconds)) : 'Sign in to Admin'}
             </Button>
           </form>
         </div>

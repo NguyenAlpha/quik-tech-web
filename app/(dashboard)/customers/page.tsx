@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from "react"
 import { toast } from 'sonner'
 import { useLanguage } from "@/lib/language-context"
+import { errorMessage } from '@/lib/api-error'
 import { formatCurrency } from "@/lib/utils"
 import { getCustomers, createCustomer, updateCustomer, deleteCustomer, payCustomer, getOrdersPage, ApiError } from "@/lib/api"
 import { PageSkeleton } from "@/components/page-skeleton"
@@ -85,7 +86,7 @@ export default function CustomersPage() {
     try {
       setCustomers(await getCustomers())
     } catch (err) {
-      setPageError(err instanceof ApiError ? err.message : 'Failed to load data')
+      setPageError(errorMessage(err, t, 'Failed to load data'))
     } finally {
       setIsPageLoading(false)
     }
@@ -156,7 +157,7 @@ export default function CustomersPage() {
       setIsFormOpen(false)
       setRefreshKey(k => k + 1)
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : editingCustomer ? tc.errorUpdatingCustomer : tc.errorCreatingCustomer)
+      toast.error(errorMessage(error, t, editingCustomer ? tc.errorUpdatingCustomer : tc.errorCreatingCustomer))
     } finally {
       setIsFormLoading(false)
     }
@@ -173,7 +174,7 @@ export default function CustomersPage() {
       setSelectedCustomer(updated)
       setRefreshKey(k => k + 1)
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : tc.errorPayingCustomer)
+      toast.error(errorMessage(error, t, tc.errorPayingCustomer))
     } finally {
       setIsPayLoading(false)
     }
@@ -190,7 +191,7 @@ export default function CustomersPage() {
       if (error instanceof ApiError && error.code === 'VALIDATION_ERROR') {
         toast.error(tc.deleteBlockedHasDebt)
       } else {
-        toast.error(error instanceof ApiError ? error.message : tc.errorDeletingCustomer)
+        toast.error(errorMessage(error, t, tc.errorDeletingCustomer))
       }
     } finally {
       setIsDeleting(null)

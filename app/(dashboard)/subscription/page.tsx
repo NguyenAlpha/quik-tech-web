@@ -25,6 +25,7 @@ import { PageSkeleton } from '@/components/page-skeleton'
 import { PageError } from '@/components/page-error'
 import { useAuth } from '@/lib/auth-context'
 import { useLanguage } from '@/lib/language-context'
+import { errorMessage } from '@/lib/api-error'
 import {
   getBusinessSubscription, requestUpgrade, getInvoicesPage,
   scheduleDowngrade, cancelScheduledDowngrade,
@@ -126,7 +127,7 @@ export default function SubscriptionPage() {
       setSubscription(sub)
       setInvoices(inv.content)
     } catch (err) {
-      setPageError(err instanceof Error ? err.message : ts.loadError)
+      setPageError(errorMessage(err, t, ts.loadError))
     } finally {
       setIsPageLoading(false)
     }
@@ -155,7 +156,7 @@ export default function SubscriptionPage() {
       setCheckoutBankInfo(result.bankInfo)
       setIsCheckoutOpen(true)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : ts.upgradeError)
+      toast.error(errorMessage(err, t, ts.upgradeError))
     } finally {
       setUpgradeLoading(false)
     }
@@ -168,8 +169,8 @@ export default function SubscriptionPage() {
       setCheckoutInvoice(pendingInvoice)
       setCheckoutBankInfo(bankInfo)
       setIsCheckoutOpen(true)
-    } catch {
-      toast.error(ts.loadBankInfoError)
+    } catch (err) {
+      toast.error(errorMessage(err, t, ts.loadBankInfoError))
     }
   }
 
@@ -184,7 +185,7 @@ export default function SubscriptionPage() {
       setCheckoutBankInfo(null)
       toast.success(ts.cancelPaymentSuccess)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : ts.cancelPaymentError)
+      toast.error(errorMessage(err, t, ts.cancelPaymentError))
     } finally {
       setCancelLoading(false)
     }
@@ -218,7 +219,7 @@ export default function SubscriptionPage() {
       setIsDowngradeOpen(false)
       toast.success(ts.downgradeSuccess)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : ts.downgradeError)
+      toast.error(errorMessage(err, t, ts.downgradeError))
     } finally {
       setDowngradeLoading(false)
     }
@@ -233,7 +234,7 @@ export default function SubscriptionPage() {
       setIsCancelDowngradeOpen(false)
       toast.success(ts.cancelDowngradeSuccess)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : ts.cancelDowngradeError)
+      toast.error(errorMessage(err, t, ts.cancelDowngradeError))
     } finally {
       setCancelDowngradeLoading(false)
     }

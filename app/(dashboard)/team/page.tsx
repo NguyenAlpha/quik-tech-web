@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react"
 import { toast } from "sonner"
 import { Crown, UserCog, UserPlus, Loader2, Trash2, Lock } from "lucide-react"
 import { useLanguage } from "@/lib/language-context"
+import { errorMessage } from '@/lib/api-error'
 import { useAuth } from "@/lib/auth-context"
 import {
   getBusinessMembers,
@@ -54,7 +55,7 @@ export default function TeamPage() {
     try {
       setMembers(await getBusinessMembers())
     } catch (err) {
-      setPageError(err instanceof ApiError ? err.message : "Failed to load data")
+      setPageError(errorMessage(err, t, "Failed to load data"))
     } finally {
       setIsPageLoading(false)
     }
@@ -84,7 +85,7 @@ export default function TeamPage() {
         if (err.code === "USER_NOT_FOUND") toast.error(tt.errUserNotFound)
         else if (err.code === "SUBSCRIPTION_LIMIT_EXCEEDED") toast.error(tt.errStaffLimit)
         else if (err.code === "VALIDATION_ERROR") toast.error(tt.errAlreadyMember)
-        else toast.error(err.message)
+        else toast.error(errorMessage(err, t))
       } else {
         toast.error(tt.errGeneric)
       }
@@ -100,7 +101,7 @@ export default function TeamPage() {
       toast.success(!m.isActive ? tt.activated : tt.deactivated)
       await init()
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : tt.errGeneric)
+      toast.error(errorMessage(err, t, tt.errGeneric))
     } finally {
       setBusyId(null)
     }
@@ -114,7 +115,7 @@ export default function TeamPage() {
       toast.success(tt.removed)
       await init()
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : tt.errGeneric)
+      toast.error(errorMessage(err, t, tt.errGeneric))
     } finally {
       setBusyId(null)
     }

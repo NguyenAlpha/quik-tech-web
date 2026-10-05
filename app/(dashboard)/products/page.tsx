@@ -5,6 +5,8 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useLanguage } from '@/lib/language-context'
+import { errorMessage } from '@/lib/api-error'
+import { useRateLimitCooldown } from '@/hooks/use-rate-limit-cooldown'
 import { AddProductModal } from '@/components/add-product-modal'
 import { EditProductModal } from '@/components/edit-product-modal'
 import { ProductsTable } from '@/components/products-table'
@@ -56,13 +58,14 @@ export default function ProductsPage() {
   const [importOpen, setImportOpen] = useState(false)
   const [importFile, setImportFile] = useState<File | null>(null)
   const [isImporting, setIsImporting] = useState(false)
+  const importCooldown = useRateLimitCooldown()
   const [importResult, setImportResult] = useState<{ imported: number; skipped: number; errors: string[] } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     Promise.all([getCategories(), getUnits()])
       .then(([cats, uts]) => { setCategories(cats); setUnits(uts) })
-      .catch(() => toast.error('Failed to load data'))
+      .catch(err => toast.error(errorMessage(err, t)))
   }, [])
 
   useEffect(() => {
@@ -89,8 +92,8 @@ export default function ProductsPage() {
         setProducts(result.content)
         setTotalPages(result.totalPages)
         setTotalElements(result.totalElements)
-      } catch {
-        toast.error('Failed to load products')
+      } catch (err) {
+        toast.error(errorMessage(err, t))
       } finally {
         setIsPageLoading(false)
         hasLoaded.current = true
@@ -107,8 +110,7 @@ export default function ProductsPage() {
       setPage(0)
       setRefreshKey(k => k + 1)
     } catch (error) {
-      // if(error.)
-      toast.error(error instanceof ApiError ? error.message : tp.errorAddingProduct)
+      toast.error(errorMessage(error, t, tp.errorAddingProduct))
     } finally {
       setIsLoading(false)
     }
@@ -125,7 +127,7 @@ export default function ProductsPage() {
       if (err instanceof ApiError && err.code === 'VALIDATION_ERROR') {
         toast.error(tp.deleteBlockedHasStock)
       } else {
-        toast.error(tp.errorDeletingProduct)
+        toast.error(errorMessage(err, t, tp.errorDeletingProduct))
       }
     } finally {
       setIsDeleting(null)
@@ -140,7 +142,7 @@ export default function ProductsPage() {
       toast.success(tp.productUpdated)
       setRefreshKey(k => k + 1)
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : tp.errorUpdatingProduct)
+      toast.error(errorMessage(error, t, tp.errorUpdatingProduct))
     } finally {
       setIsEditLoading(false)
     }
@@ -150,13 +152,13 @@ export default function ProductsPage() {
     try {
       await setProductStatus(id, isActive)
       setRefreshKey(k => k + 1)
-    } catch {
-      toast.error(tp.errorUpdatingProduct)
+    } catch (err) {
+      toast.error(errorMessage(err, t, tp.errorUpdatingProduct))
     }
   }
 
   const handleImport = async () => {
-    if (!importFile) return
+    if (!importFile || isImporting || importCooldown.isCoolingDown) return
     setIsImporting(true)
     setImportResult(null)
     try {
@@ -167,7 +169,8 @@ export default function ProductsPage() {
         setRefreshKey(k => k + 1)
       }
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : tp.importError)
+      importCooldown.record(err)
+      toast.error(errorMessage(err, t, tp.importError))
     } finally {
       setIsImporting(false)
     }
@@ -379,8 +382,8 @@ export default function ProductsPage() {
               <Button variant="outline" onClick={() => setImportOpen(false)} disabled={isImporting}>
                 {isImporting ? '' : 'Close'}
               </Button>
-              <Button onClick={handleImport} disabled={!importFile || isImporting}>
-                {isImporting ? <><Loader2 className="mr-2 size-4 animate-spin" />{tp.importing}</> : tp.importProducts}
+              <Button onClick={handleImport} disabled={!importFile || isImporting || importCooldown.isCoolingDown}>
+                {isImporting ? <><Loader2 className="mr-2 size-4 animate-spin" />{tp.importing}</> : importCooldown.isCoolingDown ? t.common.retryIn.replace('{seconds}', String(importCooldown.remainingSeconds)) : tp.importProducts}
               </Button>
             </div>
           </DialogFooter>

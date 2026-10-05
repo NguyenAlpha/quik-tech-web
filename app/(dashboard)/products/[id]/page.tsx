@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useLanguage } from '@/lib/language-context'
+import { errorMessage } from '@/lib/api-error'
 import { EditProductModal } from '@/components/edit-product-modal'
 import { ProductDetail, Category, Unit, CreateProductInput } from '@/lib/types'
 import { getProduct, getCategories, getUnits, updateProduct, setProductStatus } from '@/lib/api'
@@ -34,8 +35,8 @@ export default function ProductDetailPage() {
         setProduct(p)
         setCategories(cats)
         setUnits(uts)
-      } catch {
-        toast.error(tp.errorLoadingProduct)
+      } catch (err) {
+        toast.error(errorMessage(err, t, tp.errorLoadingProduct))
       } finally {
         setIsPageLoading(false)
       }
@@ -52,8 +53,8 @@ export default function ProductDetailPage() {
       setProduct(refreshed)
       toast.success(tp.productUpdated)
       setIsEditOpen(false)
-    } catch {
-      toast.error(tp.errorUpdatingProduct)
+    } catch (err) {
+      toast.error(errorMessage(err, t, tp.errorUpdatingProduct))
     } finally {
       setIsEditLoading(false)
     }
@@ -64,8 +65,8 @@ export default function ProductDetailPage() {
     try {
       const updated = await setProductStatus(product.id, !product.isActive)
       setProduct({ ...product, isActive: updated.isActive })
-    } catch {
-      toast.error(tp.errorUpdatingProduct)
+    } catch (err) {
+      toast.error(errorMessage(err, t, tp.errorUpdatingProduct))
     }
   }
 

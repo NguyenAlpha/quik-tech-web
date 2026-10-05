@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import { useLanguage } from '@/lib/language-context'
 import { loginUser } from '@/lib/api'
+import { errorMessage } from '@/lib/api-error'
+import { useRateLimitCooldown } from '@/hooks/use-rate-limit-cooldown'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -22,9 +24,11 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const cooldown = useRateLimitCooldown()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (isLoading || cooldown.isCoolingDown) return
     setError(null)
     setIsLoading(true)
     try {
@@ -32,7 +36,8 @@ export default function LoginPage() {
       login(accessToken, user, memberships, refreshToken)
       router.push(memberships.length === 0 ? '/setup' : '/dashboard')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong')
+      cooldown.record(err)
+      setError(errorMessage(err, t))
     } finally {
       setIsLoading(false)
     }
@@ -99,9 +104,9 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
+          <Button type="submit" className="w-full" disabled={isLoading || cooldown.isCoolingDown}>
             {isLoading && <Loader2 className="mr-2 size-4 animate-spin" />}
-            {ta.loginButton}
+            {cooldown.isCoolingDown ? t.common.retryIn.replace('{seconds}', String(cooldown.remainingSeconds)) : ta.loginButton}
           </Button>
         </form>
 

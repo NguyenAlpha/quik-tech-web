@@ -13,6 +13,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useLanguage } from '@/lib/language-context'
+import { errorMessage } from '@/lib/api-error'
 import { PageSkeleton } from '@/components/page-skeleton'
 import { PageError } from '@/components/page-error'
 import { getCategories, createCategory, updateCategory, deleteCategory, ApiError } from '@/lib/api'
@@ -43,7 +44,7 @@ export default function CategoriesPage() {
       const cats = await getCategories()
       setCategories(cats)
     } catch (err) {
-      setPageError(err instanceof ApiError ? err.message : 'Failed to load data')
+      setPageError(errorMessage(err, t, 'Failed to load data'))
     } finally {
       setIsPageLoading(false)
     }
@@ -88,7 +89,7 @@ export default function CategoriesPage() {
       }
       setModal({ mode: 'closed' })
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong')
+      setError(errorMessage(err, t, 'Something went wrong'))
     } finally {
       setIsSaving(false)
     }
@@ -105,7 +106,7 @@ export default function CategoriesPage() {
       if (err instanceof ApiError && err.code === 'VALIDATION_ERROR') {
         toast.error(tc.deleteBlockedInUse)
       } else {
-        toast.error(err instanceof Error ? err.message : tc.errorDelete)
+        toast.error(errorMessage(err, t, tc.errorDelete))
       }
     }
   }

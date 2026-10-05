@@ -24,16 +24,45 @@ import { PurchaseOrderStatus } from "./types"
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
 
 export class ApiError extends Error {
-  constructor(public code: string, message: string) {
+  constructor(public code: string, message: string, public status?: number, public retryAt?: number) {
     super(message)
     this.name = "ApiError"
   }
+
+  get retryAfterSeconds(): number | undefined {
+    return this.retryAt === undefined ? undefined : Math.max(0, Math.ceil((this.retryAt - Date.now()) / 1000))
+  }
+}
+
+function responseError(response: Response, body: any): ApiError {
+  let retryAt: number | undefined
+  const retryAfter = response.headers.get('Retry-After')?.trim()
+  if (retryAfter && /^\d+$/.test(retryAfter)) {
+    const timestamp = Date.now() + Number(retryAfter) * 1000
+    if (Number.isSafeInteger(timestamp)) retryAt = timestamp
+  } else if (retryAfter && /^[A-Za-z]{3},/.test(retryAfter)) {
+    const timestamp = Date.parse(retryAfter)
+    if (Number.isFinite(timestamp)) retryAt = Math.max(Date.now(), timestamp)
+  }
+  return new ApiError(
+    response.status === 429 ? 'RATE_LIMIT_EXCEEDED' : body?.error?.code ?? 'UNKNOWN',
+    response.status === 429 ? 'Too many requests. Please try again later.' : body?.error?.message ?? 'Request failed',
+    response.status,
+    response.status === 429 ? retryAt : undefined,
+  )
+}
+
+async function readApiResponse<T>(response: Response): Promise<T> {
+  const body = await response.json().catch(() => null)
+  if (!response.ok || !body?.success) throw responseError(response, body)
+  return body.data
 }
 
 // ─── Core fetch helper ────────────────────────────────────────────────────────
 
 let _redirectingToLogin = false
 let _refreshPromise: Promise<string | null> | null = null
+let _refreshRateLimit: { token: string; error: ApiError } | null = null
 
 function clearAuthAndRedirect() {
   if (_redirectingToLogin) return
@@ -50,31 +79,38 @@ function clearAuthAndRedirect() {
 
 async function tryRefreshToken(): Promise<string | null> {
   if (_refreshPromise) return _refreshPromise
+  const refreshToken = localStorage.getItem('auth_refresh_token')
+  if (!refreshToken) return null
+  if (_refreshRateLimit?.token === refreshToken && (_refreshRateLimit.error.retryAfterSeconds ?? 0) > 0) {
+    throw _refreshRateLimit.error
+  }
+  _refreshRateLimit = null
   _refreshPromise = (async () => {
-    const refreshToken = localStorage.getItem('auth_refresh_token')
-    if (!refreshToken) return null
-    try {
-      const res = await fetch(`${API_BASE}/api/auth/refresh`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refreshToken }),
-      })
-      if (!res.ok) return null
-      const body = await res.json()
-      if (!body.success) return null
-      const newToken: string = body.data.accessToken
-      const newRefresh: string | undefined = body.data.refreshToken
-      localStorage.setItem('auth_token', newToken)
-      if (newRefresh) localStorage.setItem('auth_refresh_token', newRefresh)
-      document.cookie = `auth_token=${newToken}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`
-      return newToken
-    } catch {
-      return null
-    } finally {
-      _refreshPromise = null
+    const res = await fetch(`${API_BASE}/api/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken }),
+    })
+    if (res.status === 401) return null
+    const data = await readApiResponse<AuthResponse>(res)
+    if (typeof data?.accessToken !== 'string' || !data.accessToken) {
+      throw new ApiError('INVALID_RESPONSE', 'Invalid session refresh response', res.status)
     }
+    localStorage.setItem('auth_token', data.accessToken)
+    if (data.refreshToken) localStorage.setItem('auth_refresh_token', data.refreshToken)
+    document.cookie = `auth_token=${data.accessToken}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`
+    return data.accessToken
   })()
-  return _refreshPromise
+  try {
+    return await _refreshPromise
+  } catch (error) {
+    if (error instanceof ApiError && error.code === 'RATE_LIMIT_EXCEEDED') {
+      _refreshRateLimit = { token: refreshToken, error }
+    }
+    throw error
+  } finally {
+    _refreshPromise = null
+  }
 }
 
 async function adminApiFetch<T>(path: string, init?: RequestInit): Promise<T> {
@@ -95,50 +131,38 @@ async function adminApiFetch<T>(path: string, init?: RequestInit): Promise<T> {
       document.cookie = 'admin_token=; path=/admin; max-age=0'
       window.location.href = '/admin/login'
     }
-    throw new ApiError("UNAUTHORIZED", "Session expired. Please log in again.")
+    throw new ApiError("UNAUTHORIZED", "Session expired. Please log in again.", 401)
   }
 
-  const body = await res.json()
-  if (!res.ok || !body.success) {
-    throw new ApiError(body.error?.code ?? "UNKNOWN", body.error?.message ?? "Request failed")
+  return readApiResponse<T>(res)
+}
+
+async function authenticatedFetch(path: string, init?: RequestInit): Promise<Response> {
+  const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null
+  const send = (accessToken: string | null) => {
+    const headers = new Headers(init?.headers)
+    if (accessToken) headers.set('Authorization', `Bearer ${accessToken}`)
+    return fetch(`${API_BASE}${path}`, { ...init, headers })
   }
-  return body.data
+  let res = await send(token)
+
+  if (res.status === 401) {
+    const currentToken = localStorage.getItem('auth_token')
+    const newToken = currentToken && currentToken !== token ? currentToken : await tryRefreshToken()
+    if (newToken) res = await send(newToken)
+    if (res.status === 401) {
+      clearAuthAndRedirect()
+      throw new ApiError("UNAUTHORIZED", "Session expired. Please log in again.", 401)
+    }
+  }
+
+  return res
 }
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  let token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null
-  let res = await fetch(`${API_BASE}${path}`, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...init?.headers,
-    },
-  })
-
-  if (res.status === 401) {
-    const newToken = await tryRefreshToken()
-    if (newToken) {
-      res = await fetch(`${API_BASE}${path}`, {
-        ...init,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${newToken}`,
-          ...init?.headers,
-        },
-      })
-    }
-    if (res.status === 401) {
-      clearAuthAndRedirect()
-      throw new ApiError("UNAUTHORIZED", "Session expired. Please log in again.")
-    }
-  }
-
-  const body = await res.json()
-  if (!res.ok || !body.success) {
-    throw new ApiError(body.error?.code ?? "UNKNOWN", body.error?.message ?? "Request failed")
-  }
-  return body.data
+  const headers = new Headers(init?.headers)
+  if (!headers.has('Content-Type')) headers.set('Content-Type', 'application/json')
+  return readApiResponse<T>(await authenticatedFetch(path, { ...init, headers }))
 }
 
 function getStoreId(): number {
@@ -165,28 +189,10 @@ function getStoreIdOrNull(): number | null {
 }
 
 async function downloadFile(path: string, filename: string): Promise<void> {
-  const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null
-  let res = await fetch(`${API_BASE}${path}`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-  })
-  if (res.status === 401) {
-    const newToken = await tryRefreshToken()
-    if (newToken) {
-      res = await fetch(`${API_BASE}${path}`, {
-        headers: { Authorization: `Bearer ${newToken}` },
-      })
-    }
-    if (res.status === 401) {
-      clearAuthAndRedirect()
-      throw new ApiError("UNAUTHORIZED", "Session expired")
-    }
-  }
+  const res = await authenticatedFetch(path)
   if (!res.ok) {
     const body = await res.json().catch(() => null)
-    throw new ApiError(
-      body?.error?.code ?? "EXPORT_FAILED",
-      body?.error?.message ?? "Export failed",
-    )
+    throw responseError(res, body)
   }
   const blob = await res.blob()
   triggerDownload(blob, filename)
@@ -420,11 +426,7 @@ export async function loginUser(data: LoginInput): Promise<AuthResponse> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   })
-  const body = await res.json()
-  if (!res.ok || !body.success) {
-    throw new Error(body.error?.message || "Invalid email or password")
-  }
-  return body.data
+  return readApiResponse<AuthResponse>(res)
 }
 
 export async function registerUser(data: RegisterInput): Promise<AuthResponse> {
@@ -433,11 +435,7 @@ export async function registerUser(data: RegisterInput): Promise<AuthResponse> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   })
-  const body = await res.json()
-  if (!res.ok || !body.success) {
-    throw new Error(body.error?.message || "Registration failed")
-  }
-  return body.data
+  return readApiResponse<AuthResponse>(res)
 }
 
 // ─── Categories ───────────────────────────────────────────────────────────────
@@ -508,34 +506,13 @@ export async function createProduct(input: CreateProductInput): Promise<Product>
 }
 
 export async function importProducts(file: File): Promise<{ imported: number; skipped: number; errors: string[] }> {
-  const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null
   const formData = new FormData()
   formData.append('file', file)
-  const res = await fetch(`${API_BASE}${businessUrl('/products/import')}`, {
+  const res = await authenticatedFetch(businessUrl('/products/import'), {
     method: 'POST',
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
     body: formData,
   })
-  if (res.status === 401) {
-    const newToken = await tryRefreshToken()
-    if (newToken) {
-      const res2 = await fetch(`${API_BASE}${businessUrl('/products/import')}`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${newToken}` },
-        body: formData,
-      })
-      if (res2.status !== 401) {
-        const body2 = await res2.json()
-        if (!res2.ok || !body2.success) throw new ApiError(body2.error?.code ?? 'UNKNOWN', body2.error?.message ?? 'Request failed')
-        return body2.data
-      }
-    }
-    clearAuthAndRedirect()
-    throw new ApiError('UNAUTHORIZED', 'Session expired')
-  }
-  const body = await res.json()
-  if (!res.ok || !body.success) throw new ApiError(body.error?.code ?? 'UNKNOWN', body.error?.message ?? 'Request failed')
-  return body.data
+  return readApiResponse(res)
 }
 
 export async function searchProducts(params: {

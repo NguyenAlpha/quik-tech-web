@@ -3,8 +3,9 @@
 import { useState, useMemo, useEffect, useRef } from "react"
 import { toast } from "sonner"
 import { useLanguage } from "@/lib/language-context"
+import { errorMessage } from '@/lib/api-error'
 import { formatCurrency } from "@/lib/utils"
-import { getPaymentsPage, createPayment, deletePayment, getCustomers, getSuppliers, ApiError } from "@/lib/api"
+import { getPaymentsPage, createPayment, deletePayment, getCustomers, getSuppliers } from "@/lib/api"
 import { PaymentsTable } from "@/components/payments-table"
 import {
   Search,
@@ -102,7 +103,7 @@ export default function PaymentsPage() {
       setTotalIncome(result.totalIncome)
       setTotalExpense(result.totalExpense)
     } catch (err) {
-      setPageError(err instanceof ApiError ? err.message : 'Failed to load data')
+      setPageError(errorMessage(err, t, 'Failed to load data'))
     } finally {
       setIsPageLoading(false)
     }
@@ -149,7 +150,7 @@ export default function PaymentsPage() {
       setCurrentPage(0)
       setRefreshKey(k => k + 1)
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : tp.deleteError)
+      toast.error(errorMessage(error, t, tp.deleteError))
     }
   }
 
@@ -170,7 +171,7 @@ export default function PaymentsPage() {
       setCurrentPage(0)
       setRefreshKey(k => k + 1)
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : tp.createError)
+      toast.error(errorMessage(error, t, tp.createError))
     } finally {
       setIsSubmitting(false)
     }

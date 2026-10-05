@@ -19,6 +19,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
 import { useLanguage } from '@/lib/language-context'
+import { errorMessage } from '@/lib/api-error'
 import {
   adminGetPendingInvoices, adminConfirmInvoice, adminRejectInvoice,
   adminGetBusinesses, adminGetSubscription, adminChangePlan,
@@ -79,7 +80,7 @@ export default function AdminSubscriptionsPage() {
       setInvoices(result.content)
       setTotalPages(result.totalPages)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : ts.loadError)
+      toast.error(errorMessage(err, t, ts.loadError))
     } finally {
       setIsLoading(false)
     }
@@ -95,7 +96,7 @@ export default function AdminSubscriptionsPage() {
       setAdminNote('')
       toast.success(ts.confirmSuccess)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : ts.confirmError)
+      toast.error(errorMessage(err, t, ts.confirmError))
     } finally {
       setIsActioning(false)
     }
@@ -111,7 +112,7 @@ export default function AdminSubscriptionsPage() {
       setAdminNote('')
       toast.success(ts.rejectSuccess)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : ts.rejectError)
+      toast.error(errorMessage(err, t, ts.rejectError))
     } finally {
       setIsActioning(false)
     }
@@ -126,7 +127,7 @@ export default function AdminSubscriptionsPage() {
       setCurrentSub(updated)
       toast.success(ts.changePlanSuccess)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : ts.changePlanError)
+      toast.error(errorMessage(err, t, ts.changePlanError))
     } finally {
       setIsChangingPlan(false)
     }

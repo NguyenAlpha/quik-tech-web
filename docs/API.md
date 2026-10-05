@@ -17,31 +17,16 @@ NEXT_PUBLIC_API_URL=http://localhost:8080
 
 ## 2. apiFetch — Core helper
 
-Tất cả API calls đều đi qua `apiFetch<T>()`. Gọi trực tiếp `fetch()` trong các page/component
-là **sai pattern** — phải dùng hàm này.
+Page/component dùng các hàm public trong `lib/api.ts`. API JSON đã xác thực đi qua
+`apiFetch<T>()`; import multipart và export file dùng chung `authenticatedFetch()`
+để giữ cùng hành vi refresh. Login/register và API admin có luồng xác thực riêng,
+nhưng dùng cùng bộ phân tích lỗi HTTP.
 
 ```ts
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const token = typeof window !== 'undefined'
-    ? localStorage.getItem('auth_token')
-    : null
-
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...init?.headers,
-    },
-  })
-
-  const body = await res.json()
-
-  if (!res.ok || !body.success) {
-    throw new Error(body.error?.message || 'Request failed')
-  }
-
-  return body.data
+  const headers = new Headers(init?.headers)
+  if (!headers.has('Content-Type')) headers.set('Content-Type', 'application/json')
+  return readApiResponse<T>(await authenticatedFetch(path, { ...init, headers }))
 }
 ```
 
@@ -49,11 +34,15 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
 - Đính kèm JWT token vào `Authorization: Bearer ...`
 - Parse JSON response
 - Unwrap `ApiResult<T>` — trả về `body.data` trực tiếp
-- Throw `Error` có message từ backend khi lỗi
+- Throw `ApiError` với `code`, `status`, `retryAt` và `retryAfterSeconds` khi lỗi HTTP
+- Chỉ thử refresh khi request nhận 401; không tự retry 429
 
 **Những gì caller phải lo:**
 - Truyền đúng kiểu generic `<T>` để TypeScript suy luận
-- Bắt lỗi bằng `try/catch` ở tầng page
+- Bắt lỗi bằng `try/catch` ở tầng page và hiển thị qua `errorMessage(err, t)`
+
+Chi tiết xử lý 429, giữ phiên khi refresh lỗi tạm thời và nút đếm ngược nằm trong
+[RATE_LIMITING.md](RATE_LIMITING.md).
 
 ---
 

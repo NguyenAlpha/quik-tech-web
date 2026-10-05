@@ -14,6 +14,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
 import { useLanguage } from '@/lib/language-context'
+import { errorMessage } from '@/lib/api-error'
 import { adminGetUsers, adminSetUserStatus, adminDeleteUser } from '@/lib/api'
 import type { AdminUser } from '@/lib/types'
 
@@ -49,7 +50,7 @@ export default function AdminUsersPage() {
       setUsers(result.content)
       setTotalPages(result.totalPages)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : ts.userMgmtLoadError)
+      toast.error(errorMessage(err, t, ts.userMgmtLoadError))
     } finally {
       setIsLoading(false)
     }
@@ -62,7 +63,7 @@ export default function AdminUsersPage() {
       setUsers(prev => prev.map(u => u.id === updated.id ? updated : u))
       toast.success(ts.userMgmtStatusSuccess)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : ts.userMgmtStatusError)
+      toast.error(errorMessage(err, t, ts.userMgmtStatusError))
     } finally {
       setTogglingUserId(null)
     }
@@ -77,7 +78,7 @@ export default function AdminUsersPage() {
       setDeleteTarget(null)
       toast.success(ts.userMgmtDeleteSuccess)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : ts.userMgmtDeleteError)
+      toast.error(errorMessage(err, t, ts.userMgmtDeleteError))
     } finally {
       setIsDeletingUser(false)
     }

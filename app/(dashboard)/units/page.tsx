@@ -12,6 +12,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useLanguage } from '@/lib/language-context'
+import { errorMessage } from '@/lib/api-error'
 import { PageSkeleton } from '@/components/page-skeleton'
 import { getUnits, createUnit, updateUnit, deleteUnit, ApiError } from '@/lib/api'
 import type { Unit, CreateUnitInput } from '@/lib/types'
@@ -36,6 +37,7 @@ export default function UnitsPage() {
   useEffect(() => {
     getUnits()
       .then(setUnits)
+      .catch(err => toast.error(errorMessage(err, t)))
       .finally(() => setIsPageLoading(false))
   }, [])
 
@@ -77,7 +79,7 @@ export default function UnitsPage() {
       }
       setModal({ mode: 'closed' })
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong')
+      setError(errorMessage(err, t, 'Something went wrong'))
     } finally {
       setIsSaving(false)
     }
@@ -94,7 +96,7 @@ export default function UnitsPage() {
       if (err instanceof ApiError && err.code === 'VALIDATION_ERROR') {
         toast.error(tu.deleteBlockedInUse)
       } else {
-        toast.error(err instanceof Error ? err.message : tu.errorDelete)
+        toast.error(errorMessage(err, t, tu.errorDelete))
       }
     }
   }

@@ -26,6 +26,7 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
 import { useLanguage } from '@/lib/language-context'
+import { errorMessage } from '@/lib/api-error'
 import { PageSkeleton } from '@/components/page-skeleton'
 import { PageError } from '@/components/page-error'
 import { SuppliersTable } from '@/components/suppliers-table'
@@ -70,7 +71,7 @@ export default function SuppliersPage() {
     try {
       setSuppliers(await getSuppliers())
     } catch (err) {
-      setPageError(err instanceof ApiError ? err.message : 'Failed to load data')
+      setPageError(errorMessage(err, t, 'Failed to load data'))
     } finally {
       setIsPageLoading(false)
     }
@@ -142,7 +143,7 @@ export default function SuppliersPage() {
       setIsFormOpen(false)
       setRefreshKey((k) => k + 1)
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : editingSupplier ? ts.errorUpdatingSupplier : ts.errorAddingSupplier)
+      toast.error(errorMessage(error, t, editingSupplier ? ts.errorUpdatingSupplier : ts.errorAddingSupplier))
     } finally {
       setIsFormLoading(false)
     }
@@ -159,7 +160,7 @@ export default function SuppliersPage() {
       setSelectedSupplier(updated)
       setRefreshKey((k) => k + 1)
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : ts.errorPayingSupplier)
+      toast.error(errorMessage(error, t, ts.errorPayingSupplier))
     } finally {
       setIsPayLoading(false)
     }
@@ -176,7 +177,7 @@ export default function SuppliersPage() {
       if (error instanceof ApiError && error.code === 'VALIDATION_ERROR') {
         toast.error(ts.deleteBlockedHasDebt)
       } else {
-        toast.error(error instanceof ApiError ? error.message : ts.errorDeletingSupplier)
+        toast.error(errorMessage(error, t, ts.errorDeletingSupplier))
       }
     } finally {
       setIsDeleting(null)

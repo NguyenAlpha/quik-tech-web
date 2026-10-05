@@ -7,7 +7,8 @@ import { RecentOrders } from "@/components/recent-orders"
 import { LowStockAlert } from "@/components/low-stock-alert"
 import { PageError } from "@/components/page-error"
 import { useLanguage } from "@/lib/language-context"
-import { getDashboard, ApiError } from "@/lib/api"
+import { errorMessage } from '@/lib/api-error'
+import { getDashboard } from "@/lib/api"
 import type { DashboardData } from "@/lib/types"
 
 function DashboardSkeleton() {
@@ -43,7 +44,7 @@ export default function DashboardPage() {
     try {
       setData(await getDashboard())
     } catch (err) {
-      setPageError(err instanceof ApiError ? err.message : 'Failed to load dashboard')
+      setPageError(errorMessage(err, t, 'Failed to load dashboard'))
     } finally {
       setIsLoading(false)
     }

@@ -14,9 +14,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Switch } from '@/components/ui/switch'
 import { useLanguage } from '@/lib/language-context'
+import { errorMessage } from '@/lib/api-error'
 import { PageSkeleton } from '@/components/page-skeleton'
 import { PageError } from '@/components/page-error'
-import { getWarehouses, createWarehouse, updateWarehouse, deleteWarehouse, ApiError } from '@/lib/api'
+import { getWarehouses, createWarehouse, updateWarehouse, deleteWarehouse } from '@/lib/api'
 import type { Warehouse } from '@/lib/types'
 
 type ModalState =
@@ -43,7 +44,7 @@ export default function WarehousesPage() {
     try {
       setWarehouses(await getWarehouses())
     } catch (err) {
-      setPageError(err instanceof ApiError ? err.message : 'Failed to load data')
+      setPageError(errorMessage(err, t, 'Failed to load data'))
     } finally {
       setIsPageLoading(false)
     }
@@ -88,7 +89,7 @@ export default function WarehousesPage() {
       }
       setModal({ mode: 'closed' })
     } catch (err) {
-      setError(err instanceof Error ? err.message : tw.errorSave)
+      setError(errorMessage(err, t, tw.errorSave))
     } finally {
       setIsSaving(false)
     }
@@ -101,7 +102,7 @@ export default function WarehousesPage() {
       setWarehouses((prev) => prev.filter((w) => w.id !== warehouse.id))
       toast.success(tw.deleted)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : tw.errorDelete)
+      toast.error(errorMessage(err, t, tw.errorDelete))
     }
   }
 

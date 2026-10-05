@@ -3,10 +3,12 @@
 import { useState, useEffect, useRef } from 'react'
 import { toast } from 'sonner'
 import { useLanguage } from '@/lib/language-context'
+import { errorMessage } from '@/lib/api-error'
+import { useRateLimitCooldown } from '@/hooks/use-rate-limit-cooldown'
 import { formatCurrency } from '@/lib/utils'
 import {
   getOrdersPage, getOrder, createOrder, completeOrder, cancelOrder, payOrder,
-  getCustomers, getWarehouses, searchProducts, exportOrdersExcel, ApiError,
+  getCustomers, getWarehouses, searchProducts, exportOrdersExcel,
 } from '@/lib/api'
 import { OrdersTable } from '@/components/orders-table'
 import { AddOrderModal } from '@/components/add-order-modal'
@@ -91,6 +93,7 @@ export default function OrdersPage() {
   const [isCancelling, setIsCancelling] = useState<string | null>(null)
 
   const [isExporting, setIsExporting] = useState(false)
+  const exportCooldown = useRateLimitCooldown()
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [isCreateLoading, setIsCreateLoading] = useState(false)
   const [isPayOpen, setIsPayOpen] = useState(false)
@@ -127,8 +130,8 @@ export default function OrdersPage() {
         setOrders(result.content)
         setTotalPages(result.totalPages)
         setTotalElements(result.totalElements)
-      } catch {
-        toast.error('Failed to load orders')
+      } catch (err) {
+        toast.error(errorMessage(err, t, 'Failed to load orders'))
       } finally {
         setIsPageLoading(false)
         hasLoaded.current = true
@@ -154,7 +157,7 @@ export default function OrdersPage() {
         setTotalPages(result.totalPages)
         setTotalElements(result.totalElements)
       })
-      .catch(() => toast.error('Failed to load orders'))
+      .catch(err => toast.error(errorMessage(err, t)))
       .finally(() => setIsPageLoading(false))
   }, [page, debouncedSearch, statusFilter, dateFrom, dateTo, refreshKey])
 
@@ -180,7 +183,7 @@ export default function OrdersPage() {
       setPage(0)
       setRefreshKey(k => k + 1)
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : to.errorCreatingOrder)
+      toast.error(errorMessage(error, t, to.errorCreatingOrder))
     } finally {
       setIsCreateLoading(false)
     }
@@ -195,7 +198,7 @@ export default function OrdersPage() {
       setSelectedOrder(null)
       setRefreshKey(k => k + 1)
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : to.errorCompletingOrder)
+      toast.error(errorMessage(error, t, to.errorCompletingOrder))
     } finally {
       setIsActionLoading(false)
     }
@@ -210,7 +213,7 @@ export default function OrdersPage() {
       setSelectedOrder(null)
       setRefreshKey(k => k + 1)
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : to.errorCancellingOrder)
+      toast.error(errorMessage(error, t, to.errorCancellingOrder))
     } finally {
       setIsActionLoading(false)
     }
@@ -227,7 +230,7 @@ export default function OrdersPage() {
       setSelectedOrder(null)
       setRefreshKey(k => k + 1)
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : to.errorPayingOrder)
+      toast.error(errorMessage(error, t, to.errorPayingOrder))
     } finally {
       setIsPayLoading(false)
     }
@@ -240,7 +243,7 @@ export default function OrdersPage() {
       toast.success(to.orderCancelled)
       setRefreshKey(k => k + 1)
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : to.errorCancellingOrder)
+      toast.error(errorMessage(error, t, to.errorCancellingOrder))
     } finally {
       setIsCancelling(null)
     }
@@ -270,21 +273,23 @@ export default function OrdersPage() {
         <Button
           variant="outline"
           className="gap-2 shadow-sm"
-          disabled={isExporting}
+          disabled={isExporting || exportCooldown.isCoolingDown}
           onClick={async () => {
+            if (isExporting || exportCooldown.isCoolingDown) return
             setIsExporting(true)
             try {
               await exportOrdersExcel(dateFrom || undefined, dateTo || undefined)
               toast.success(to.exportSuccess)
-            } catch {
-              toast.error(to.exportError)
+            } catch (err) {
+              exportCooldown.record(err)
+              toast.error(errorMessage(err, t, to.exportError))
             } finally {
               setIsExporting(false)
             }
           }}
         >
           <Download className="size-4" />
-          {isExporting ? to.exporting : to.exportExcel}
+          {isExporting ? to.exporting : exportCooldown.isCoolingDown ? t.common.retryIn.replace('{seconds}', String(exportCooldown.remainingSeconds)) : to.exportExcel}
         </Button>
         <Button onClick={() => setIsCreateOpen(true)} className="gap-2 shadow-sm">
           <Plus className="size-4" />

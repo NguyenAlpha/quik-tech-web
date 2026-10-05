@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import { useLanguage } from '@/lib/language-context'
 import { createDefaultBusiness } from '@/lib/api'
+import { errorMessage } from '@/lib/api-error'
 import { Store, Layers, Loader2 } from 'lucide-react'
 
 export default function SetupPage() {
@@ -49,7 +50,7 @@ export default function SetupPage() {
       selectStore(result.store.id, result.business.id)
       router.replace('/dashboard')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong')
+      setError(errorMessage(err, t))
       setIsCreating(false)
     }
   }

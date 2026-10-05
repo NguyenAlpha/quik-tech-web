@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import { useLanguage } from '@/lib/language-context'
 import { registerUser } from '@/lib/api'
+import { errorMessage } from '@/lib/api-error'
+import { useRateLimitCooldown } from '@/hooks/use-rate-limit-cooldown'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -26,6 +28,7 @@ export default function RegisterPage() {
   })
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const cooldown = useRateLimitCooldown()
   const [showPassword, setShowPassword] = useState(false)
 
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) =>
@@ -33,6 +36,7 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (isLoading || cooldown.isCoolingDown) return
     setError(null)
 
     if (form.password !== form.confirmPassword) {
@@ -64,7 +68,8 @@ export default function RegisterPage() {
       login(accessToken, user, memberships, refreshToken)
       router.push(memberships.length === 0 ? '/setup' : '/dashboard')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong')
+      cooldown.record(err)
+      setError(errorMessage(err, t))
     } finally {
       setIsLoading(false)
     }
@@ -179,9 +184,9 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
+          <Button type="submit" className="w-full" disabled={isLoading || cooldown.isCoolingDown}>
             {isLoading && <Loader2 className="mr-2 size-4 animate-spin" />}
-            {ta.registerButton}
+            {cooldown.isCoolingDown ? t.common.retryIn.replace('{seconds}', String(cooldown.remainingSeconds)) : ta.registerButton}
           </Button>
         </form>
 

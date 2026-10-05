@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { useLanguage } from '@/lib/language-context'
+import { errorMessage } from '@/lib/api-error'
 import { PageSkeleton } from '@/components/page-skeleton'
 import { PageError } from '@/components/page-error'
 import { AddPurchaseOrderModal } from '@/components/add-purchase-order-modal'
@@ -122,7 +123,7 @@ export default function PurchaseOrdersPage() {
       setProducts(prods)
       setWarehouses(whs)
     } catch (err) {
-      setPageError(err instanceof Error ? err.message : 'Failed to load data')
+      setPageError(errorMessage(err, t, 'Failed to load data'))
     } finally {
       setIsPageLoading(false)
     }
@@ -146,7 +147,7 @@ export default function PurchaseOrdersPage() {
         setTotalElements(result.totalElements)
         setTotalPages(result.totalPages)
       })
-      .catch(() => toast.error('Failed to load purchase orders'))
+      .catch(err => toast.error(errorMessage(err, t, 'Failed to load purchase orders')))
   }, [currentPage, debouncedSearch, statusFilter, dateFrom, dateTo, refreshTrigger])
 
   // Reset pay state when modal closes
@@ -187,8 +188,8 @@ export default function PurchaseOrdersPage() {
       setIsModalOpen(false)
       setCurrentPage(0)
       setRefreshTrigger(k => k + 1)
-    } catch {
-      toast.error(tpo.errorCreatingPO)
+    } catch (err) {
+      toast.error(errorMessage(err, t, tpo.errorCreatingPO))
     } finally {
       setIsLoading(false)
     }
@@ -204,8 +205,8 @@ export default function PurchaseOrdersPage() {
       setEditingPO(null)
       setSelectedPO(null)
       setRefreshTrigger(k => k + 1)
-    } catch {
-      toast.error(tpo.errorUpdatingPO)
+    } catch (err) {
+      toast.error(errorMessage(err, t, tpo.errorUpdatingPO))
     } finally {
       setIsLoading(false)
     }
@@ -217,8 +218,8 @@ export default function PurchaseOrdersPage() {
       await deletePurchaseOrder(id)
       toast.success(tpo.poDeleted)
       setRefreshTrigger(k => k + 1)
-    } catch {
-      toast.error(tpo.errorDeletingPO)
+    } catch (err) {
+      toast.error(errorMessage(err, t, tpo.errorDeletingPO))
     } finally {
       setIsDeleting(null)
     }
@@ -229,8 +230,8 @@ export default function PurchaseOrdersPage() {
       await updatePurchaseOrderStatus(id, status)
       toast.success(tpo.poUpdated)
       setRefreshTrigger(k => k + 1)
-    } catch {
-      toast.error(tpo.errorUpdatingPO)
+    } catch (err) {
+      toast.error(errorMessage(err, t, tpo.errorUpdatingPO))
     }
   }
 
@@ -246,8 +247,8 @@ export default function PurchaseOrdersPage() {
       setPayAmount('')
       setSelectedPO(null)
       setRefreshTrigger(k => k + 1)
-    } catch {
-      toast.error(tpo.errorPayingOrder)
+    } catch (err) {
+      toast.error(errorMessage(err, t, tpo.errorPayingOrder))
     } finally {
       setIsPayLoading(false)
     }
@@ -261,8 +262,8 @@ export default function PurchaseOrdersPage() {
       toast.success(tpo.poUpdated)
       setSelectedPO(null)
       setRefreshTrigger(k => k + 1)
-    } catch {
-      toast.error(tpo.errorUpdatingPO)
+    } catch (err) {
+      toast.error(errorMessage(err, t, tpo.errorUpdatingPO))
     } finally {
       setIsActionLoading(false)
     }

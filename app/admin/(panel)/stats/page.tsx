@@ -5,6 +5,7 @@ import { BarChart3, Building2, TrendingUp, Users, CreditCard, AlertCircle, Loade
 import { adminGetStats } from '@/lib/api'
 import { formatCurrency } from '@/lib/utils'
 import { useLanguage } from '@/lib/language-context'
+import { errorMessage } from '@/lib/api-error'
 import { toast } from 'sonner'
 import type { AdminStats } from '@/lib/types'
 
@@ -43,7 +44,7 @@ export default function AdminStatsPage() {
   useEffect(() => {
     adminGetStats()
       .then(setStats)
-      .catch(() => toast.error(ts.statsLoadError))
+      .catch(err => toast.error(errorMessage(err, t, ts.statsLoadError)))
       .finally(() => setIsLoading(false))
   }, [])
 
