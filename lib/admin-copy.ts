@@ -5,7 +5,7 @@ import { useLanguage } from '@/lib/language-context'
 // Admin-specific copy stays separate from merchant/store terminology.
 const adminCopy = {
   en: {
-    workspace: 'System administration', management: 'Management', overview: 'Overview',
+    refresh: 'Refresh', workspace: 'System administration', management: 'Management', overview: 'Overview',
     subscriptions: 'Subscriptions', businesses: 'Businesses', users: 'Users', account: 'Admin account',
     toggleNavigation: 'Toggle navigation', skipToContent: 'Skip to content',
     overviewDescription: 'Monitor your platform and keep track of what needs attention.',
@@ -24,7 +24,7 @@ const adminCopy = {
     loginWelcome: 'A clear view of your platform.', loginIntro: 'One workspace for the people and businesses behind QuikTech POS.',
   },
   vi: {
-    workspace: 'Quản trị hệ thống', management: 'Quản lý', overview: 'Tổng quan',
+    refresh: 'Làm mới', workspace: 'Quản trị hệ thống', management: 'Quản lý', overview: 'Tổng quan',
     subscriptions: 'Gói dịch vụ', businesses: 'Doanh nghiệp', users: 'Người dùng', account: 'Tài khoản quản trị',
     toggleNavigation: 'Đóng/mở điều hướng', skipToContent: 'Chuyển đến nội dung',
     overviewDescription: 'Theo dõi toàn hệ thống và các công việc cần xử lý.',
