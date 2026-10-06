@@ -44,3 +44,18 @@ Browser checks used synthetic fixtures and intercepted API requests. Live backen
 integration and production data were not exercised. The local production check
 stubbed the existing Vercel Analytics script: its endpoint returns HTML on the
 local Next server, which otherwise produces an unrelated script parse error.
+
+## Phase 4: live backend and administrator session
+
+The login form verifies `/api/admin/session` before persisting the admin token.
+The panel checks the same endpoint before mounting its pages. Permission/network
+errors offer retry and admin-only logout; merchant session keys stay untouched.
+
+Run `node scripts/check-admin-live.mjs` with `ADMIN_USERNAME`, `ADMIN_PASSWORD`
+and optionally `ADMIN_API_URL` in the process environment. Default checks are
+read-only. `ADMIN_TEST_MUTATIONS=1` is restricted to `localhost:8081`, the isolated
+integration server with its own PostgreSQL database and Redis DB 15.
+
+Live checks passed on 2026-10-06, including invoice confirm/reject and validation,
+plan changes, ordinary-user 403, missing/invalid token 401 and user lock/unlock/
+deletion. No real business records were mutated by these checks.

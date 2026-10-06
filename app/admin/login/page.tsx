@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { loginUser } from '@/lib/api'
+import { verifyAdminSession } from '@/lib/admin-client'
 import { errorMessage } from '@/lib/api-error'
 import { useLanguage } from '@/lib/language-context'
 import { useAdminCopy } from '@/lib/admin-copy'
@@ -31,7 +32,8 @@ export default function AdminLoginPage() {
     setError(null)
     setIsLoading(true)
     try {
-      const { accessToken, user } = await loginUser({ usernameOrEmail, password })
+      const { accessToken } = await loginUser({ usernameOrEmail, password })
+      const user = await verifyAdminSession(accessToken)
       localStorage.setItem('admin_token', accessToken)
       localStorage.setItem('admin_user', JSON.stringify(user))
       document.cookie = `admin_token=${accessToken}; path=/admin; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`
