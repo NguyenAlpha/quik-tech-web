@@ -30,9 +30,10 @@ import {
   adminConfirmInvoice,
   adminRejectInvoice,
   adminGetBusinesses,
-  adminGetSubscription,
-  adminChangePlan
+  adminGetSubscription
 } from '@/lib/api'
+import { adminChangePlan } from '@/lib/admin-client'
+import { AdminReasonField } from '@/components/admin-reason-field'
 import { useAdminUrl } from '@/hooks/use-admin-url'
 import { AdminInvoiceSearch } from '@/components/admin-invoice-search'
 import { useAdminPending } from '@/components/admin-pending-provider'
@@ -71,6 +72,7 @@ function AdminSubscriptionsContent() {
   const [newPlan, setNewPlan] = useState('')
   const [newCycle, setNewCycle] = useState('MONTHLY')
   const [isChangingPlan, setIsChangingPlan] = useState(false)
+  const [reason, setReason] = useState('')
 
   const loadInvoices = useCallback(async () => {
     const request = ++invoiceRequest.current
@@ -111,6 +113,7 @@ function AdminSubscriptionsContent() {
   useEffect(() => {
     let cancelled = false
     setCurrentSub(null)
+    setReason('')
     setNewPlan('')
     setSubError(null)
     if (!selectedBusinessId) {
@@ -181,8 +184,10 @@ function AdminSubscriptionsContent() {
       const updated = await adminChangePlan(
         Number(selectedBusinessId),
         newPlan,
-        newPlan === 'FREE' ? undefined : newCycle
+        newPlan === 'FREE' ? undefined : newCycle,
+        reason
       )
+      setReason('')
       setCurrentSub(updated)
       toast.success(ts.changePlanSuccess)
     } catch (err) {
@@ -441,6 +446,7 @@ function AdminSubscriptionsContent() {
               <p className="text-sm text-amber-800 dark:text-amber-400">{ts.overrideWarning}</p>
             </div>
 
+            <AdminReasonField value={reason} onChange={setReason} disabled={!currentSub || isChangingPlan} />
             <div className="flex flex-wrap items-end gap-3">
               <div className="min-w-36 flex-1 space-y-2">
                 <Label htmlFor="subscription-plan">{ts.newPlanLabel}</Label>

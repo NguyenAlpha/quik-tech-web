@@ -93,3 +93,23 @@ Phase 6 checks passed: TypeScript/build, real API filters, literal wildcard,
 page boundaries, invalid parameter 400 and normal-user 403. An isolated live
 browser check confirmed payment, badge refresh, search/status URL restoration
 and mobile layout; production business records were not mutated.
+
+## Phase 7: administrator activity
+
+`/admin/audit` lists plan adjustments, invoice confirmation/rejection and account
+status/deletion changes. Action, business and actor filters are URL parameters;
+older entries use a cursor (`beforeId`), with a button to return to the latest.
+The detail dialog shows reason and changed fields side by side, with EN/VI labels.
+
+Plan adjustment and account dialogs accept an optional 500-character reason.
+Invoice actions keep the existing note/rejection reason. Requests remain compatible
+with older callers that omit a reason. Activity starts after the backend update;
+previous activity is not reconstructed. Backend audit snapshots use an explicit
+field allowlist and exclude passwords/tokens.
+
+Phase 7 checks passed: TypeScript and production build; live API actor/reason/
+before-after, cursor pagination, authorization, failed actions excluded and
+concurrent confirmation. Chromium exercised plan adjustment, lock and delete
+reasons, the comparison dialog at 390px, filter restoration and EN/VI. All these
+mutations used isolated test records. The backend rollback script verified that
+an audit insert failure also rolls back the subscription change.

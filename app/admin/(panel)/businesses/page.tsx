@@ -17,7 +17,9 @@ import { AdminTableState } from '@/components/admin-table-state'
 import { AdminPlanBadge, AdminSubscriptionStatus } from '@/components/admin-subscription-badges'
 import { useAdminCopy } from '@/lib/admin-copy'
 import { errorMessage } from '@/lib/api-error'
-import { adminGetBusinesses, adminGetSubscription, adminChangePlan } from '@/lib/api'
+import { adminGetBusinesses, adminGetSubscription } from '@/lib/api'
+import { adminChangePlan } from '@/lib/admin-client'
+import { AdminReasonField } from '@/components/admin-reason-field'
 import type { Business, BusinessSubscription } from '@/lib/types'
 
 interface BusinessWithSub extends Business {
@@ -41,6 +43,7 @@ export default function AdminBusinessesPage() {
   const [newPlan, setNewPlan] = useState('')
   const [newCycle, setNewCycle] = useState('MONTHLY')
   const [isChangingPlan, setIsChangingPlan] = useState(false)
+  const [reason, setReason] = useState('')
 
   useEffect(() => {
     let cancelled = false
@@ -71,6 +74,7 @@ export default function AdminBusinessesPage() {
   }, [reload, t, ts.businessesLoadError])
 
   const openDetail = async (b: BusinessWithSub) => {
+    setReason('')
     setSelected(b)
     setDetailError(null)
     if (!b.sub) {
@@ -99,7 +103,8 @@ export default function AdminBusinessesPage() {
     setIsChangingPlan(true)
     try {
       // billingCycle chỉ gửi với gói trả phí — backend từ chối khi thiếu (400)
-      const updated = await adminChangePlan(selected.id, newPlan, newPlan === 'FREE' ? undefined : newCycle)
+      const updated = await adminChangePlan(selected.id, newPlan, newPlan === 'FREE' ? undefined : newCycle, reason)
+      setReason('')
       const updatedBusiness = { ...selected, sub: updated }
       setBusinesses((prev) => prev.map((x) => (x.id === selected.id ? updatedBusiness : x)))
       setSelected(updatedBusiness)
@@ -272,6 +277,7 @@ export default function AdminBusinessesPage() {
                 <p className="text-xs text-amber-800 dark:text-amber-400">{ts.overrideWarning}</p>
               </div>
 
+              <AdminReasonField value={reason} onChange={setReason} disabled={isChangingPlan} />
               <div className="flex flex-wrap items-end gap-3">
                 <div className="min-w-32 flex-1 space-y-1.5">
                   <Label htmlFor="business-plan" className="text-foreground text-sm">

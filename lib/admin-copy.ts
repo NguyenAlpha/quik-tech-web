@@ -5,6 +5,16 @@ import { useLanguage } from '@/lib/language-context'
 // Admin-specific copy stays separate from merchant/store terminology.
 const adminCopy = {
   en: {
+    periodStart: 'Period start', periodEnd: 'Period end', updated: 'Updated', pendingPlan: 'Scheduled plan',
+    pendingCycle: 'Scheduled billing cycle', paidAt: 'Paid at', confirmedAt: 'Confirmed at', deletedAt: 'Deleted at', yes: 'Yes', no: 'No',
+    audit: 'Activity log', auditDescription: 'Review administrator actions and the values that changed.',
+    reasonOptional: 'Reason (optional)', reasonPlaceholder: 'Explain this change for other administrators...',
+    reason: 'Reason', noReason: 'No reason provided', actor: 'Administrator', action: 'Action', target: 'Record',
+    before: 'Before', after: 'After', field: 'Field', changes: 'Changes', noChanges: 'No values changed.',
+    allActions: 'All actions', businessId: 'Business ID', actorId: 'Administrator ID', latest: 'Latest', older: 'Older entries',
+    noAudit: 'No administrator activity found.',
+    planChanged: 'Subscription adjusted', invoiceConfirmed: 'Invoice confirmed', invoiceRejected: 'Invoice rejected',
+    userStatusChanged: 'Account access changed', userDeleted: 'Account deleted',
     invoiceSearch: 'Search business, invoice ID or transfer reference...', invoiceStatus: 'Invoice status',
     allStatuses: 'All statuses', search: 'Search',
     details: 'Details', stores: 'Stores', invoices: 'Invoice history', contact: 'Contact information',
@@ -68,6 +78,16 @@ const adminCopy = {
     loginIntro: 'One workspace for the people and businesses behind QuikTech POS.'
   },
   vi: {
+    periodStart: 'Bắt đầu kỳ', periodEnd: 'Kết thúc kỳ', updated: 'Cập nhật', pendingPlan: 'Gói đã lên lịch',
+    pendingCycle: 'Chu kỳ đã lên lịch', paidAt: 'Ngày thanh toán', confirmedAt: 'Ngày xác nhận', deletedAt: 'Ngày xóa', yes: 'Có', no: 'Không',
+    audit: 'Nhật ký thao tác', auditDescription: 'Tra cứu thao tác quản trị và những giá trị đã thay đổi.',
+    reasonOptional: 'Lý do (không bắt buộc)', reasonPlaceholder: 'Giải thích thay đổi để quản trị viên khác đối chiếu...',
+    reason: 'Lý do', noReason: 'Không có lý do được cung cấp', actor: 'Quản trị viên', action: 'Thao tác', target: 'Bản ghi',
+    before: 'Trước', after: 'Sau', field: 'Trường', changes: 'Thay đổi', noChanges: 'Không có giá trị thay đổi.',
+    allActions: 'Tất cả thao tác', businessId: 'Mã doanh nghiệp', actorId: 'Mã quản trị viên', latest: 'Mới nhất', older: 'Bản ghi cũ hơn',
+    noAudit: 'Chưa có thao tác quản trị phù hợp.',
+    planChanged: 'Điều chỉnh gói', invoiceConfirmed: 'Xác nhận hóa đơn', invoiceRejected: 'Từ chối hóa đơn',
+    userStatusChanged: 'Thay đổi quyền truy cập', userDeleted: 'Xóa tài khoản',
     invoiceSearch: 'Tìm doanh nghiệp, mã hóa đơn hoặc nội dung chuyển khoản...', invoiceStatus: 'Trạng thái hóa đơn',
     allStatuses: 'Tất cả trạng thái', search: 'Tìm kiếm',
     details: 'Chi tiết', stores: 'Cửa hàng', invoices: 'Lịch sử hóa đơn', contact: 'Thông tin liên hệ',

@@ -22,7 +22,9 @@ import { AdminPagination } from '@/components/admin-pagination'
 import { useLanguage } from '@/lib/language-context'
 import { useAdminCopy } from '@/lib/admin-copy'
 import { errorMessage } from '@/lib/api-error'
-import { adminGetUsers, adminSetUserStatus, adminDeleteUser } from '@/lib/api'
+import { adminGetUsers } from '@/lib/api'
+import { adminSetUserStatus, adminDeleteUser } from '@/lib/admin-client'
+import { AdminReasonField } from '@/components/admin-reason-field'
 import { getInitials } from '@/lib/utils'
 import type { AdminUser } from '@/lib/types'
 
@@ -40,6 +42,7 @@ export default function AdminUsersPage() {
   const [error, setError] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<AdminUser | null>(null)
   const [statusTarget, setStatusTarget] = useState<AdminUser | null>(null)
+  const [reason, setReason] = useState('')
   const [isDeletingUser, setIsDeletingUser] = useState(false)
   const [isChangingStatus, setIsChangingStatus] = useState(false)
   const locale = language === 'vi' ? 'vi-VN' : 'en-US'
@@ -77,7 +80,7 @@ export default function AdminUsersPage() {
     if (!statusTarget || isChangingStatus) return
     setIsChangingStatus(true)
     try {
-      const updated = await adminSetUserStatus(statusTarget.id, !statusTarget.isActive)
+      const updated = await adminSetUserStatus(statusTarget.id, !statusTarget.isActive, reason)
       setUsers((prev) => prev.map((user) => (user.id === updated.id ? updated : user)))
       setStatusTarget(null)
       toast.success(ts.userMgmtStatusSuccess)
@@ -92,7 +95,7 @@ export default function AdminUsersPage() {
     if (!deleteTarget || isDeletingUser) return
     setIsDeletingUser(true)
     try {
-      await adminDeleteUser(deleteTarget.id)
+      await adminDeleteUser(deleteTarget.id, reason)
       setDeleteTarget(null)
       if (users.length === 1 && page > 0) setPage(page - 1)
       else setReload((value) => value + 1)
@@ -184,7 +187,7 @@ export default function AdminUsersPage() {
                   </TableCell>
                   <TableCell className="pr-5">
                     <div className="flex items-center justify-end gap-2">
-                      <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setStatusTarget(user)}>
+                      <Button size="sm" variant="outline" className="gap-1.5" onClick={() => { setReason(''); setStatusTarget(user) }}>
                         {user.isActive ? <UserX className="size-3.5" /> : <UserCheck className="size-3.5" />}
                         {user.isActive ? ts.userMgmtDeactivate : ts.userMgmtActivate}
                       </Button>
@@ -192,7 +195,7 @@ export default function AdminUsersPage() {
                         size="sm"
                         variant="ghost"
                         className="gap-1.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                        onClick={() => setDeleteTarget(user)}
+                        onClick={() => { setReason(''); setDeleteTarget(user) }}
                       >
                         <Trash2 className="size-3.5" />
                         {ts.userMgmtDelete}
@@ -230,6 +233,7 @@ export default function AdminUsersPage() {
               <p className="mt-3 font-medium">{statusTarget.isActive ? ts.userMgmtDeactivate : ts.userMgmtActivate}</p>
             </div>
           )}
+          <AdminReasonField value={reason} onChange={setReason} disabled={isChangingStatus} />
           <DialogFooter>
             <Button variant="outline" disabled={isChangingStatus} onClick={() => setStatusTarget(null)}>
               {t.common.cancel}
@@ -264,6 +268,7 @@ export default function AdminUsersPage() {
               <p className="break-all text-muted-foreground">{deleteTarget.email}</p>
             </div>
           )}
+          <AdminReasonField value={reason} onChange={setReason} disabled={isDeletingUser} />
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={isDeletingUser}>
               {t.common.cancel}

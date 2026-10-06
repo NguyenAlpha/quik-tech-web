@@ -1,6 +1,6 @@
 'use client'
 
-import { BarChart3, Building2, CreditCard, ShieldCheck, Users } from 'lucide-react'
+import { BarChart3, Building2, CreditCard, ShieldCheck, Users, History } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAdminCopy } from '@/lib/admin-copy'
@@ -16,6 +16,7 @@ export const adminNavItems = [
   { key: 'subscriptions' as const, href: '/admin/subscriptions', icon: CreditCard },
   { key: 'businesses' as const, href: '/admin/businesses', icon: Building2 },
   { key: 'users' as const, href: '/admin/users', icon: Users },
+  { key: 'audit' as const, href: '/admin/audit', icon: History },
 ]
 
 export function AdminSidebar() {
