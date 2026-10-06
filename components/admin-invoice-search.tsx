@@ -65,7 +65,7 @@ export function AdminInvoiceSearch() {
     <div className="space-y-4">
       <div className="flex flex-wrap gap-3">
         <form
-          className="flex min-w-0 flex-1 gap-2"
+          className="flex w-full min-w-0 gap-2 sm:min-w-72 sm:flex-1"
           onSubmit={(event) => {
             event.preventDefault()
             update({ q: search.trim(), page: null })
@@ -77,7 +77,7 @@ export function AdminInvoiceSearch() {
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             maxLength={100}
-            className="min-w-40 bg-card"
+            className="min-w-0 flex-1 bg-card"
           />
           <Button type="submit" variant="outline" aria-label={copy.search}>
             <Search className="size-4" />
