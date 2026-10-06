@@ -146,4 +146,3 @@ if (mutations) {
   assert.ok(deletion.after.deletedAt)
   console.log('PASS: test account soft-deleted; fixture business/invoices remain only in the isolated database')
 }
-
