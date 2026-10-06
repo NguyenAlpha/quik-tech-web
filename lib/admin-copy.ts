@@ -1,0 +1,50 @@
+'use client'
+
+import { useLanguage } from '@/lib/language-context'
+
+// Admin-specific copy stays separate from merchant/store terminology.
+const adminCopy = {
+  en: {
+    workspace: 'System administration', management: 'Management', overview: 'Overview',
+    subscriptions: 'Subscriptions', businesses: 'Businesses', users: 'Users', account: 'Admin account',
+    toggleNavigation: 'Toggle navigation', skipToContent: 'Skip to content',
+    overviewDescription: 'Monitor your platform and keep track of what needs attention.',
+    totalBusinesses: 'Total businesses', totalUsers: 'Total users', reviewInvoices: 'Review invoices',
+    pendingDescription: 'Payments awaiting confirmation', revenueDescription: 'Confirmed subscription payments',
+    sixMonthTotal: 'Total over 6 months', noRevenue: 'No subscription revenue in this period.',
+    noSubscriptions: 'No subscriptions yet.', planDescription: 'Businesses by their current subscription plan',
+    invoiceQueue: 'Pending invoices', overridePlan: 'Adjust subscription',
+    subscriptionDescription: 'Review incoming payments and manage business subscription plans.',
+    previous: 'Previous', next: 'Next', page: 'Page', of: 'of', results: 'results',
+    businessDetails: 'Business details and subscription', viewDetails: 'View details',
+    active: 'Active', expired: 'Expired', cancelled: 'Cancelled',
+    confirmStatusTitle: 'Change account access?', confirmStatusDescription: 'Review the account below before changing its access.',
+    loginTitle: 'Sign in to administration', loginDescription: 'Manage businesses, accounts and subscriptions in one place.',
+    usernameOrEmail: 'Username or email', signIn: 'Sign in to Admin', restrictedAccess: 'For authorized administrators only',
+    loginWelcome: 'A clear view of your platform.', loginIntro: 'One workspace for the people and businesses behind QuikTech POS.',
+  },
+  vi: {
+    workspace: 'Quản trị hệ thống', management: 'Quản lý', overview: 'Tổng quan',
+    subscriptions: 'Gói dịch vụ', businesses: 'Doanh nghiệp', users: 'Người dùng', account: 'Tài khoản quản trị',
+    toggleNavigation: 'Đóng/mở điều hướng', skipToContent: 'Chuyển đến nội dung',
+    overviewDescription: 'Theo dõi toàn hệ thống và các công việc cần xử lý.',
+    totalBusinesses: 'Tổng doanh nghiệp', totalUsers: 'Tổng người dùng', reviewInvoices: 'Duyệt hóa đơn',
+    pendingDescription: 'Thanh toán đang chờ xác nhận', revenueDescription: 'Thanh toán gói dịch vụ đã xác nhận',
+    sixMonthTotal: 'Tổng doanh thu 6 tháng', noRevenue: 'Chưa có doanh thu gói dịch vụ trong kỳ này.',
+    noSubscriptions: 'Chưa có gói dịch vụ nào.', planDescription: 'Doanh nghiệp theo gói dịch vụ hiện tại',
+    invoiceQueue: 'Hóa đơn chờ duyệt', overridePlan: 'Điều chỉnh gói',
+    subscriptionDescription: 'Duyệt thanh toán và quản lý gói dịch vụ của doanh nghiệp.',
+    previous: 'Trước', next: 'Sau', page: 'Trang', of: 'trên', results: 'kết quả',
+    businessDetails: 'Thông tin doanh nghiệp và gói dịch vụ', viewDetails: 'Xem chi tiết',
+    active: 'Đang hoạt động', expired: 'Đã hết hạn', cancelled: 'Đã hủy',
+    confirmStatusTitle: 'Thay đổi quyền truy cập?', confirmStatusDescription: 'Kiểm tra tài khoản bên dưới trước khi thay đổi quyền truy cập.',
+    loginTitle: 'Đăng nhập quản trị', loginDescription: 'Quản lý doanh nghiệp, tài khoản và gói dịch vụ tại một nơi.',
+    usernameOrEmail: 'Tên đăng nhập hoặc email', signIn: 'Đăng nhập quản trị', restrictedAccess: 'Dành cho quản trị viên được cấp quyền',
+    loginWelcome: 'Toàn cảnh hệ thống của bạn.', loginIntro: 'Không gian quản lý người dùng và doanh nghiệp trên QuikTech POS.',
+  },
+}
+
+export function useAdminCopy() {
+  const { language } = useLanguage()
+  return adminCopy[language]
+}

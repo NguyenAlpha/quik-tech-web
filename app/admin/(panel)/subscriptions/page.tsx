@@ -28,15 +28,15 @@ import { formatCurrency } from '@/lib/utils'
 import type { SubscriptionInvoice, Business, BusinessSubscription } from '@/lib/types'
 
 const planStyles: Record<string, { label: string; className: string }> = {
-  FREE:  { label: 'Free',  className: 'bg-slate-700 text-slate-300' },
-  BASIC: { label: 'Basic', className: 'bg-blue-900/60 text-blue-300' },
-  PRO:   { label: 'Pro',   className: 'bg-amber-900/60 text-amber-300' },
+  FREE:  { label: 'Free',  className: 'bg-muted text-foreground' },
+  BASIC: { label: 'Basic', className: 'bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300' },
+  PRO:   { label: 'Pro',   className: 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300' },
 }
 
 const statusColor: Record<string, string> = {
-  ACTIVE:    'text-emerald-400',
-  EXPIRED:   'text-red-400',
-  CANCELLED: 'text-slate-500',
+  ACTIVE:    'text-emerald-700 dark:text-emerald-400',
+  EXPIRED:   'text-destructive',
+  CANCELLED: 'text-muted-foreground',
 }
 
 export default function AdminSubscriptionsPage() {
@@ -134,57 +134,57 @@ export default function AdminSubscriptionsPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="mx-auto w-full max-w-screen-2xl space-y-6 p-4 sm:p-6 lg:p-8">
       <div>
-        <h1 className="text-2xl font-bold text-white">{ts.adminPendingTitle}</h1>
-        <p className="text-sm text-slate-400 mt-1">{ts.adminPendingSubtitle}</p>
+        <h1 className="text-2xl font-bold text-foreground">{ts.adminPendingTitle}</h1>
+        <p className="text-sm text-muted-foreground mt-1">{ts.adminPendingSubtitle}</p>
       </div>
 
       {/* Pending invoices table */}
-      <div className="rounded-xl border border-slate-800 bg-slate-900 overflow-hidden">
+      <div className="rounded-xl border border-border bg-card overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="border-slate-800 hover:bg-transparent">
-              <TableHead className="text-slate-400">{ts.colBusiness}</TableHead>
-              <TableHead className="text-slate-400">{ts.colPlan}</TableHead>
-              <TableHead className="text-slate-400">{ts.colCycle}</TableHead>
-              <TableHead className="text-slate-400">{ts.colAmount}</TableHead>
-              <TableHead className="text-slate-400">{ts.colTransferRef}</TableHead>
-              <TableHead className="text-slate-400">{ts.colCreated}</TableHead>
-              <TableHead className="text-right text-slate-400">{ts.colActions}</TableHead>
+            <TableRow className="border-border hover:bg-transparent">
+              <TableHead className="text-muted-foreground">{ts.colBusiness}</TableHead>
+              <TableHead className="text-muted-foreground">{ts.colPlan}</TableHead>
+              <TableHead className="text-muted-foreground">{ts.colCycle}</TableHead>
+              <TableHead className="text-muted-foreground">{ts.colAmount}</TableHead>
+              <TableHead className="text-muted-foreground">{ts.colTransferRef}</TableHead>
+              <TableHead className="text-muted-foreground">{ts.colCreated}</TableHead>
+              <TableHead className="text-right text-muted-foreground">{ts.colActions}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
                 <TableCell colSpan={7} className="h-24 text-center">
-                  <Loader2 className="mx-auto size-5 animate-spin text-slate-500" />
+                  <Loader2 className="mx-auto size-5 animate-spin text-muted-foreground" />
                 </TableCell>
               </TableRow>
             ) : invoices.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="h-32 text-center">
                   <div className="flex flex-col items-center gap-2">
-                    <Check className="size-8 text-slate-600" />
-                    <p className="text-sm text-slate-500">{ts.adminNoPending}</p>
+                    <Check className="size-8 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">{ts.adminNoPending}</p>
                   </div>
                 </TableCell>
               </TableRow>
             ) : invoices.map(inv => (
-              <TableRow key={inv.id} className="border-slate-800 hover:bg-slate-800/50">
-                <TableCell className="font-medium text-slate-200">#{inv.businessId}</TableCell>
+              <TableRow key={inv.id} className="border-border hover:bg-muted/50">
+                <TableCell className="font-medium text-foreground">#{inv.businessId}</TableCell>
                 <TableCell>
                   <Badge variant="secondary" className={planStyles[inv.plan]?.className}>
                     {planStyles[inv.plan]?.label ?? inv.plan}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-sm text-slate-400">
+                <TableCell className="text-sm text-muted-foreground">
                   {inv.billingCycle === 'MONTHLY' ? ts.monthly.split(' ')[0] : ts.yearly.split(' ')[0]}
                 </TableCell>
-                <TableCell className="font-medium text-slate-200">{formatCurrency(inv.amount)}</TableCell>
+                <TableCell className="font-medium text-foreground">{formatCurrency(inv.amount)}</TableCell>
                 <TableCell className="max-w-48">
                   {inv.bankTransferRef ? (
-                    <span className="block truncate font-mono text-sm text-slate-300">{inv.bankTransferRef}</span>
+                    <span className="block truncate font-mono text-sm text-foreground">{inv.bankTransferRef}</span>
                   ) : (
                     <span className="flex items-center gap-1.5 text-xs text-amber-500">
                       <AlertCircle className="size-3.5" />
@@ -192,7 +192,7 @@ export default function AdminSubscriptionsPage() {
                     </span>
                   )}
                 </TableCell>
-                <TableCell className="text-sm text-slate-500">
+                <TableCell className="text-sm text-muted-foreground">
                   {new Date(inv.createdAt).toLocaleDateString()}
                 </TableCell>
                 <TableCell>
@@ -200,7 +200,7 @@ export default function AdminSubscriptionsPage() {
                     <Button
                       size="sm"
                       variant="outline"
-                      className="h-7 gap-1.5 border-emerald-700 text-emerald-400 hover:bg-emerald-900/30"
+                      className="h-7 gap-1.5 border-emerald-700 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-900/30"
                       onClick={() => { setConfirmTarget(inv); setAdminNote('') }}
                     >
                       <Check className="size-3.5" />
@@ -209,7 +209,7 @@ export default function AdminSubscriptionsPage() {
                     <Button
                       size="sm"
                       variant="outline"
-                      className="h-7 gap-1.5 border-red-700 text-red-400 hover:bg-red-900/30"
+                      className="h-7 gap-1.5 border-red-700 text-destructive hover:bg-red-900/30"
                       onClick={() => { setRejectTarget(inv); setAdminNote('') }}
                     >
                       <X className="size-3.5" />
@@ -222,33 +222,33 @@ export default function AdminSubscriptionsPage() {
           </TableBody>
         </Table>
         {totalPages > 1 && (
-          <div className="flex items-center justify-between border-t border-slate-800 px-4 py-3">
-            <p className="text-sm text-slate-500">Page {page + 1} of {totalPages}</p>
+          <div className="flex items-center justify-between border-t border-border px-4 py-3">
+            <p className="text-sm text-muted-foreground">Page {page + 1} of {totalPages}</p>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={() => setPage(p => p - 1)} disabled={page === 0 || isLoading}
-                className="border-slate-700 text-slate-300 hover:bg-slate-800">Previous</Button>
+                className="border-border text-foreground hover:bg-muted">Previous</Button>
               <Button variant="outline" size="sm" onClick={() => setPage(p => p + 1)} disabled={page >= totalPages - 1 || isLoading}
-                className="border-slate-700 text-slate-300 hover:bg-slate-800">Next</Button>
+                className="border-border text-foreground hover:bg-muted">Next</Button>
             </div>
           </div>
         )}
       </div>
 
       {/* Override Plan */}
-      <div className="rounded-xl border border-slate-800 bg-slate-900 p-5 space-y-4">
+      <div className="rounded-xl border border-border bg-card p-5 space-y-4">
         <div>
-          <h2 className="text-base font-semibold text-white">{ts.adminOverrideTitle}</h2>
-          <p className="text-sm text-slate-400 mt-0.5">{ts.adminOverrideSubtitle}</p>
+          <h2 className="text-base font-semibold text-foreground">{ts.adminOverrideTitle}</h2>
+          <p className="text-sm text-muted-foreground mt-0.5">{ts.adminOverrideSubtitle}</p>
         </div>
         <div className="space-y-2">
-          <Label className="text-slate-300">{ts.selectBusiness}</Label>
+          <Label className="text-foreground">{ts.selectBusiness}</Label>
           <Select value={selectedBusinessId} onValueChange={setSelectedBusinessId}>
-            <SelectTrigger className="w-full sm:max-w-sm bg-slate-800 border-slate-700 text-slate-200">
+            <SelectTrigger className="w-full sm:max-w-sm bg-muted border-border text-foreground">
               <SelectValue placeholder={ts.selectBusiness} />
             </SelectTrigger>
-            <SelectContent className="bg-slate-800 border-slate-700">
+            <SelectContent className="bg-muted border-border">
               {businesses.map(b => (
-                <SelectItem key={b.id} value={String(b.id)} className="text-slate-200">
+                <SelectItem key={b.id} value={String(b.id)} className="text-foreground">
                   #{b.id} — {b.name}
                 </SelectItem>
               ))}
@@ -257,28 +257,28 @@ export default function AdminSubscriptionsPage() {
         </div>
 
         {selectedBusinessId && (
-          <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-4">
+          <div className="rounded-lg border border-border bg-muted/50 p-4">
             {isSubLoading ? (
-              <div className="flex items-center gap-2 text-sm text-slate-400">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Loader2 className="size-4 animate-spin" />Loading...
               </div>
             ) : currentSub ? (
               <div className="grid grid-cols-3 gap-4 text-sm">
                 <div className="space-y-1">
-                  <p className="text-xs text-slate-500">{ts.currentPlanLabel}</p>
+                  <p className="text-xs text-muted-foreground">{ts.currentPlanLabel}</p>
                   <Badge variant="secondary" className={planStyles[currentSub.plan]?.className}>
                     {planStyles[currentSub.plan]?.label ?? currentSub.plan}
                   </Badge>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-xs text-slate-500">{ts.currentStatusLabel}</p>
+                  <p className="text-xs text-muted-foreground">{ts.currentStatusLabel}</p>
                   <p className={`text-sm font-medium ${statusColor[currentSub.status] ?? ''}`}>
                     {currentSub.status}
                   </p>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-xs text-slate-500">{ts.expiresLabel}</p>
-                  <p className="text-sm text-slate-300">
+                  <p className="text-xs text-muted-foreground">{ts.expiresLabel}</p>
+                  <p className="text-sm text-foreground">
                     {currentSub.expiresAt ? new Date(currentSub.expiresAt).toLocaleDateString() : ts.never}
                   </p>
                 </div>
@@ -288,40 +288,40 @@ export default function AdminSubscriptionsPage() {
         )}
 
         {!selectedBusinessId && (
-          <p className="text-sm text-slate-500">{ts.noBusinessSelected}</p>
+          <p className="text-sm text-muted-foreground">{ts.noBusinessSelected}</p>
         )}
 
-        <Separator className="bg-slate-800" />
+        <Separator className="bg-muted" />
 
-        <div className="flex items-start gap-3 rounded-lg border border-amber-800/50 bg-amber-950/20 p-3">
+        <div className="flex items-start gap-3 rounded-lg border border-amber-200 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-950/20 p-3">
           <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-500" />
-          <p className="text-sm text-amber-400">{ts.overrideWarning}</p>
+          <p className="text-sm text-amber-800 dark:text-amber-400">{ts.overrideWarning}</p>
         </div>
 
         <div className="flex items-end gap-3">
           <div className="w-48 space-y-2">
-            <Label className="text-slate-300">{ts.newPlanLabel}</Label>
+            <Label className="text-foreground">{ts.newPlanLabel}</Label>
             <Select value={newPlan} onValueChange={setNewPlan} disabled={!selectedBusinessId || isSubLoading}>
-              <SelectTrigger className="bg-slate-800 border-slate-700 text-slate-200">
+              <SelectTrigger className="bg-muted border-border text-foreground">
                 <SelectValue placeholder={ts.newPlanLabel} />
               </SelectTrigger>
-              <SelectContent className="bg-slate-800 border-slate-700">
-                <SelectItem value="FREE" className="text-slate-200">Free</SelectItem>
-                <SelectItem value="BASIC" className="text-slate-200">Basic</SelectItem>
-                <SelectItem value="PRO" className="text-slate-200">Pro</SelectItem>
+              <SelectContent className="bg-muted border-border">
+                <SelectItem value="FREE" className="text-foreground">Free</SelectItem>
+                <SelectItem value="BASIC" className="text-foreground">Basic</SelectItem>
+                <SelectItem value="PRO" className="text-foreground">Pro</SelectItem>
               </SelectContent>
             </Select>
           </div>
           {newPlan !== 'FREE' && (
             <div className="w-48 space-y-2">
-              <Label className="text-slate-300">{ts.colCycle}</Label>
+              <Label className="text-foreground">{ts.colCycle}</Label>
               <Select value={newCycle} onValueChange={setNewCycle} disabled={!selectedBusinessId || isSubLoading}>
-                <SelectTrigger className="bg-slate-800 border-slate-700 text-slate-200">
+                <SelectTrigger className="bg-muted border-border text-foreground">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-700">
-                  <SelectItem value="MONTHLY" className="text-slate-200">{ts.monthly}</SelectItem>
-                  <SelectItem value="YEARLY" className="text-slate-200">{ts.yearly}</SelectItem>
+                <SelectContent className="bg-muted border-border">
+                  <SelectItem value="MONTHLY" className="text-foreground">{ts.monthly}</SelectItem>
+                  <SelectItem value="YEARLY" className="text-foreground">{ts.yearly}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -329,7 +329,7 @@ export default function AdminSubscriptionsPage() {
           <Button
             onClick={handleChangePlan}
             disabled={!selectedBusinessId || !newPlan || isChangingPlan || isSubLoading}
-            className="bg-red-600 hover:bg-red-700 text-white"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground"
           >
             {isChangingPlan && <Loader2 className="mr-2 size-4 animate-spin" />}
             {isChangingPlan ? ts.changingPlan : ts.changePlan}
@@ -339,45 +339,45 @@ export default function AdminSubscriptionsPage() {
 
       {/* Confirm Dialog */}
       <Dialog open={!!confirmTarget} onOpenChange={open => !open && setConfirmTarget(null)}>
-        <DialogContent className="sm:max-w-md bg-slate-900 border-slate-700 text-slate-100">
+        <DialogContent className="sm:max-w-md bg-card border-border text-foreground">
           <DialogHeader>
             <DialogTitle>{ts.confirmTitle}</DialogTitle>
-            <DialogDescription className="text-slate-400">{ts.confirmDesc}</DialogDescription>
+            <DialogDescription className="text-muted-foreground">{ts.confirmDesc}</DialogDescription>
           </DialogHeader>
           {confirmTarget && (
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div className="space-y-0.5">
-                  <p className="text-slate-400">{ts.colPlan}</p>
+                  <p className="text-muted-foreground">{ts.colPlan}</p>
                   <p className="font-medium">{planStyles[confirmTarget.plan]?.label ?? confirmTarget.plan}</p>
                 </div>
                 <div className="space-y-0.5">
-                  <p className="text-slate-400">{ts.colAmount}</p>
+                  <p className="text-muted-foreground">{ts.colAmount}</p>
                   <p className="font-medium">{formatCurrency(confirmTarget.amount)}</p>
                 </div>
                 {confirmTarget.bankTransferRef && (
                   <div className="col-span-2 space-y-0.5">
-                    <p className="text-slate-400">{ts.colTransferRef}</p>
+                    <p className="text-muted-foreground">{ts.colTransferRef}</p>
                     <p className="font-mono text-sm">{confirmTarget.bankTransferRef}</p>
                   </div>
                 )}
               </div>
               <div className="space-y-2">
-                <Label className="text-slate-300">{ts.adminNoteOptional}</Label>
+                <Label className="text-foreground">{ts.adminNoteOptional}</Label>
                 <Textarea
                   value={adminNote}
                   onChange={e => setAdminNote(e.target.value)}
                   placeholder={ts.adminNotePlaceholder}
                   rows={2}
                   maxLength={500}
-                  className="bg-slate-800 border-slate-700 text-slate-200 placeholder:text-slate-500"
+                  className="bg-muted border-border text-foreground placeholder:text-muted-foreground"
                 />
               </div>
             </div>
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfirmTarget(null)} disabled={isActioning}
-              className="border-slate-700 text-slate-300 hover:bg-slate-800">Cancel</Button>
+              className="border-border text-foreground hover:bg-muted">Cancel</Button>
             <Button onClick={handleConfirm} disabled={isActioning}
               className="gap-2 bg-emerald-600 text-white hover:bg-emerald-700">
               {isActioning ? ts.confirming : <><Check className="size-4" />{ts.confirmPayment}</>}
@@ -388,30 +388,30 @@ export default function AdminSubscriptionsPage() {
 
       {/* Reject Dialog */}
       <Dialog open={!!rejectTarget} onOpenChange={open => !open && setRejectTarget(null)}>
-        <DialogContent className="sm:max-w-md bg-slate-900 border-slate-700 text-slate-100">
+        <DialogContent className="sm:max-w-md bg-card border-border text-foreground">
           <DialogHeader>
             <DialogTitle>{ts.rejectTitle}</DialogTitle>
-            <DialogDescription className="text-slate-400">{ts.rejectDesc}</DialogDescription>
+            <DialogDescription className="text-muted-foreground">{ts.rejectDesc}</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
-              <Label className="text-slate-300">{ts.rejectNoteLabel}</Label>
+              <Label className="text-foreground">{ts.rejectNoteLabel}</Label>
               <Textarea
                 value={adminNote}
                 onChange={e => setAdminNote(e.target.value)}
                 placeholder={ts.rejectNotePlaceholder}
                 rows={3}
                 maxLength={500}
-                className="bg-slate-800 border-slate-700 text-slate-200 placeholder:text-slate-500"
+                className="bg-muted border-border text-foreground placeholder:text-muted-foreground"
               />
               {!adminNote.trim() && (
-                <p className="text-xs text-red-400">{ts.rejectNoteRequired}</p>
+                <p className="text-xs text-destructive">{ts.rejectNoteRequired}</p>
               )}
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setRejectTarget(null)} disabled={isActioning}
-              className="border-slate-700 text-slate-300 hover:bg-slate-800">Cancel</Button>
+              className="border-border text-foreground hover:bg-muted">Cancel</Button>
             <Button onClick={handleReject} disabled={isActioning || !adminNote.trim()}
               variant="destructive" className="gap-2">
               {isActioning ? ts.rejecting : <><X className="size-4" />{ts.rejectInvoice}</>}

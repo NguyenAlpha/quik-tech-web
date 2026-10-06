@@ -40,31 +40,31 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="flex flex-col items-center gap-3 mb-8">
-          <div className="flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br from-red-500 to-rose-600 shadow-lg shadow-red-900/40">
-            <ShieldCheck className="size-7 text-white" />
+          <div className="flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary/80 shadow-sm">
+            <ShieldCheck className="size-7 text-primary-foreground" />
           </div>
           <div className="text-center">
-            <h1 className="text-xl font-bold text-white tracking-tight">QuikTech POS Admin</h1>
-            <p className="text-sm text-slate-400 mt-0.5">System administration portal</p>
+            <h1 className="text-xl font-bold text-foreground tracking-tight">QuikTech POS Admin</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">System administration portal</p>
           </div>
         </div>
 
         {/* Card */}
-        <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-xl">
+        <div className="rounded-2xl border border-border bg-card p-6 shadow-xl">
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="flex items-center gap-2 rounded-lg border border-red-900 bg-red-950/50 p-3 text-sm text-red-400">
+              <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
                 <AlertCircle className="size-4 shrink-0" />
                 {error}
               </div>
             )}
 
             <div className="space-y-1.5">
-              <Label htmlFor="usernameOrEmail" className="text-slate-300 text-sm">
+              <Label htmlFor="usernameOrEmail" className="text-foreground text-sm">
                 Username or Email
               </Label>
               <Input
@@ -75,12 +75,12 @@ export default function AdminLoginPage() {
                 onChange={e => setUsernameOrEmail(e.target.value)}
                 required
                 autoComplete="username"
-                className="bg-slate-800 border-slate-700 text-slate-100 placeholder:text-slate-500 focus-visible:ring-red-500"
+                className="bg-muted border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-ring"
               />
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="password" className="text-slate-300 text-sm">
+              <Label htmlFor="password" className="text-foreground text-sm">
                 Password
               </Label>
               <Input
@@ -91,13 +91,13 @@ export default function AdminLoginPage() {
                 onChange={e => setPassword(e.target.value)}
                 required
                 autoComplete="current-password"
-                className="bg-slate-800 border-slate-700 text-slate-100 placeholder:text-slate-500 focus-visible:ring-red-500"
+                className="bg-muted border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-ring"
               />
             </div>
 
             <Button
               type="submit"
-              className="w-full bg-red-600 hover:bg-red-700 text-white mt-2"
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground mt-2"
               disabled={isLoading || cooldown.isCoolingDown}
             >
               {isLoading && <Loader2 className="mr-2 size-4 animate-spin" />}
@@ -106,7 +106,7 @@ export default function AdminLoginPage() {
           </form>
         </div>
 
-        <p className="text-center text-xs text-slate-600 mt-6">
+        <p className="text-center text-xs text-muted-foreground mt-6">
           Restricted access — authorized personnel only
         </p>
       </div>

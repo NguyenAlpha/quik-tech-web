@@ -10,7 +10,7 @@ import { toast } from 'sonner'
 import type { AdminStats } from '@/lib/types'
 
 const planColors: Record<string, string> = {
-  FREE: 'bg-slate-600',
+  FREE: 'bg-muted-foreground',
   BASIC: 'bg-blue-500',
   PRO: 'bg-amber-500',
 }
@@ -22,15 +22,15 @@ function StatCard({ icon: Icon, label, value, sub }: {
   sub?: string
 }) {
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
+    <div className="rounded-xl border border-border bg-card p-5">
       <div className="flex items-center justify-between mb-3">
-        <p className="text-sm text-slate-400">{label}</p>
-        <div className="flex size-8 items-center justify-center rounded-lg bg-slate-800">
-          <Icon className="size-4 text-slate-400" />
+        <p className="text-sm text-muted-foreground">{label}</p>
+        <div className="flex size-8 items-center justify-center rounded-lg bg-muted">
+          <Icon className="size-4 text-muted-foreground" />
         </div>
       </div>
-      <p className="text-2xl font-bold text-white">{value}</p>
-      {sub && <p className="mt-1 text-xs text-slate-500">{sub}</p>}
+      <p className="text-2xl font-bold text-foreground">{value}</p>
+      {sub && <p className="mt-1 text-xs text-muted-foreground">{sub}</p>}
     </div>
   )
 }
@@ -51,14 +51,14 @@ export default function AdminStatsPage() {
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
-        <Loader2 className="size-6 animate-spin text-slate-400" />
+        <Loader2 className="size-6 animate-spin text-muted-foreground" />
       </div>
     )
   }
 
   if (!stats) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-2 text-slate-500">
+      <div className="flex h-full flex-col items-center justify-center gap-2 text-muted-foreground">
         <AlertCircle className="size-6" />
         <p className="text-sm">{ts.statsLoadError}</p>
       </div>
@@ -75,11 +75,11 @@ export default function AdminStatsPage() {
   const maxRevenue = Math.max(...stats.revenueLast6Months.map(m => m.amount), 1)
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="mx-auto w-full max-w-screen-2xl space-y-6 p-4 sm:p-6 lg:p-8">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-white">{ts.statsTitle}</h1>
-        <p className="text-sm text-slate-400 mt-1">{ts.statsSubtitle}</p>
+        <h1 className="text-2xl font-bold text-foreground">{ts.statsTitle}</h1>
+        <p className="text-sm text-muted-foreground mt-1">{ts.statsSubtitle}</p>
       </div>
 
       {/* KPI Cards */}
@@ -105,19 +105,19 @@ export default function AdminStatsPage() {
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {/* Plan Breakdown */}
-        <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
+        <div className="rounded-xl border border-border bg-card p-5">
           <div className="flex items-center gap-2 mb-4">
-            <BarChart3 className="size-4 text-slate-400" />
-            <h2 className="text-sm font-medium text-slate-200">{ts.statsPlanBreakdown}</h2>
+            <BarChart3 className="size-4 text-muted-foreground" />
+            <h2 className="text-sm font-medium text-foreground">{ts.statsPlanBreakdown}</h2>
           </div>
           <div className="space-y-3">
             {planBreakdown.map(p => (
               <div key={p.label}>
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-medium text-slate-400">{p.label}</span>
-                  <span className="text-xs text-slate-300">{p.count} / {totalPaid}</span>
+                  <span className="text-xs font-medium text-muted-foreground">{p.label}</span>
+                  <span className="text-xs text-foreground">{p.count} / {totalPaid}</span>
                 </div>
-                <div className="h-2 w-full rounded-full bg-slate-800">
+                <div className="h-2 w-full rounded-full bg-muted">
                   <div
                     className={`h-2 rounded-full ${planColors[p.label]}`}
                     style={{ width: totalPaid > 0 ? `${(p.count / totalPaid) * 100}%` : '0%' }}
@@ -128,15 +128,15 @@ export default function AdminStatsPage() {
           </div>
 
           {/* Sub status */}
-          <div className="mt-5 pt-4 border-t border-slate-800">
-            <p className="text-xs font-medium text-slate-400 mb-3">{ts.statsSubStatus}</p>
+          <div className="mt-5 pt-4 border-t border-border">
+            <p className="text-xs font-medium text-muted-foreground mb-3">{ts.statsSubStatus}</p>
             <div className="flex gap-4">
               <div className="flex-1 rounded-lg bg-emerald-900/30 border border-emerald-800/50 p-3 text-center">
-                <p className="text-lg font-bold text-emerald-400">{stats.activeSubscriptions}</p>
+                <p className="text-lg font-bold text-emerald-700 dark:text-emerald-400">{stats.activeSubscriptions}</p>
                 <p className="text-xs text-emerald-600 mt-0.5">{ts.statsActive}</p>
               </div>
               <div className="flex-1 rounded-lg bg-red-900/30 border border-red-800/50 p-3 text-center">
-                <p className="text-lg font-bold text-red-400">{stats.expiredSubscriptions}</p>
+                <p className="text-lg font-bold text-destructive">{stats.expiredSubscriptions}</p>
                 <p className="text-xs text-red-600 mt-0.5">{ts.statsExpired}</p>
               </div>
             </div>
@@ -144,10 +144,10 @@ export default function AdminStatsPage() {
         </div>
 
         {/* Revenue Chart */}
-        <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
+        <div className="rounded-xl border border-border bg-card p-5">
           <div className="flex items-center gap-2 mb-4">
-            <TrendingUp className="size-4 text-slate-400" />
-            <h2 className="text-sm font-medium text-slate-200">{ts.statsRevenueChart}</h2>
+            <TrendingUp className="size-4 text-muted-foreground" />
+            <h2 className="text-sm font-medium text-foreground">{ts.statsRevenueChart}</h2>
           </div>
           <div className="flex items-end gap-2 h-32">
             {stats.revenueLast6Months.map(m => {
@@ -157,19 +157,19 @@ export default function AdminStatsPage() {
                 <div key={m.month} className="flex flex-1 flex-col items-center gap-1">
                   <div className="w-full flex items-end justify-center" style={{ height: '100%' }}>
                     <div
-                      className="w-full rounded-t bg-red-600/80 hover:bg-red-500 transition-colors cursor-default"
+                      className="w-full rounded-t bg-primary/80 hover:bg-primary transition-colors cursor-default"
                       style={{ height: `${Math.max(heightPct, 2)}%` }}
                       title={formatCurrency(m.amount)}
                     />
                   </div>
-                  <span className="text-xs text-slate-500">{shortMonth}</span>
+                  <span className="text-xs text-muted-foreground">{shortMonth}</span>
                 </div>
               )
             })}
           </div>
-          <div className="mt-3 pt-3 border-t border-slate-800">
-            <p className="text-xs text-slate-500">
-              Total paid: <span className="text-slate-300 font-medium">
+          <div className="mt-3 pt-3 border-t border-border">
+            <p className="text-xs text-muted-foreground">
+              Total paid: <span className="text-foreground font-medium">
                 {formatCurrency(stats.revenueLast6Months.reduce((s, m) => s + m.amount, 0))}
               </span>
             </p>
