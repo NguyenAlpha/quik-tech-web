@@ -364,6 +364,8 @@ export interface SubscriptionInvoice {
   amount: number
   status: 'PENDING' | 'PAID' | 'FAILED'
   bankTransferRef: string | null
+  paymentAccountId?: number | null
+  bankInfo?: BankTransferInfo | null
   adminNote: string | null
   periodStart: string
   periodEnd: string

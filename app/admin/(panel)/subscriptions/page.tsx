@@ -38,6 +38,8 @@ import { adminChangePlan } from '@/lib/admin-client'
 import { AdminReasonField } from '@/components/admin-reason-field'
 import { useAdminUrl } from '@/hooks/use-admin-url'
 import { AdminInvoiceSearch } from '@/components/admin-invoice-search'
+import { PaymentBankDetails } from '@/components/payment-bank-details'
+import { usePaymentAccountCopy } from '@/lib/payment-account-copy'
 import { useAdminPending } from '@/components/admin-pending-provider'
 import { formatCurrency } from '@/lib/utils'
 import type { SubscriptionInvoice, Business, BusinessSubscription } from '@/lib/types'
@@ -54,6 +56,7 @@ function AdminSubscriptionsContent() {
   const { count: pendingCount, refresh: refreshPending } = useAdminPending()
   const { t, language } = useLanguage()
   const copy = useAdminCopy()
+  const bankCopy = usePaymentAccountCopy()
   const locale = language === 'vi' ? 'vi-VN' : 'en-US'
   const ts = t.subscription
 
@@ -238,6 +241,10 @@ function AdminSubscriptionsContent() {
       <div className="col-span-2">
         <dt className="text-xs text-muted-foreground">{ts.colTransferRef}</dt>
         <dd className="mt-1 break-all font-mono">{reviewTarget.bankTransferRef || ts.refNotSubmitted}</dd>
+      </div>
+      <div className="col-span-2 border-t pt-3">
+        <dt className="mb-3 font-medium">{bankCopy.snapshotTitle}</dt>
+        <dd><PaymentBankDetails info={reviewTarget.bankInfo} /></dd>
       </div>
     </dl>
   )

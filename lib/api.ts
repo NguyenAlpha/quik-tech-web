@@ -331,8 +331,9 @@ export async function cancelInvoice(businessId: number, invoiceId: number): Prom
   )
 }
 
-export async function getSubscriptionBankInfo(businessId: number): Promise<BankTransferInfo> {
-  return apiFetch<BankTransferInfo>(`/api/businesses/${businessId}/subscription/bank-info`)
+export async function getSubscriptionBankInfo(businessId: number, invoiceId?: number): Promise<BankTransferInfo | null> {
+  const query = invoiceId === undefined ? '' : `?invoiceId=${invoiceId}`
+  return apiFetch<BankTransferInfo | null>(`/api/businesses/${businessId}/subscription/bank-info${query}`)
 }
 
 export async function getInvoicesPage(
@@ -408,6 +409,8 @@ function mapInvoice(i: any): SubscriptionInvoice {
     amount: Number(i.amount),
     status: i.status,
     bankTransferRef: i.bankTransferRef ?? null,
+    paymentAccountId: i.paymentAccountId ?? null,
+    bankInfo: i.bankInfo ?? null,
     adminNote: i.adminNote ?? null,
     periodStart: i.periodStart ?? '',
     periodEnd: i.periodEnd ?? '',

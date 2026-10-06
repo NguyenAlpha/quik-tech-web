@@ -13,6 +13,8 @@ import {
 import { AdminTableState } from '@/components/admin-table-state'
 import { AdminPagination } from '@/components/admin-pagination'
 import { AdminPlanBadge } from '@/components/admin-subscription-badges'
+import { PaymentBankDetails } from '@/components/payment-bank-details'
+import { usePaymentAccountCopy } from '@/lib/payment-account-copy'
 import { useLanguage } from '@/lib/language-context'
 import { useAdminCopy } from '@/lib/admin-copy'
 import { formatCurrency } from '@/lib/utils'
@@ -36,6 +38,7 @@ export function AdminInvoiceHistory({
   onRetry: () => void
 }) {
   const copy = useAdminCopy()
+  const bankCopy = usePaymentAccountCopy()
   const { t, language } = useLanguage()
   const labels = { PENDING: copy.pending, PAID: copy.paid, FAILED: copy.failed }
   const colors = {
@@ -57,12 +60,13 @@ export function AdminInvoiceHistory({
             </TableHead>
             <TableHead>{copy.created}</TableHead>
             <TableHead>{copy.note}</TableHead>
+            <TableHead>{bankCopy.title}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {loading || error || !invoices.length ? (
             <AdminTableState
-              columns={7}
+              columns={8}
               loading={loading}
               error={error}
               emptyMessage={copy.noInvoices}
@@ -104,8 +108,11 @@ export function AdminInvoiceHistory({
                 <TableCell className="min-w-48 max-w-80 whitespace-normal break-words">
                   {invoice.adminNote || '—'}
                   <p className="mt-1 break-all font-mono text-xs text-muted-foreground">
-                    {invoice.bankTransferRef}
+                  {invoice.bankTransferRef}
                   </p>
+                </TableCell>
+                <TableCell className="min-w-64 max-w-96 whitespace-normal">
+                  <details><summary className="cursor-pointer text-sm text-primary">{bankCopy.snapshotTitle}</summary><div className="mt-3"><PaymentBankDetails info={invoice.bankInfo} /></div></details>
                 </TableCell>
               </TableRow>
             ))

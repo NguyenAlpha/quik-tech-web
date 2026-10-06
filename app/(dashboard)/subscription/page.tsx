@@ -6,7 +6,6 @@ import {
   Check, ArrowUpCircle, ArrowDownCircle, AlertTriangle, Receipt,
   Loader2, Copy, CheckCheck,
 } from 'lucide-react'
-import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -23,6 +22,8 @@ import {
 } from '@/components/ui/table'
 import { PageSkeleton } from '@/components/page-skeleton'
 import { PageError } from '@/components/page-error'
+import { PaymentBankDetails } from '@/components/payment-bank-details'
+import { usePaymentAccountCopy } from '@/lib/payment-account-copy'
 import { useAuth } from '@/lib/auth-context'
 import { useLanguage } from '@/lib/language-context'
 import { errorMessage } from '@/lib/api-error'
@@ -30,6 +31,7 @@ import {
   getBusinessSubscription, requestUpgrade, getInvoicesPage,
   scheduleDowngrade, cancelScheduledDowngrade,
   cancelInvoice, getSubscriptionBankInfo,
+  ApiError,
 } from '@/lib/api'
 import { formatCurrency } from '@/lib/utils'
 import type {
@@ -57,6 +59,7 @@ export default function SubscriptionPage() {
   const { businessId, memberships } = useAuth()
   const { language, t } = useLanguage()
   const ts = t.subscription
+  const bankCopy = usePaymentAccountCopy()
   const planLabels: Record<string, string> = {
     FREE: ts.planFree,
     BASIC: ts.planBasic,
@@ -91,6 +94,10 @@ export default function SubscriptionPage() {
   const [checkoutBankInfo, setCheckoutBankInfo] = useState<BankTransferInfo | null>(null)
   const [cancelLoading, setCancelLoading] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [checkoutLoading, setCheckoutLoading] = useState(false)
+  const [paymentAvailable, setPaymentAvailable] = useState<boolean | null>(null)
+  const [paymentAvailabilityError, setPaymentAvailabilityError] = useState(false)
+  const [availabilityReload, setAvailabilityReload] = useState(0)
 
   // Downgrade modals
   const [isDowngradeOpen, setIsDowngradeOpen] = useState(false)
@@ -135,13 +142,24 @@ export default function SubscriptionPage() {
 
   useEffect(() => { init() }, [businessId])
 
+  useEffect(() => {
+    let cancelled = false
+    setPaymentAvailable(null)
+    setPaymentAvailabilityError(false)
+    if (!businessId || !isOwner) return
+    getSubscriptionBankInfo(businessId)
+      .then(info => { if (!cancelled) setPaymentAvailable(!!info) })
+      .catch(() => { if (!cancelled) setPaymentAvailabilityError(true) })
+    return () => { cancelled = true }
+  }, [businessId, isOwner, availabilityReload, isUpgradeOpen])
+
   const openUpgrade = (plan: string) => {
     setUpgradeForm({ plan, billingCycle })
     setIsUpgradeOpen(true)
   }
 
   const handleUpgrade = async () => {
-    if (!businessId) return
+    if (!businessId || paymentAvailable !== true || upgradeLoading) return
     setUpgradeLoading(true)
     try {
       const result = await requestUpgrade(businessId, upgradeForm.plan, upgradeForm.billingCycle)
@@ -156,21 +174,27 @@ export default function SubscriptionPage() {
       setCheckoutBankInfo(result.bankInfo)
       setIsCheckoutOpen(true)
     } catch (err) {
-      toast.error(errorMessage(err, t, ts.upgradeError))
+      if (err instanceof ApiError && err.code === 'PAYMENT_ACCOUNT_UNAVAILABLE') {
+        setPaymentAvailable(false)
+        toast.error(bankCopy.unavailable)
+      } else toast.error(errorMessage(err, t, ts.upgradeError))
     } finally {
       setUpgradeLoading(false)
     }
   }
 
   const openCheckoutFromBanner = async () => {
-    if (!businessId || !pendingInvoice) return
+    if (!businessId || !pendingInvoice || checkoutLoading) return
+    setCheckoutLoading(true)
     try {
-      const bankInfo = await getSubscriptionBankInfo(businessId)
+      const bankInfo = await getSubscriptionBankInfo(businessId, pendingInvoice.id)
       setCheckoutInvoice(pendingInvoice)
       setCheckoutBankInfo(bankInfo)
       setIsCheckoutOpen(true)
     } catch (err) {
       toast.error(errorMessage(err, t, ts.loadBankInfoError))
+    } finally {
+      setCheckoutLoading(false)
     }
   }
 
@@ -271,6 +295,13 @@ export default function SubscriptionPage() {
         </div>
       </div>
 
+      {isOwner && (paymentAvailable === false || paymentAvailabilityError) && (
+        <div role="status" className="flex flex-wrap items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
+          <p className="flex-1">{paymentAvailabilityError ? bankCopy.availabilityError : bankCopy.unavailable}</p>
+          <Button variant="outline" size="sm" onClick={() => setAvailabilityReload(value => value + 1)}>{t.common.retry}</Button>
+        </div>
+      )}
+
       {/* Plan cards */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
         {plans.map(plan => {
@@ -325,7 +356,7 @@ export default function SubscriptionPage() {
                   {isCurrent ? (
                     <Button className="w-full" variant="outline" disabled>{ts.currentPlan}</Button>
                   ) : canUpgrade ? (
-                    <Button className="w-full gap-2" onClick={() => openUpgrade(plan.id)}>
+                    <Button className="w-full gap-2" disabled={paymentAvailable !== true} onClick={() => openUpgrade(plan.id)}>
                       <ArrowUpCircle className="size-4" />
                       {ts.upgradeBtn}
                     </Button>
@@ -384,6 +415,7 @@ export default function SubscriptionPage() {
             variant="outline"
             className="shrink-0 border-amber-300 text-amber-700 hover:bg-amber-100 dark:border-amber-700 dark:text-amber-400 dark:hover:bg-amber-950/50"
             onClick={openCheckoutFromBanner}
+            disabled={checkoutLoading || !isOwner}
           >
             {ts.viewDetails}
           </Button>
@@ -406,6 +438,7 @@ export default function SubscriptionPage() {
                   <TableHead className="text-xs">{ts.colAmount}</TableHead>
                   <TableHead className="text-xs">{ts.colStatus}</TableHead>
                   <TableHead className="text-xs">{ts.colDate}</TableHead>
+                  <TableHead className="text-xs">{bankCopy.title}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -427,6 +460,9 @@ export default function SubscriptionPage() {
                     </TableCell>
                     <TableCell className="py-2 text-xs text-muted-foreground">
                       {new Date(inv.createdAt).toLocaleDateString(locale)}
+                    </TableCell>
+                    <TableCell className="min-w-64 max-w-96 whitespace-normal py-2">
+                      <details><summary className="cursor-pointer text-xs text-primary">{bankCopy.snapshotTitle}</summary><div className="mt-3"><PaymentBankDetails info={inv.bankInfo} /></div></details>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -484,7 +520,7 @@ export default function SubscriptionPage() {
             <Button variant="outline" onClick={() => setIsUpgradeOpen(false)} disabled={upgradeLoading}>
               {ts.cancel}
             </Button>
-            <Button onClick={handleUpgrade} disabled={upgradeLoading} className="gap-2">
+            <Button onClick={handleUpgrade} disabled={upgradeLoading || paymentAvailable !== true} className="gap-2">
               {upgradeLoading
                 ? <><Loader2 className="size-4 animate-spin" />{ts.processing}</>
                 : ts.continueToPayment}
@@ -495,7 +531,7 @@ export default function SubscriptionPage() {
 
       {/* ── Checkout modal ── */}
       <Dialog open={isCheckoutOpen} onOpenChange={open => { if (!open) { setIsCheckoutOpen(false); setCheckoutInvoice(null); setCheckoutBankInfo(null) } }}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold">{ts.checkoutTitle}</DialogTitle>
             <DialogDescription>
@@ -514,12 +550,7 @@ export default function SubscriptionPage() {
               </p>
             </div>
 
-            {/* QR code */}
-            <div className="flex justify-center">
-              <div className="relative size-48 overflow-hidden rounded-xl border">
-                <Image src="/qr.png" alt={ts.transferQrAlt} fill className="object-cover" />
-              </div>
-            </div>
+            {/* QR code: the former fixed image is omitted because invoices can have different receiving accounts. */}
 
             {/* Transfer reference — most important */}
             <div className="rounded-lg border-2 border-primary/20 bg-primary/5 px-4 py-3">
@@ -539,21 +570,14 @@ export default function SubscriptionPage() {
             </div>
 
             {/* Bank info */}
-            {checkoutBankInfo && (
-              <div className="divide-y rounded-lg border">
-                {[
-                  { label: ts.bankName,      value: checkoutBankInfo.bankName },
-                  { label: ts.accountNumber, value: checkoutBankInfo.accountNumber },
-                  { label: ts.accountHolder, value: checkoutBankInfo.accountHolder },
-                  { label: ts.branch,        value: checkoutBankInfo.branch },
-                ].map(({ label, value }) => (
-                  <div key={label} className="flex items-center justify-between px-4 py-2.5">
-                    <span className="text-sm text-muted-foreground">{label}</span>
-                    <span className="text-sm font-medium">{value || '—'}</span>
-                  </div>
-                ))}
-              </div>
-            )}
+            <section className="space-y-3 rounded-lg border p-4">
+              <h3 className="text-sm font-semibold">{bankCopy.snapshotTitle}</h3>
+              <PaymentBankDetails info={checkoutBankInfo} />
+              {checkoutBankInfo && <Button size="sm" variant="outline" onClick={async () => {
+                try { await navigator.clipboard.writeText(checkoutBankInfo.accountNumber); toast.success(bankCopy.copied) }
+                catch { toast.error(bankCopy.copyError) }
+              }}><Copy className="size-4" />{bankCopy.copyNumber}</Button>}
+            </section>
           </div>
 
           <DialogFooter className="gap-2 sm:gap-0">
@@ -566,7 +590,7 @@ export default function SubscriptionPage() {
               {cancelLoading && <Loader2 className="size-4 animate-spin" />}
               {ts.cancelPayment}
             </Button>
-            <Button onClick={handlePaid} className="gap-2">
+            <Button onClick={handlePaid} disabled={!checkoutBankInfo || cancelLoading} className="gap-2">
               <Check className="size-4" />
               {ts.transferred}
             </Button>

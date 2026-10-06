@@ -138,3 +138,14 @@ actions appear in `/admin/audit`, including reasons and before/after values.
 Requires the backend payment-account API and migrations V11/V12; see backend
 `docs/api/PAYMENT_ACCOUNTS.md` for one-time import and deployment order.
 This feature has not been run, built or tested, at the user's request.
+
+Invoice review dialogs, global/business invoice history and merchant history show
+the account details saved on each invoice, including a missing-history message for
+legacy invoices without a snapshot. Merchant checkout reopens with `invoiceId`,
+so switching the default cannot redirect a pending invoice to another bank. The
+fixed `/qr.png` is no longer displayed; customers can copy the saved account number
+and transfer reference. No new QR generation or external banking service is added.
+
+If no default is configured, merchant upgrade/checkout submission is disabled with
+a retryable availability notice. Server validation remains authoritative if the
+configuration changes while the page is open. Free/downgrade flows remain available.
