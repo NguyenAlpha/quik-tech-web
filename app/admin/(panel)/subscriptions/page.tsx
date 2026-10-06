@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, Suspense } from 'react'
+import { useState, useEffect, useCallback, useRef, Suspense } from 'react'
 import { toast } from 'sonner'
 import { Check, X, AlertCircle, AlertTriangle, Loader2, RefreshCw, Building2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -34,18 +34,23 @@ import {
   adminChangePlan
 } from '@/lib/api'
 import { useAdminUrl } from '@/hooks/use-admin-url'
+import { AdminInvoiceSearch } from '@/components/admin-invoice-search'
+import { useAdminPending } from '@/components/admin-pending-provider'
 import { formatCurrency } from '@/lib/utils'
 import type { SubscriptionInvoice, Business, BusinessSubscription } from '@/lib/types'
 
 function AdminSubscriptionsContent() {
-  const { params, update } = useAdminUrl()
+  const { params, update, page } = useAdminUrl()
+  const tab = ['override', 'history'].includes(params.get('tab') || '') ? params.get('tab')! : 'invoices'
+  const invoiceRequest = useRef(0)
+  const setPage = useCallback((value: number) => update({ page: value }), [update])
+  const { count: pendingCount, refresh: refreshPending } = useAdminPending()
   const { t, language } = useLanguage()
   const copy = useAdminCopy()
   const locale = language === 'vi' ? 'vi-VN' : 'en-US'
   const ts = t.subscription
 
   const [invoices, setInvoices] = useState<SubscriptionInvoice[]>([])
-  const [page, setPage] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -68,10 +73,12 @@ function AdminSubscriptionsContent() {
   const [isChangingPlan, setIsChangingPlan] = useState(false)
 
   const loadInvoices = useCallback(async () => {
+    const request = ++invoiceRequest.current
     setIsLoading(true)
     setError(null)
     try {
       const result = await adminGetPendingInvoices({ page, size: 20 })
+      if (request !== invoiceRequest.current) return
       if (result.content.length === 0 && page > 0) {
         setPage(Math.max(0, Math.min(page - 1, result.totalPages - 1)))
         return
@@ -79,11 +86,11 @@ function AdminSubscriptionsContent() {
       setInvoices(result.content)
       setTotalPages(result.totalPages)
     } catch (err) {
-      setError(errorMessage(err, t, ts.loadError))
+      if (request === invoiceRequest.current) setError(errorMessage(err, t, ts.loadError))
     } finally {
-      setIsLoading(false)
+      if (request === invoiceRequest.current) setIsLoading(false)
     }
-  }, [page, t, ts.loadError])
+  }, [page, t, ts.loadError, setPage])
 
   const loadBusinesses = useCallback(async () => {
     setBusinessError(null)
@@ -95,8 +102,9 @@ function AdminSubscriptionsContent() {
   }, [t, ts.businessesLoadError])
 
   useEffect(() => {
-    void loadInvoices()
-  }, [loadInvoices])
+    if (tab === 'invoices') void loadInvoices()
+    return () => { invoiceRequest.current++ }
+  }, [loadInvoices, tab])
   useEffect(() => {
     void loadBusinesses()
   }, [loadBusinesses])
@@ -137,6 +145,8 @@ function AdminSubscriptionsContent() {
       setConfirmTarget(null)
       setAdminNote('')
       toast.success(ts.confirmSuccess)
+      refreshPending()
+      setSubReload(value => value + 1)
       void loadInvoices()
     } catch (err) {
       toast.error(errorMessage(err, t, ts.confirmError))
@@ -154,6 +164,7 @@ function AdminSubscriptionsContent() {
       setRejectTarget(null)
       setAdminNote('')
       toast.success(ts.rejectSuccess)
+      refreshPending()
       void loadInvoices()
     } catch (err) {
       toast.error(errorMessage(err, t, ts.rejectError))
@@ -218,11 +229,12 @@ function AdminSubscriptionsContent() {
   return (
     <div className="mx-auto w-full max-w-screen-2xl space-y-6 p-4 sm:p-6 lg:p-8">
       <PageHeader title={copy.subscriptions} subtitle={copy.subscriptionDescription} />
-      <Tabs value={params.get('tab') === 'override' ? 'override' : 'invoices'} onValueChange={tab => update({ tab })} className="gap-5">
+      <Tabs value={tab} onValueChange={tab => update({ tab, page: null })} className="gap-5">
         <TabsList className="h-auto max-w-full flex-wrap">
           <TabsTrigger value="invoices" className="px-3 py-2">
-            {copy.invoiceQueue}
+            {copy.invoiceQueue}{pendingCount !== null && <span className="ml-2 rounded-full bg-primary/10 px-2 text-xs text-primary">{pendingCount}</span>}
           </TabsTrigger>
+          <TabsTrigger value="history" className="px-3 py-2">{copy.invoices}</TabsTrigger>
           <TabsTrigger value="override" className="px-3 py-2">
             {copy.overridePlan}
           </TabsTrigger>
@@ -235,7 +247,7 @@ function AdminSubscriptionsContent() {
                 <h2 className="text-sm font-semibold">{copy.invoiceQueue}</h2>
                 <p className="mt-1 text-xs text-muted-foreground">{copy.pendingDescription}</p>
               </div>
-              <Button variant="outline" size="sm" onClick={loadInvoices} disabled={isLoading}>
+              <Button variant="outline" size="sm" onClick={() => { void loadInvoices(); refreshPending() }} disabled={isLoading}>
                 <RefreshCw className="size-4" />
                 {copy.refresh}
               </Button>
@@ -353,6 +365,7 @@ function AdminSubscriptionsContent() {
             </div>
           )}
         </TabsContent>
+        <TabsContent value="history" className="min-w-0"><AdminInvoiceSearch /></TabsContent>
         <TabsContent value="override" className="min-w-0">
           {/* Override Plan */}
           <div className="max-w-3xl space-y-6 rounded-xl border bg-card p-5 shadow-sm sm:p-6">

@@ -22,7 +22,7 @@ export function AdminHeader() {
   const { t } = useLanguage()
   const copy = useAdminCopy()
   const [user, setUser] = useState<AuthUser | null>(null)
-  const currentPage = adminNavItems.find(item => item.href === pathname)
+  const currentPage = adminNavItems.find(item => item.href === pathname || pathname.startsWith(`${item.href}/`))
 
   useEffect(() => {
     const saved = localStorage.getItem('admin_user')

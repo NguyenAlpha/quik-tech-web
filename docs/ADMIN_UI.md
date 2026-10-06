@@ -77,3 +77,19 @@ the existing business endpoint, with loading/empty/retry states and pagination.
 Phase 5 checks passed: TypeScript, production build, live aggregate/404/403 and
 business-scoped invoice history; Chromium tabs/reload, preselected adjustment,
 390px layout without page overflow and no JavaScript errors.
+
+## Phase 6: invoice operations
+
+Subscriptions has pending, history and adjustment tabs. History searches business
+names, numeric business/invoice IDs and transfer references, with status filtering.
+`tab`, `q`, `status` and zero-based `page` are preserved in the URL; submitting a
+search or changing status resets pagination. Requests ignore obsolete responses.
+
+The navigation badge and pending tab count refresh after confirm/reject, manual
+refresh and returning to the browser tab. A failed count request hides the badge
+instead of showing a stale count. Confirming also refreshes a selected subscription.
+
+Phase 6 checks passed: TypeScript/build, real API filters, literal wildcard,
+page boundaries, invalid parameter 400 and normal-user 403. An isolated live
+browser check confirmed payment, badge refresh, search/status URL restoration
+and mobile layout; production business records were not mutated.

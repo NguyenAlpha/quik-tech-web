@@ -5,6 +5,8 @@ import { useLanguage } from '@/lib/language-context'
 // Admin-specific copy stays separate from merchant/store terminology.
 const adminCopy = {
   en: {
+    invoiceSearch: 'Search business, invoice ID or transfer reference...', invoiceStatus: 'Invoice status',
+    allStatuses: 'All statuses', search: 'Search',
     details: 'Details', stores: 'Stores', invoices: 'Invoice history', contact: 'Contact information',
     address: 'Address', phone: 'Phone', email: 'Email', created: 'Created',
     planLimits: 'Plan limits', products: 'Products', staff: 'Staff', warehouses: 'Warehouses', unlimited: 'Unlimited',
@@ -66,6 +68,8 @@ const adminCopy = {
     loginIntro: 'One workspace for the people and businesses behind QuikTech POS.'
   },
   vi: {
+    invoiceSearch: 'Tìm doanh nghiệp, mã hóa đơn hoặc nội dung chuyển khoản...', invoiceStatus: 'Trạng thái hóa đơn',
+    allStatuses: 'Tất cả trạng thái', search: 'Tìm kiếm',
     details: 'Chi tiết', stores: 'Cửa hàng', invoices: 'Lịch sử hóa đơn', contact: 'Thông tin liên hệ',
     address: 'Địa chỉ', phone: 'Điện thoại', email: 'Email', created: 'Ngày tạo',
     planLimits: 'Giới hạn gói', products: 'Sản phẩm', staff: 'Nhân viên', warehouses: 'Kho', unlimited: 'Không giới hạn',

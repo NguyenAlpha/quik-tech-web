@@ -4,6 +4,7 @@ import { BarChart3, Building2, CreditCard, ShieldCheck, Users } from 'lucide-rea
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAdminCopy } from '@/lib/admin-copy'
+import { useAdminPending } from '@/components/admin-pending-provider'
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent,
   SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
@@ -21,6 +22,7 @@ export function AdminSidebar() {
   const pathname = usePathname()
   const copy = useAdminCopy()
   const { setOpenMobile } = useSidebar()
+  const { count } = useAdminPending()
 
   return (
     <Sidebar collapsible="icon" className="border-r">
@@ -56,6 +58,7 @@ export function AdminSidebar() {
                     <Link href={item.href} aria-current={(pathname === item.href || pathname.startsWith(`${item.href}/`)) ? 'page' : undefined} onClick={() => setOpenMobile(false)}>
                       <item.icon />
                       <span>{copy[item.key]}</span>
+                      {item.key === 'subscriptions' && count !== null && count > 0 && <span aria-label={`${copy.invoiceQueue}: ${count}`} className="ml-auto rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary group-data-[collapsible=icon]:hidden">{count}</span>}
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

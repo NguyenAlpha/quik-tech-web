@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { AdminSidebar } from '@/components/admin-sidebar'
 import { AdminHeader } from '@/components/admin-header'
+import { AdminPendingProvider } from '@/components/admin-pending-provider'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { useAdminCopy } from '@/lib/admin-copy'
 import { clearAdminSession, verifyAdminSession } from '@/lib/admin-client'
@@ -51,7 +52,7 @@ export default function AdminPanelLayout({ children }: { children: React.ReactNo
   )
 
   return (
-    <SidebarProvider>
+    <AdminPendingProvider><SidebarProvider>
       <a href="#admin-content" className="sr-only z-50 rounded-md bg-background p-3 focus:not-sr-only focus:fixed focus:left-4 focus:top-4">
         {copy.skipToContent}
       </a>
@@ -62,6 +63,6 @@ export default function AdminPanelLayout({ children }: { children: React.ReactNo
           {children}
         </main>
       </SidebarInset>
-    </SidebarProvider>
+    </SidebarProvider></AdminPendingProvider>
   )
 }
