@@ -33,6 +33,7 @@ import {
 import { useAdminUrl } from '@/hooks/use-admin-url'
 import { useLanguage } from '@/lib/language-context'
 import { useAdminCopy } from '@/lib/admin-copy'
+import { usePaymentAccountCopy } from '@/lib/payment-account-copy'
 import { errorMessage } from '@/lib/api-error'
 import {
   adminRequest,
@@ -57,6 +58,7 @@ function flatten(
 function AuditContent() {
   const { params, update } = useAdminUrl()
   const copy = useAdminCopy()
+  const bankCopy = usePaymentAccountCopy()
   const { t, language } = useLanguage()
   const action = params.get('action') || 'ALL'
   const businessId = params.get('businessId') || ''
@@ -74,7 +76,11 @@ function AuditContent() {
     ADMIN_INVOICE_CONFIRMED: copy.invoiceConfirmed,
     ADMIN_INVOICE_REJECTED: copy.invoiceRejected,
     ADMIN_USER_STATUS_CHANGED: copy.userStatusChanged,
-    ADMIN_USER_DELETED: copy.userDeleted
+    ADMIN_USER_DELETED: copy.userDeleted,
+    ADMIN_PAYMENT_ACCOUNT_CREATED: bankCopy.accountCreated,
+    ADMIN_PAYMENT_ACCOUNT_UPDATED: bankCopy.accountUpdated,
+    ADMIN_PAYMENT_ACCOUNT_ACTIVATED: bankCopy.accountActivated,
+    ADMIN_PAYMENT_ACCOUNT_ARCHIVED: bankCopy.accountArchived
   }
   useEffect(() => {
     setBusinessInput(businessId)
@@ -110,6 +116,10 @@ function AuditContent() {
     ...new Set([...Object.keys(before), ...Object.keys(after)])
   ].filter((key) => before[key] !== after[key])
   const fieldNames: Record<string, string> = {
+    label: bankCopy.label, bankName: bankCopy.bankName, accountNumber: bankCopy.accountNumber,
+    accountHolder: bankCopy.accountHolder, branch: bankCopy.branch, active: bankCopy.active,
+    archived: bankCopy.archived, version: bankCopy.version, bankInfo: bankCopy.bankInfo,
+    paymentAccountId: bankCopy.paymentAccountId,
     invoice: copy.invoices,
     subscription: copy.subscriptions,
     id: 'ID',
@@ -260,7 +270,9 @@ function AuditContent() {
                         ? copy.users
                         : entry.entityType === 'SUBSCRIPTION'
                           ? copy.subscriptions
-                          : copy.invoices}{' '}
+                          : entry.entityType === 'PAYMENT_ACCOUNT'
+                            ? bankCopy.title
+                            : copy.invoices}{' '}
                       #{entry.entityId}
                     </p>
                     {entry.businessId && (

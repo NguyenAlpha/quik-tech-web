@@ -121,3 +121,20 @@ concurrent confirmation. Chromium exercised plan adjustment, lock and delete
 reasons, the comparison dialog at 390px, filter restoration and EN/VI. All these
 mutations used isolated test records. The backend rollback script verified that
 an audit insert failure also rolls back the subscription change.
+
+## Receiving accounts
+
+`/admin/payment-accounts` manages the platform's bank accounts for subscription
+fees. Cards show bank, number, holder, branch and status; forms support EN/VI,
+loading/retry, optional reasons and version conflicts. Accounts can be added,
+edited, selected for new invoices or archived. The default cannot be archived
+until another account is selected. Archived cards remain visible under their tab.
+
+Switch confirmation shows the previous and next receiving details. Existing
+invoices keep their saved destination. If no account is selected, the page prompts
+setup and explains that new subscription payments are unavailable. The four account
+actions appear in `/admin/audit`, including reasons and before/after values.
+
+Requires the backend payment-account API and migrations V11/V12; see backend
+`docs/api/PAYMENT_ACCOUNTS.md` for one-time import and deployment order.
+This feature has not been run, built or tested, at the user's request.

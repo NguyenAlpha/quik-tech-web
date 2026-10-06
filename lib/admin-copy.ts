@@ -5,6 +5,7 @@ import { useLanguage } from '@/lib/language-context'
 // Admin-specific copy stays separate from merchant/store terminology.
 const adminCopy = {
   en: {
+    paymentAccounts: 'Receiving accounts',
     periodStart: 'Period start', periodEnd: 'Period end', updated: 'Updated', pendingPlan: 'Scheduled plan',
     pendingCycle: 'Scheduled billing cycle', paidAt: 'Paid at', confirmedAt: 'Confirmed at', deletedAt: 'Deleted at', yes: 'Yes', no: 'No',
     audit: 'Activity log', auditDescription: 'Review administrator actions and the values that changed.',
@@ -80,6 +81,7 @@ const adminCopy = {
     loginIntro: 'One workspace for the people and businesses behind QuikTech POS.'
   },
   vi: {
+    paymentAccounts: 'Tài khoản nhận tiền',
     periodStart: 'Bắt đầu kỳ', periodEnd: 'Kết thúc kỳ', updated: 'Cập nhật', pendingPlan: 'Gói đã lên lịch',
     pendingCycle: 'Chu kỳ đã lên lịch', paidAt: 'Ngày thanh toán', confirmedAt: 'Ngày xác nhận', deletedAt: 'Ngày xóa', yes: 'Có', no: 'Không',
     audit: 'Nhật ký thao tác', auditDescription: 'Tra cứu thao tác quản trị và những giá trị đã thay đổi.',
