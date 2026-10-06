@@ -1,5 +1,9 @@
 # Architecture — Cấu trúc & Cách Next.js Hoạt Động
 
+> Khu vực quản trị hệ thống hiện nằm riêng tại `app/admin/(panel)` và
+> `app/admin/login`, dùng layout và phiên admin độc lập. Xem [Admin UI](ADMIN_UI.md)
+> cho cấu trúc giao diện, kế hoạch triển khai và các kiểm tra đã thực hiện.
+
 ## 1. Folder Structure
 
 ```

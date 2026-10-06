@@ -1,81 +1,101 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
-import { Loader2, Search, Trash2, UserX, UserCheck } from 'lucide-react'
+import { Loader2, Search, Trash2, UserX, UserCheck, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle,
-  DialogFooter, DialogDescription,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription
 } from '@/components/ui/dialog'
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from '@/components/ui/table'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { PageHeader } from '@/components/page-header'
+import { AdminTableState } from '@/components/admin-table-state'
+import { AdminPagination } from '@/components/admin-pagination'
 import { useLanguage } from '@/lib/language-context'
+import { useAdminCopy } from '@/lib/admin-copy'
 import { errorMessage } from '@/lib/api-error'
 import { adminGetUsers, adminSetUserStatus, adminDeleteUser } from '@/lib/api'
+import { getInitials } from '@/lib/utils'
 import type { AdminUser } from '@/lib/types'
 
 export default function AdminUsersPage() {
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const ts = t.subscription
-
+  const copy = useAdminCopy()
   const [users, setUsers] = useState<AdminUser[]>([])
   const [page, setPage] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
   const [search, setSearch] = useState('')
+  const [query, setQuery] = useState('')
+  const [reload, setReload] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<AdminUser | null>(null)
+  const [statusTarget, setStatusTarget] = useState<AdminUser | null>(null)
   const [isDeletingUser, setIsDeletingUser] = useState(false)
-  const [togglingUserId, setTogglingUserId] = useState<number | null>(null)
-  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  useEffect(() => { loadUsers() }, [page])
+  const [isChangingStatus, setIsChangingStatus] = useState(false)
+  const locale = language === 'vi' ? 'vi-VN' : 'en-US'
 
   useEffect(() => {
-    if (searchTimer.current) clearTimeout(searchTimer.current)
-    searchTimer.current = setTimeout(() => {
+    const timer = setTimeout(() => {
+      setQuery(search.trim())
       setPage(0)
-      loadUsers(search)
-    }, 400)
-    return () => { if (searchTimer.current) clearTimeout(searchTimer.current) }
+    }, 350)
+    return () => clearTimeout(timer)
   }, [search])
 
-  const loadUsers = async (q = search) => {
+  useEffect(() => {
+    let cancelled = false
     setIsLoading(true)
-    try {
-      const result = await adminGetUsers({ q: q || undefined, page, size: 20 })
-      setUsers(result.content)
-      setTotalPages(result.totalPages)
-    } catch (err) {
-      toast.error(errorMessage(err, t, ts.userMgmtLoadError))
-    } finally {
-      setIsLoading(false)
+    setError(null)
+    adminGetUsers({ q: query || undefined, page, size: 20 })
+      .then((result) => {
+        if (cancelled) return
+        setUsers(result.content)
+        setTotalPages(result.totalPages)
+      })
+      .catch((err) => {
+        if (!cancelled) setError(errorMessage(err, t, ts.userMgmtLoadError))
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false)
+      })
+    return () => {
+      cancelled = true
     }
-  }
+  }, [page, query, reload, t, ts.userMgmtLoadError])
 
-  const handleToggleStatus = async (user: AdminUser) => {
-    setTogglingUserId(user.id)
+  const handleToggleStatus = async () => {
+    if (!statusTarget || isChangingStatus) return
+    setIsChangingStatus(true)
     try {
-      const updated = await adminSetUserStatus(user.id, !user.isActive)
-      setUsers(prev => prev.map(u => u.id === updated.id ? updated : u))
+      const updated = await adminSetUserStatus(statusTarget.id, !statusTarget.isActive)
+      setUsers((prev) => prev.map((user) => (user.id === updated.id ? updated : user)))
+      setStatusTarget(null)
       toast.success(ts.userMgmtStatusSuccess)
     } catch (err) {
       toast.error(errorMessage(err, t, ts.userMgmtStatusError))
     } finally {
-      setTogglingUserId(null)
+      setIsChangingStatus(false)
     }
   }
 
   const handleDelete = async () => {
-    if (!deleteTarget) return
+    if (!deleteTarget || isDeletingUser) return
     setIsDeletingUser(true)
     try {
       await adminDeleteUser(deleteTarget.id)
-      setUsers(prev => prev.filter(u => u.id !== deleteTarget.id))
       setDeleteTarget(null)
+      if (users.length === 1 && page > 0) setPage(page - 1)
+      else setReload((value) => value + 1)
       toast.success(ts.userMgmtDeleteSuccess)
     } catch (err) {
       toast.error(errorMessage(err, t, ts.userMgmtDeleteError))
@@ -86,127 +106,168 @@ export default function AdminUsersPage() {
 
   return (
     <div className="mx-auto w-full max-w-screen-2xl space-y-6 p-4 sm:p-6 lg:p-8">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">{ts.userMgmtTitle}</h1>
-        <p className="text-sm text-muted-foreground mt-1">{ts.userMgmtSubtitle}</p>
-      </div>
+      <PageHeader title={copy.users} subtitle={ts.userMgmtSubtitle}>
+        <Button
+          variant="outline"
+          className="gap-2 self-start"
+          onClick={() => setReload((value) => value + 1)}
+          disabled={isLoading}
+        >
+          <RefreshCw className="size-4" />
+          {copy.refresh}
+        </Button>
+      </PageHeader>
 
-      <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          className="pl-9 bg-muted border-border text-foreground placeholder:text-muted-foreground"
-          placeholder={ts.userMgmtSearch}
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-        />
-      </div>
-
-      <div className="rounded-xl border border-border bg-card overflow-hidden">
+      <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b p-4 sm:px-5">
+          <div className="relative w-full sm:max-w-sm">
+            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              className="bg-background pl-9"
+              aria-label={ts.userMgmtSearch}
+              placeholder={ts.userMgmtSearch}
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+            />
+          </div>
+          <span className="text-xs text-muted-foreground">{copy.users}</span>
+        </div>
         <Table>
-          <TableHeader>
-            <TableRow className="border-border hover:bg-transparent">
-              <TableHead className="pl-5 text-muted-foreground">{ts.userMgmtColUser}</TableHead>
-              <TableHead className="text-muted-foreground">{ts.userMgmtColEmail}</TableHead>
-              <TableHead className="text-muted-foreground">{ts.userMgmtColStatus}</TableHead>
-              <TableHead className="text-muted-foreground">{ts.userMgmtColCreated}</TableHead>
-              <TableHead className="pr-5 text-right text-muted-foreground">{ts.userMgmtColActions}</TableHead>
+          <TableHeader className="bg-muted/40">
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="pl-5">{ts.userMgmtColUser}</TableHead>
+              <TableHead>{ts.userMgmtColStatus}</TableHead>
+              <TableHead>{ts.userMgmtColCreated}</TableHead>
+              <TableHead className="pr-5 text-right">{ts.userMgmtColActions}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center">
-                  <Loader2 className="mx-auto size-5 animate-spin text-muted-foreground" />
-                </TableCell>
-              </TableRow>
-            ) : users.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center text-sm text-muted-foreground">
-                  {ts.userMgmtNoUsers}
-                </TableCell>
-              </TableRow>
-            ) : users.map(user => (
-              <TableRow key={user.id} className="border-border hover:bg-muted/50">
-                <TableCell className="pl-5">
-                  <div className="flex flex-col">
-                    <span className="text-sm font-medium text-foreground">{user.fullName || user.username}</span>
-                    <span className="text-xs text-muted-foreground">@{user.username}</span>
-                  </div>
-                </TableCell>
-                <TableCell className="text-sm text-muted-foreground">{user.email}</TableCell>
-                <TableCell>
-                  <Badge
-                    variant="secondary"
-                    className={user.isActive
-                      ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300'
-                      : 'bg-muted text-muted-foreground'}
-                  >
-                    {user.isActive ? ts.userMgmtActive : ts.userMgmtInactive}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-sm text-muted-foreground">
-                  {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '—'}
-                </TableCell>
-                <TableCell className="pr-5">
-                  <div className="flex items-center justify-end gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-7 gap-1.5 border-border text-foreground hover:bg-muted"
-                      disabled={togglingUserId === user.id}
-                      onClick={() => handleToggleStatus(user)}
+            {isLoading || error || users.length === 0 ? (
+              <AdminTableState
+                columns={4}
+                loading={isLoading}
+                error={error}
+                emptyMessage={ts.userMgmtNoUsers}
+                onRetry={() => setReload((value) => value + 1)}
+              />
+            ) : (
+              users.map((user) => (
+                <TableRow key={user.id}>
+                  <TableCell className="py-4 pl-5">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="size-9">
+                        <AvatarFallback className="bg-primary/10 text-xs text-primary">
+                          {getInitials(user.fullName || user.username)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0">
+                        <p className="font-medium">{user.fullName || user.username}</p>
+                        <p className="mt-0.5 text-xs text-muted-foreground">{user.email}</p>
+                        <p className="mt-0.5 text-xs text-muted-foreground">@{user.username}</p>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant="secondary"
+                      className={
+                        user.isActive
+                          ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
+                          : 'bg-muted text-muted-foreground'
+                      }
                     >
-                      {togglingUserId === user.id
-                        ? <Loader2 className="size-3.5 animate-spin" />
-                        : user.isActive
-                          ? <UserX className="size-3.5" />
-                          : <UserCheck className="size-3.5" />}
-                      {user.isActive ? ts.userMgmtDeactivate : ts.userMgmtActivate}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-7 gap-1.5 border-red-700 text-destructive hover:bg-red-900/30"
-                      onClick={() => setDeleteTarget(user)}
-                    >
-                      <Trash2 className="size-3.5" />
-                      {ts.userMgmtDelete}
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
+                      {user.isActive ? ts.userMgmtActive : ts.userMgmtInactive}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {user.createdAt ? new Date(user.createdAt).toLocaleDateString(locale) : '—'}
+                  </TableCell>
+                  <TableCell className="pr-5">
+                    <div className="flex items-center justify-end gap-2">
+                      <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setStatusTarget(user)}>
+                        {user.isActive ? <UserX className="size-3.5" /> : <UserCheck className="size-3.5" />}
+                        {user.isActive ? ts.userMgmtDeactivate : ts.userMgmtActivate}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="gap-1.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                        onClick={() => setDeleteTarget(user)}
+                      >
+                        <Trash2 className="size-3.5" />
+                        {ts.userMgmtDelete}
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between border-t border-border px-5 py-3">
-            <p className="text-sm text-muted-foreground">Page {page + 1} of {totalPages}</p>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => setPage(p => p - 1)} disabled={page === 0 || isLoading}
-                className="border-border text-foreground hover:bg-muted">Previous</Button>
-              <Button variant="outline" size="sm" onClick={() => setPage(p => p + 1)} disabled={page >= totalPages - 1 || isLoading}
-                className="border-border text-foreground hover:bg-muted">Next</Button>
-            </div>
-          </div>
-        )}
+        <AdminPagination
+          page={page}
+          totalPages={totalPages}
+          disabled={isLoading || !!error || search.trim() !== query}
+          onPageChange={setPage}
+        />
       </div>
 
-      {/* Delete Dialog */}
-      <Dialog open={!!deleteTarget} onOpenChange={open => !open && setDeleteTarget(null)}>
-        <DialogContent className="sm:max-w-md bg-card border-border text-foreground">
+      <Dialog
+        open={!!statusTarget}
+        onOpenChange={(open) => {
+          if (!open && !isChangingStatus) setStatusTarget(null)
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{ts.userMgmtDeleteTitle}</DialogTitle>
-            <DialogDescription className="text-muted-foreground">{ts.userMgmtDeleteDesc}</DialogDescription>
+            <DialogTitle>{copy.confirmStatusTitle}</DialogTitle>
+            <DialogDescription>{copy.confirmStatusDescription}</DialogDescription>
           </DialogHeader>
-          {deleteTarget && (
-            <div className="rounded-lg border border-border bg-muted/50 p-4 text-sm">
-              <p className="font-medium text-foreground">{deleteTarget.fullName || deleteTarget.username}</p>
-              <p className="text-muted-foreground">{deleteTarget.email}</p>
+          {statusTarget && (
+            <div className="rounded-lg border bg-muted/40 p-4 text-sm">
+              <p className="font-medium">{statusTarget.fullName || statusTarget.username}</p>
+              <p className="break-all text-muted-foreground">{statusTarget.email}</p>
+              <p className="mt-3 font-medium">{statusTarget.isActive ? ts.userMgmtDeactivate : ts.userMgmtActivate}</p>
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={isDeletingUser}
-              className="border-border text-foreground hover:bg-muted">Cancel</Button>
+            <Button variant="outline" disabled={isChangingStatus} onClick={() => setStatusTarget(null)}>
+              {t.common.cancel}
+            </Button>
+            <Button
+              variant={statusTarget?.isActive ? 'destructive' : 'default'}
+              disabled={isChangingStatus}
+              onClick={handleToggleStatus}
+            >
+              {isChangingStatus && <Loader2 className="size-4 animate-spin" />}
+              {statusTarget?.isActive ? ts.userMgmtDeactivate : ts.userMgmtActivate}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Dialog */}
+      <Dialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => {
+          if (!open && !isDeletingUser) setDeleteTarget(null)
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{ts.userMgmtDeleteTitle}</DialogTitle>
+            <DialogDescription>{ts.userMgmtDeleteDesc}</DialogDescription>
+          </DialogHeader>
+          {deleteTarget && (
+            <div className="rounded-lg border bg-muted/40 p-4 text-sm">
+              <p className="font-medium">{deleteTarget.fullName || deleteTarget.username}</p>
+              <p className="break-all text-muted-foreground">{deleteTarget.email}</p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={isDeletingUser}>
+              {t.common.cancel}
+            </Button>
             <Button variant="destructive" onClick={handleDelete} disabled={isDeletingUser} className="gap-2">
               {isDeletingUser ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
               {ts.userMgmtDeleteConfirm}

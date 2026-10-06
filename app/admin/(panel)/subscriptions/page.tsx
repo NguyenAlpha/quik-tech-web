@@ -1,52 +1,55 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
-import { Check, X, AlertCircle, AlertTriangle, Loader2 } from 'lucide-react'
+import { Check, X, AlertCircle, AlertTriangle, Loader2, RefreshCw, Building2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Separator } from '@/components/ui/separator'
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle,
-  DialogFooter, DialogDescription,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription
 } from '@/components/ui/dialog'
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select'
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from '@/components/ui/table'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useLanguage } from '@/lib/language-context'
+import { PageHeader } from '@/components/page-header'
+import { AdminTableState } from '@/components/admin-table-state'
+import { AdminPagination } from '@/components/admin-pagination'
+import { AdminPlanBadge, AdminSubscriptionStatus } from '@/components/admin-subscription-badges'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { useAdminCopy } from '@/lib/admin-copy'
 import { errorMessage } from '@/lib/api-error'
 import {
-  adminGetPendingInvoices, adminConfirmInvoice, adminRejectInvoice,
-  adminGetBusinesses, adminGetSubscription, adminChangePlan,
+  adminGetPendingInvoices,
+  adminConfirmInvoice,
+  adminRejectInvoice,
+  adminGetBusinesses,
+  adminGetSubscription,
+  adminChangePlan
 } from '@/lib/api'
 import { formatCurrency } from '@/lib/utils'
 import type { SubscriptionInvoice, Business, BusinessSubscription } from '@/lib/types'
 
-const planStyles: Record<string, { label: string; className: string }> = {
-  FREE:  { label: 'Free',  className: 'bg-muted text-foreground' },
-  BASIC: { label: 'Basic', className: 'bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300' },
-  PRO:   { label: 'Pro',   className: 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300' },
-}
-
-const statusColor: Record<string, string> = {
-  ACTIVE:    'text-emerald-700 dark:text-emerald-400',
-  EXPIRED:   'text-destructive',
-  CANCELLED: 'text-muted-foreground',
-}
-
 export default function AdminSubscriptionsPage() {
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
+  const copy = useAdminCopy()
+  const locale = language === 'vi' ? 'vi-VN' : 'en-US'
   const ts = t.subscription
 
   const [invoices, setInvoices] = useState<SubscriptionInvoice[]>([])
   const [page, setPage] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [businessError, setBusinessError] = useState<string | null>(null)
+  const [subError, setSubError] = useState<string | null>(null)
+  const [subReload, setSubReload] = useState(0)
 
   const [confirmTarget, setConfirmTarget] = useState<SubscriptionInvoice | null>(null)
   const [rejectTarget, setRejectTarget] = useState<SubscriptionInvoice | null>(null)
@@ -61,40 +64,77 @@ export default function AdminSubscriptionsPage() {
   const [newCycle, setNewCycle] = useState('MONTHLY')
   const [isChangingPlan, setIsChangingPlan] = useState(false)
 
-  useEffect(() => { loadInvoices() }, [page])
-  useEffect(() => { adminGetBusinesses().then(setBusinesses).catch(() => {}) }, [])
-  useEffect(() => {
-    if (!selectedBusinessId) { setCurrentSub(null); setNewPlan(''); return }
-    setIsSubLoading(true)
-    setCurrentSub(null)
-    adminGetSubscription(Number(selectedBusinessId))
-      .then(sub => { setCurrentSub(sub); setNewPlan(sub.plan); setNewCycle(sub.billingCycle ?? 'MONTHLY') })
-      .catch(() => {})
-      .finally(() => setIsSubLoading(false))
-  }, [selectedBusinessId])
-
-  const loadInvoices = async () => {
+  const loadInvoices = useCallback(async () => {
     setIsLoading(true)
+    setError(null)
     try {
       const result = await adminGetPendingInvoices({ page, size: 20 })
+      if (result.content.length === 0 && page > 0) {
+        setPage(Math.max(0, Math.min(page - 1, result.totalPages - 1)))
+        return
+      }
       setInvoices(result.content)
       setTotalPages(result.totalPages)
     } catch (err) {
-      toast.error(errorMessage(err, t, ts.loadError))
+      setError(errorMessage(err, t, ts.loadError))
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [page, t, ts.loadError])
+
+  const loadBusinesses = useCallback(async () => {
+    setBusinessError(null)
+    try {
+      setBusinesses(await adminGetBusinesses())
+    } catch (err) {
+      setBusinessError(errorMessage(err, t, ts.businessesLoadError))
+    }
+  }, [t, ts.businessesLoadError])
+
+  useEffect(() => {
+    void loadInvoices()
+  }, [loadInvoices])
+  useEffect(() => {
+    void loadBusinesses()
+  }, [loadBusinesses])
+  useEffect(() => {
+    let cancelled = false
+    setCurrentSub(null)
+    setNewPlan('')
+    setSubError(null)
+    if (!selectedBusinessId) {
+      setIsSubLoading(false)
+      return
+    }
+    setIsSubLoading(true)
+    adminGetSubscription(Number(selectedBusinessId))
+      .then((sub) => {
+        if (cancelled) return
+        setCurrentSub(sub)
+        setNewPlan(sub.plan)
+        setNewCycle(sub.billingCycle ?? 'MONTHLY')
+      })
+      .catch((err) => {
+        if (!cancelled) setSubError(errorMessage(err, t, ts.loadError))
+      })
+      .finally(() => {
+        if (!cancelled) setIsSubLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [selectedBusinessId, subReload, t, ts.loadError])
 
   const handleConfirm = async () => {
-    if (!confirmTarget) return
+    if (!confirmTarget || isActioning) return
     setIsActioning(true)
     try {
       await adminConfirmInvoice(confirmTarget.id, adminNote.trim() || undefined)
-      setInvoices(prev => prev.filter(inv => inv.id !== confirmTarget.id))
+      setInvoices((prev) => prev.filter((inv) => inv.id !== confirmTarget.id))
       setConfirmTarget(null)
       setAdminNote('')
       toast.success(ts.confirmSuccess)
+      void loadInvoices()
     } catch (err) {
       toast.error(errorMessage(err, t, ts.confirmError))
     } finally {
@@ -103,14 +143,15 @@ export default function AdminSubscriptionsPage() {
   }
 
   const handleReject = async () => {
-    if (!rejectTarget || !adminNote.trim()) return
+    if (!rejectTarget || !adminNote.trim() || isActioning) return
     setIsActioning(true)
     try {
       await adminRejectInvoice(rejectTarget.id, adminNote.trim())
-      setInvoices(prev => prev.filter(inv => inv.id !== rejectTarget.id))
+      setInvoices((prev) => prev.filter((inv) => inv.id !== rejectTarget.id))
       setRejectTarget(null)
       setAdminNote('')
       toast.success(ts.rejectSuccess)
+      void loadInvoices()
     } catch (err) {
       toast.error(errorMessage(err, t, ts.rejectError))
     } finally {
@@ -119,11 +160,15 @@ export default function AdminSubscriptionsPage() {
   }
 
   const handleChangePlan = async () => {
-    if (!selectedBusinessId || !newPlan) return
+    if (!selectedBusinessId || !newPlan || !currentSub || isChangingPlan) return
     setIsChangingPlan(true)
     try {
       // billingCycle chỉ gửi với gói trả phí — backend từ chối khi thiếu (400)
-      const updated = await adminChangePlan(Number(selectedBusinessId), newPlan, newPlan === 'FREE' ? undefined : newCycle)
+      const updated = await adminChangePlan(
+        Number(selectedBusinessId),
+        newPlan,
+        newPlan === 'FREE' ? undefined : newCycle
+      )
       setCurrentSub(updated)
       toast.success(ts.changePlanSuccess)
     } catch (err) {
@@ -133,240 +178,334 @@ export default function AdminSubscriptionsPage() {
     }
   }
 
+  const businessName = (id: number) => businesses.find((business) => business.id === id)?.name
+  const reviewTarget = confirmTarget ?? rejectTarget
+  const invoiceSummary = reviewTarget && (
+    <dl className="grid grid-cols-2 gap-4 rounded-lg border bg-muted/30 p-4 text-sm">
+      <div className="col-span-2">
+        <dt className="text-xs text-muted-foreground">{copy.businesses}</dt>
+        <dd className="mt-1 break-words font-medium">
+          {businessName(reviewTarget.businessId) || `#${reviewTarget.businessId}`}
+        </dd>
+        <dd className="text-xs text-muted-foreground">
+          #{reviewTarget.businessId} · #{reviewTarget.id}
+        </dd>
+      </div>
+      <div>
+        <dt className="mb-1 text-xs text-muted-foreground">{ts.colPlan}</dt>
+        <dd>
+          <AdminPlanBadge plan={reviewTarget.plan} />
+        </dd>
+      </div>
+      <div>
+        <dt className="text-xs text-muted-foreground">{ts.colCycle}</dt>
+        <dd className="mt-1">{reviewTarget.billingCycle === 'MONTHLY' ? copy.monthly : copy.yearly}</dd>
+      </div>
+      <div className="col-span-2">
+        <dt className="text-xs text-muted-foreground">{ts.colAmount}</dt>
+        <dd className="mt-1 text-lg font-semibold tabular-nums">{formatCurrency(reviewTarget.amount)}</dd>
+      </div>
+      <div className="col-span-2">
+        <dt className="text-xs text-muted-foreground">{ts.colTransferRef}</dt>
+        <dd className="mt-1 break-all font-mono">{reviewTarget.bankTransferRef || ts.refNotSubmitted}</dd>
+      </div>
+    </dl>
+  )
+
   return (
     <div className="mx-auto w-full max-w-screen-2xl space-y-6 p-4 sm:p-6 lg:p-8">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">{ts.adminPendingTitle}</h1>
-        <p className="text-sm text-muted-foreground mt-1">{ts.adminPendingSubtitle}</p>
-      </div>
-
-      {/* Pending invoices table */}
-      <div className="rounded-xl border border-border bg-card overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow className="border-border hover:bg-transparent">
-              <TableHead className="text-muted-foreground">{ts.colBusiness}</TableHead>
-              <TableHead className="text-muted-foreground">{ts.colPlan}</TableHead>
-              <TableHead className="text-muted-foreground">{ts.colCycle}</TableHead>
-              <TableHead className="text-muted-foreground">{ts.colAmount}</TableHead>
-              <TableHead className="text-muted-foreground">{ts.colTransferRef}</TableHead>
-              <TableHead className="text-muted-foreground">{ts.colCreated}</TableHead>
-              <TableHead className="text-right text-muted-foreground">{ts.colActions}</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center">
-                  <Loader2 className="mx-auto size-5 animate-spin text-muted-foreground" />
-                </TableCell>
-              </TableRow>
-            ) : invoices.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} className="h-32 text-center">
-                  <div className="flex flex-col items-center gap-2">
-                    <Check className="size-8 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground">{ts.adminNoPending}</p>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : invoices.map(inv => (
-              <TableRow key={inv.id} className="border-border hover:bg-muted/50">
-                <TableCell className="font-medium text-foreground">#{inv.businessId}</TableCell>
-                <TableCell>
-                  <Badge variant="secondary" className={planStyles[inv.plan]?.className}>
-                    {planStyles[inv.plan]?.label ?? inv.plan}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-sm text-muted-foreground">
-                  {inv.billingCycle === 'MONTHLY' ? ts.monthly.split(' ')[0] : ts.yearly.split(' ')[0]}
-                </TableCell>
-                <TableCell className="font-medium text-foreground">{formatCurrency(inv.amount)}</TableCell>
-                <TableCell className="max-w-48">
-                  {inv.bankTransferRef ? (
-                    <span className="block truncate font-mono text-sm text-foreground">{inv.bankTransferRef}</span>
-                  ) : (
-                    <span className="flex items-center gap-1.5 text-xs text-amber-500">
-                      <AlertCircle className="size-3.5" />
-                      {ts.refNotSubmitted}
-                    </span>
-                  )}
-                </TableCell>
-                <TableCell className="text-sm text-muted-foreground">
-                  {new Date(inv.createdAt).toLocaleDateString()}
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center justify-end gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-7 gap-1.5 border-emerald-700 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-900/30"
-                      onClick={() => { setConfirmTarget(inv); setAdminNote('') }}
-                    >
-                      <Check className="size-3.5" />
-                      {ts.confirmBtn}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-7 gap-1.5 border-red-700 text-destructive hover:bg-red-900/30"
-                      onClick={() => { setRejectTarget(inv); setAdminNote('') }}
-                    >
-                      <X className="size-3.5" />
-                      {ts.rejectBtn}
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between border-t border-border px-4 py-3">
-            <p className="text-sm text-muted-foreground">Page {page + 1} of {totalPages}</p>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => setPage(p => p - 1)} disabled={page === 0 || isLoading}
-                className="border-border text-foreground hover:bg-muted">Previous</Button>
-              <Button variant="outline" size="sm" onClick={() => setPage(p => p + 1)} disabled={page >= totalPages - 1 || isLoading}
-                className="border-border text-foreground hover:bg-muted">Next</Button>
+      <PageHeader title={copy.subscriptions} subtitle={copy.subscriptionDescription} />
+      <Tabs defaultValue="invoices" className="gap-5">
+        <TabsList className="h-auto max-w-full flex-wrap">
+          <TabsTrigger value="invoices" className="px-3 py-2">
+            {copy.invoiceQueue}
+          </TabsTrigger>
+          <TabsTrigger value="override" className="px-3 py-2">
+            {copy.overridePlan}
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="invoices" className="min-w-0 space-y-4">
+          {/* Pending invoices table */}
+          <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4">
+              <div>
+                <h2 className="text-sm font-semibold">{copy.invoiceQueue}</h2>
+                <p className="mt-1 text-xs text-muted-foreground">{copy.pendingDescription}</p>
+              </div>
+              <Button variant="outline" size="sm" onClick={loadInvoices} disabled={isLoading}>
+                <RefreshCw className="size-4" />
+                {copy.refresh}
+              </Button>
             </div>
+            <Table>
+              <TableHeader className="bg-muted/40">
+                <TableRow className="border-border hover:bg-transparent">
+                  <TableHead className="pl-5 text-muted-foreground">{copy.businesses}</TableHead>
+                  <TableHead className="text-muted-foreground">{ts.colPlan}</TableHead>
+                  <TableHead className="text-muted-foreground">{ts.colCycle}</TableHead>
+                  <TableHead className="text-right text-muted-foreground">{ts.colAmount}</TableHead>
+                  <TableHead className="text-muted-foreground">{ts.colTransferRef}</TableHead>
+                  <TableHead className="text-muted-foreground">{ts.colCreated}</TableHead>
+                  <TableHead className="text-right text-muted-foreground">{ts.colActions}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading || error || invoices.length === 0 ? (
+                  <AdminTableState
+                    columns={7}
+                    loading={isLoading}
+                    error={error}
+                    emptyMessage={ts.adminNoPending}
+                    onRetry={loadInvoices}
+                  />
+                ) : (
+                  invoices.map((inv) => (
+                    <TableRow key={inv.id} className="border-border hover:bg-muted/50">
+                      <TableCell className="py-4 pl-5">
+                        <div className="flex items-center gap-3">
+                          <div className="rounded-lg bg-primary/10 p-2 text-primary">
+                            <Building2 className="size-4" />
+                          </div>
+                          <div>
+                            <p className="max-w-56 truncate font-medium" title={businessName(inv.businessId)}>
+                              {businessName(inv.businessId) || `#${inv.businessId}`}
+                            </p>
+                            <p className="mt-0.5 text-xs text-muted-foreground">#{inv.businessId}</p>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <AdminPlanBadge plan={inv.plan} />
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {inv.billingCycle === 'MONTHLY' ? copy.monthly : copy.yearly}
+                      </TableCell>
+                      <TableCell className="text-right font-medium tabular-nums">
+                        {formatCurrency(inv.amount)}
+                      </TableCell>
+                      <TableCell className="max-w-48">
+                        {inv.bankTransferRef ? (
+                          <span
+                            title={inv.bankTransferRef}
+                            className="block truncate font-mono text-xs text-muted-foreground"
+                          >
+                            {inv.bankTransferRef}
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1.5 text-xs text-amber-700 dark:text-amber-300">
+                            <AlertCircle className="size-3.5" />
+                            {ts.refNotSubmitted}
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {new Date(inv.createdAt).toLocaleDateString(locale)}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="gap-1.5"
+                            onClick={() => {
+                              setConfirmTarget(inv)
+                              setAdminNote('')
+                            }}
+                          >
+                            <Check className="size-3.5" />
+                            {ts.confirmBtn}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="gap-1.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                            onClick={() => {
+                              setRejectTarget(inv)
+                              setAdminNote('')
+                            }}
+                          >
+                            <X className="size-3.5" />
+                            {ts.rejectBtn}
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+            <AdminPagination
+              page={page}
+              totalPages={totalPages}
+              disabled={isLoading || !!error}
+              onPageChange={setPage}
+            />
           </div>
-        )}
-      </div>
-
-      {/* Override Plan */}
-      <div className="rounded-xl border border-border bg-card p-5 space-y-4">
-        <div>
-          <h2 className="text-base font-semibold text-foreground">{ts.adminOverrideTitle}</h2>
-          <p className="text-sm text-muted-foreground mt-0.5">{ts.adminOverrideSubtitle}</p>
-        </div>
-        <div className="space-y-2">
-          <Label className="text-foreground">{ts.selectBusiness}</Label>
-          <Select value={selectedBusinessId} onValueChange={setSelectedBusinessId}>
-            <SelectTrigger className="w-full sm:max-w-sm bg-muted border-border text-foreground">
-              <SelectValue placeholder={ts.selectBusiness} />
-            </SelectTrigger>
-            <SelectContent className="bg-muted border-border">
-              {businesses.map(b => (
-                <SelectItem key={b.id} value={String(b.id)} className="text-foreground">
-                  #{b.id} — {b.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {selectedBusinessId && (
-          <div className="rounded-lg border border-border bg-muted/50 p-4">
-            {isSubLoading ? (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="size-4 animate-spin" />Loading...
+          {businessError && (
+            <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground" role="alert">
+              <span>{businessError}</span>
+              <Button variant="outline" size="sm" onClick={loadBusinesses}>
+                {t.common.retry}
+              </Button>
+            </div>
+          )}
+        </TabsContent>
+        <TabsContent value="override" className="min-w-0">
+          {/* Override Plan */}
+          <div className="max-w-3xl space-y-6 rounded-xl border bg-card p-5 shadow-sm sm:p-6">
+            <div>
+              <h2 className="text-base font-semibold text-foreground">{copy.overridePlan}</h2>
+              <p className="text-sm text-muted-foreground mt-0.5">{copy.overrideDescription}</p>
+            </div>
+            {businessError && (
+              <div className="space-y-2" role="alert">
+                <p className="text-sm text-destructive">{businessError}</p>
+                <Button variant="outline" size="sm" onClick={loadBusinesses}>
+                  {t.common.retry}
+                </Button>
               </div>
-            ) : currentSub ? (
-              <div className="grid grid-cols-3 gap-4 text-sm">
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground">{ts.currentPlanLabel}</p>
-                  <Badge variant="secondary" className={planStyles[currentSub.plan]?.className}>
-                    {planStyles[currentSub.plan]?.label ?? currentSub.plan}
-                  </Badge>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground">{ts.currentStatusLabel}</p>
-                  <p className={`text-sm font-medium ${statusColor[currentSub.status] ?? ''}`}>
-                    {currentSub.status}
-                  </p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground">{ts.expiresLabel}</p>
-                  <p className="text-sm text-foreground">
-                    {currentSub.expiresAt ? new Date(currentSub.expiresAt).toLocaleDateString() : ts.never}
-                  </p>
-                </div>
-              </div>
-            ) : null}
-          </div>
-        )}
-
-        {!selectedBusinessId && (
-          <p className="text-sm text-muted-foreground">{ts.noBusinessSelected}</p>
-        )}
-
-        <Separator className="bg-muted" />
-
-        <div className="flex items-start gap-3 rounded-lg border border-amber-200 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-950/20 p-3">
-          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-500" />
-          <p className="text-sm text-amber-800 dark:text-amber-400">{ts.overrideWarning}</p>
-        </div>
-
-        <div className="flex items-end gap-3">
-          <div className="w-48 space-y-2">
-            <Label className="text-foreground">{ts.newPlanLabel}</Label>
-            <Select value={newPlan} onValueChange={setNewPlan} disabled={!selectedBusinessId || isSubLoading}>
-              <SelectTrigger className="bg-muted border-border text-foreground">
-                <SelectValue placeholder={ts.newPlanLabel} />
-              </SelectTrigger>
-              <SelectContent className="bg-muted border-border">
-                <SelectItem value="FREE" className="text-foreground">Free</SelectItem>
-                <SelectItem value="BASIC" className="text-foreground">Basic</SelectItem>
-                <SelectItem value="PRO" className="text-foreground">Pro</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          {newPlan !== 'FREE' && (
-            <div className="w-48 space-y-2">
-              <Label className="text-foreground">{ts.colCycle}</Label>
-              <Select value={newCycle} onValueChange={setNewCycle} disabled={!selectedBusinessId || isSubLoading}>
-                <SelectTrigger className="bg-muted border-border text-foreground">
-                  <SelectValue />
+            )}
+            <div className="space-y-2">
+              <Label htmlFor="subscription-business">{copy.selectBusiness}</Label>
+              <Select value={selectedBusinessId} onValueChange={setSelectedBusinessId} disabled={isChangingPlan}>
+                <SelectTrigger id="subscription-business" className="w-full bg-background">
+                  <SelectValue placeholder={copy.selectBusiness} />
                 </SelectTrigger>
-                <SelectContent className="bg-muted border-border">
-                  <SelectItem value="MONTHLY" className="text-foreground">{ts.monthly}</SelectItem>
-                  <SelectItem value="YEARLY" className="text-foreground">{ts.yearly}</SelectItem>
+                <SelectContent>
+                  {businesses.map((b) => (
+                    <SelectItem key={b.id} value={String(b.id)} className="text-foreground">
+                      #{b.id} — {b.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
-          )}
-          <Button
-            onClick={handleChangePlan}
-            disabled={!selectedBusinessId || !newPlan || isChangingPlan || isSubLoading}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground"
-          >
-            {isChangingPlan && <Loader2 className="mr-2 size-4 animate-spin" />}
-            {isChangingPlan ? ts.changingPlan : ts.changePlan}
-          </Button>
-        </div>
-      </div>
+
+            {selectedBusinessId && (
+              <div className="rounded-lg border border-border bg-muted/50 p-4">
+                {isSubLoading ? (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="size-4 animate-spin" />
+                    {t.common.loading}
+                  </div>
+                ) : currentSub ? (
+                  <div className="grid gap-4 text-sm sm:grid-cols-3">
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground">{ts.currentPlanLabel}</p>
+                      <AdminPlanBadge plan={currentSub.plan} />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground">{ts.currentStatusLabel}</p>
+                      <AdminSubscriptionStatus status={currentSub.status} />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground">{ts.expiresLabel}</p>
+                      <p className="text-sm text-foreground">
+                        {currentSub.expiresAt ? new Date(currentSub.expiresAt).toLocaleDateString(locale) : ts.never}
+                      </p>
+                    </div>
+                  </div>
+                ) : subError ? (
+                  <div className="space-y-3" role="alert">
+                    <p className="text-sm text-destructive">{subError}</p>
+                    <Button variant="outline" size="sm" onClick={() => setSubReload((value) => value + 1)}>
+                      {t.common.retry}
+                    </Button>
+                  </div>
+                ) : null}
+              </div>
+            )}
+
+            {!selectedBusinessId && <p className="text-sm text-muted-foreground">{copy.noBusinessSelected}</p>}
+
+            <Separator className="bg-muted" />
+
+            <div className="flex items-start gap-3 rounded-lg border border-amber-200 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-950/20 p-3">
+              <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-500" />
+              <p className="text-sm text-amber-800 dark:text-amber-400">{ts.overrideWarning}</p>
+            </div>
+
+            <div className="flex flex-wrap items-end gap-3">
+              <div className="min-w-36 flex-1 space-y-2">
+                <Label htmlFor="subscription-plan">{ts.newPlanLabel}</Label>
+                <Select
+                  value={newPlan}
+                  onValueChange={setNewPlan}
+                  disabled={!currentSub || isSubLoading || isChangingPlan}
+                >
+                  <SelectTrigger id="subscription-plan" className="w-full bg-background">
+                    <SelectValue placeholder={ts.newPlanLabel} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="FREE" className="text-foreground">
+                      Free
+                    </SelectItem>
+                    <SelectItem value="BASIC" className="text-foreground">
+                      Basic
+                    </SelectItem>
+                    <SelectItem value="PRO" className="text-foreground">
+                      Pro
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {newPlan !== 'FREE' && (
+                <div className="min-w-36 flex-1 space-y-2">
+                  <Label htmlFor="subscription-cycle">{ts.colCycle}</Label>
+                  <Select
+                    value={newCycle}
+                    onValueChange={setNewCycle}
+                    disabled={!currentSub || isSubLoading || isChangingPlan}
+                  >
+                    <SelectTrigger id="subscription-cycle" className="w-full bg-background">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="MONTHLY" className="text-foreground">
+                        {copy.monthly}
+                      </SelectItem>
+                      <SelectItem value="YEARLY" className="text-foreground">
+                        {copy.yearly}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              <Button
+                onClick={handleChangePlan}
+                disabled={!currentSub || !newPlan || isChangingPlan || isSubLoading}
+                className="bg-primary hover:bg-primary/90 text-primary-foreground"
+              >
+                {isChangingPlan && <Loader2 className="mr-2 size-4 animate-spin" />}
+                {isChangingPlan ? ts.changingPlan : ts.changePlan}
+              </Button>
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
 
       {/* Confirm Dialog */}
-      <Dialog open={!!confirmTarget} onOpenChange={open => !open && setConfirmTarget(null)}>
-        <DialogContent className="sm:max-w-md bg-card border-border text-foreground">
+      <Dialog
+        open={!!confirmTarget}
+        onOpenChange={(open) => {
+          if (!open && !isActioning) setConfirmTarget(null)
+        }}
+      >
+        <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>{ts.confirmTitle}</DialogTitle>
             <DialogDescription className="text-muted-foreground">{ts.confirmDesc}</DialogDescription>
           </DialogHeader>
           {confirmTarget && (
             <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div className="space-y-0.5">
-                  <p className="text-muted-foreground">{ts.colPlan}</p>
-                  <p className="font-medium">{planStyles[confirmTarget.plan]?.label ?? confirmTarget.plan}</p>
-                </div>
-                <div className="space-y-0.5">
-                  <p className="text-muted-foreground">{ts.colAmount}</p>
-                  <p className="font-medium">{formatCurrency(confirmTarget.amount)}</p>
-                </div>
-                {confirmTarget.bankTransferRef && (
-                  <div className="col-span-2 space-y-0.5">
-                    <p className="text-muted-foreground">{ts.colTransferRef}</p>
-                    <p className="font-mono text-sm">{confirmTarget.bankTransferRef}</p>
-                  </div>
-                )}
-              </div>
+              {invoiceSummary}
               <div className="space-y-2">
-                <Label className="text-foreground">{ts.adminNoteOptional}</Label>
+                <Label htmlFor="confirm-note">{ts.adminNoteOptional}</Label>
                 <Textarea
+                  id="confirm-note"
+                  disabled={isActioning}
                   value={adminNote}
-                  onChange={e => setAdminNote(e.target.value)}
+                  onChange={(e) => setAdminNote(e.target.value)}
                   placeholder={ts.adminNotePlaceholder}
                   rows={2}
                   maxLength={500}
@@ -376,45 +515,84 @@ export default function AdminSubscriptionsPage() {
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmTarget(null)} disabled={isActioning}
-              className="border-border text-foreground hover:bg-muted">Cancel</Button>
-            <Button onClick={handleConfirm} disabled={isActioning}
-              className="gap-2 bg-emerald-600 text-white hover:bg-emerald-700">
-              {isActioning ? ts.confirming : <><Check className="size-4" />{ts.confirmPayment}</>}
+            <Button
+              variant="outline"
+              onClick={() => setConfirmTarget(null)}
+              disabled={isActioning}
+              className="border-border text-foreground hover:bg-muted"
+            >
+              {t.common.cancel}
+            </Button>
+            <Button
+              onClick={handleConfirm}
+              disabled={isActioning}
+              className="gap-2 bg-emerald-600 text-white hover:bg-emerald-700"
+            >
+              {isActioning ? (
+                ts.confirming
+              ) : (
+                <>
+                  <Check className="size-4" />
+                  {ts.confirmPayment}
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Reject Dialog */}
-      <Dialog open={!!rejectTarget} onOpenChange={open => !open && setRejectTarget(null)}>
-        <DialogContent className="sm:max-w-md bg-card border-border text-foreground">
+      <Dialog
+        open={!!rejectTarget}
+        onOpenChange={(open) => {
+          if (!open && !isActioning) setRejectTarget(null)
+        }}
+      >
+        <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>{ts.rejectTitle}</DialogTitle>
             <DialogDescription className="text-muted-foreground">{ts.rejectDesc}</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
+            {invoiceSummary}
             <div className="space-y-2">
-              <Label className="text-foreground">{ts.rejectNoteLabel}</Label>
+              <Label htmlFor="reject-note">{ts.rejectNoteLabel}</Label>
               <Textarea
+                id="reject-note"
+                disabled={isActioning}
                 value={adminNote}
-                onChange={e => setAdminNote(e.target.value)}
+                onChange={(e) => setAdminNote(e.target.value)}
                 placeholder={ts.rejectNotePlaceholder}
                 rows={3}
                 maxLength={500}
                 className="bg-muted border-border text-foreground placeholder:text-muted-foreground"
               />
-              {!adminNote.trim() && (
-                <p className="text-xs text-destructive">{ts.rejectNoteRequired}</p>
-              )}
+              {!adminNote.trim() && <p className="text-xs text-destructive">{ts.rejectNoteRequired}</p>}
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRejectTarget(null)} disabled={isActioning}
-              className="border-border text-foreground hover:bg-muted">Cancel</Button>
-            <Button onClick={handleReject} disabled={isActioning || !adminNote.trim()}
-              variant="destructive" className="gap-2">
-              {isActioning ? ts.rejecting : <><X className="size-4" />{ts.rejectInvoice}</>}
+            <Button
+              variant="outline"
+              onClick={() => setRejectTarget(null)}
+              disabled={isActioning}
+              className="border-border text-foreground hover:bg-muted"
+            >
+              {t.common.cancel}
+            </Button>
+            <Button
+              onClick={handleReject}
+              disabled={isActioning || !adminNote.trim()}
+              variant="destructive"
+              className="gap-2"
+            >
+              {isActioning ? (
+                ts.rejecting
+              ) : (
+                <>
+                  <X className="size-4" />
+                  {ts.rejectInvoice}
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

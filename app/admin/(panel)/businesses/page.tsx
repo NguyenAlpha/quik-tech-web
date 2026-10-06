@@ -2,49 +2,39 @@
 
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { Loader2, Search, Building2, AlertTriangle, X } from 'lucide-react'
+import { Loader2, Search, Building2, AlertTriangle, RefreshCw, ArrowUpRight } from 'lucide-react'
 import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle,
-} from '@/components/ui/dialog'
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select'
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from '@/components/ui/table'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useLanguage } from '@/lib/language-context'
+import { PageHeader } from '@/components/page-header'
+import { AdminTableState } from '@/components/admin-table-state'
+import { AdminPlanBadge, AdminSubscriptionStatus } from '@/components/admin-subscription-badges'
+import { useAdminCopy } from '@/lib/admin-copy'
 import { errorMessage } from '@/lib/api-error'
 import { adminGetBusinesses, adminGetSubscription, adminChangePlan } from '@/lib/api'
 import type { Business, BusinessSubscription } from '@/lib/types'
-
-const planStyles: Record<string, { label: string; className: string }> = {
-  FREE:  { label: 'Free',  className: 'bg-muted text-foreground' },
-  BASIC: { label: 'Basic', className: 'bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300' },
-  PRO:   { label: 'Pro',   className: 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300' },
-}
-
-const statusColor: Record<string, string> = {
-  ACTIVE:    'text-emerald-700 dark:text-emerald-400',
-  EXPIRED:   'text-destructive',
-  CANCELLED: 'text-muted-foreground',
-}
 
 interface BusinessWithSub extends Business {
   sub?: BusinessSubscription
 }
 
 export default function AdminBusinessesPage() {
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
+  const copy = useAdminCopy()
+  const locale = language === 'vi' ? 'vi-VN' : 'en-US'
   const ts = t.subscription
 
   const [businesses, setBusinesses] = useState<BusinessWithSub[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [reload, setReload] = useState(0)
+  const [error, setError] = useState<string | null>(null)
+  const [detailError, setDetailError] = useState<string | null>(null)
   const [selected, setSelected] = useState<BusinessWithSub | null>(null)
   const [isSubLoading, setIsSubLoading] = useState(false)
   const [newPlan, setNewPlan] = useState('')
@@ -52,31 +42,47 @@ export default function AdminBusinessesPage() {
   const [isChangingPlan, setIsChangingPlan] = useState(false)
 
   useEffect(() => {
+    let cancelled = false
+    setIsLoading(true)
+    setError(null)
     adminGetBusinesses()
-      .then(async list => {
-        setBusinesses(list.map(b => ({ ...b })))
-        const results = await Promise.allSettled(list.map(b => adminGetSubscription(b.id)))
-        setBusinesses(list.map((b, i) => {
-          const r = results[i]
-          return r.status === 'fulfilled' ? { ...b, sub: r.value } : { ...b }
-        }))
+      .then(async (list) => {
+        if (cancelled) return
+        setBusinesses(list.map((b) => ({ ...b })))
+        const results = await Promise.allSettled(list.map((b) => adminGetSubscription(b.id)))
+        if (cancelled) return
+        setBusinesses(
+          list.map((b, i) => {
+            const r = results[i]
+            return r.status === 'fulfilled' ? { ...b, sub: r.value } : { ...b }
+          })
+        )
       })
-      .catch(err => toast.error(errorMessage(err, t, ts.businessesLoadError)))
-      .finally(() => setIsLoading(false))
-  }, [])
+      .catch((err) => {
+        if (!cancelled) setError(errorMessage(err, t, ts.businessesLoadError))
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [reload, t, ts.businessesLoadError])
 
   const openDetail = async (b: BusinessWithSub) => {
     setSelected(b)
+    setDetailError(null)
     if (!b.sub) {
       setIsSubLoading(true)
       try {
         const sub = await adminGetSubscription(b.id)
         const updated = { ...b, sub }
-        setBusinesses(prev => prev.map(x => x.id === b.id ? updated : x))
+        setBusinesses((prev) => prev.map((x) => (x.id === b.id ? updated : x)))
         setSelected(updated)
         setNewPlan(sub.plan)
         setNewCycle(sub.billingCycle ?? 'MONTHLY')
-      } catch {
+      } catch (err) {
+        setDetailError(errorMessage(err, t, ts.loadError))
         setNewPlan('')
       } finally {
         setIsSubLoading(false)
@@ -88,13 +94,13 @@ export default function AdminBusinessesPage() {
   }
 
   const handleChangePlan = async () => {
-    if (!selected || !newPlan) return
+    if (!selected || !newPlan || isChangingPlan) return
     setIsChangingPlan(true)
     try {
       // billingCycle chỉ gửi với gói trả phí — backend từ chối khi thiếu (400)
       const updated = await adminChangePlan(selected.id, newPlan, newPlan === 'FREE' ? undefined : newCycle)
       const updatedBusiness = { ...selected, sub: updated }
-      setBusinesses(prev => prev.map(x => x.id === selected.id ? updatedBusiness : x))
+      setBusinesses((prev) => prev.map((x) => (x.id === selected.id ? updatedBusiness : x)))
       setSelected(updatedBusiness)
       toast.success(ts.changePlanSuccess)
     } catch (err) {
@@ -105,97 +111,122 @@ export default function AdminBusinessesPage() {
   }
 
   const filtered = search.trim()
-    ? businesses.filter(b => b.name.toLowerCase().includes(search.toLowerCase()))
+    ? businesses.filter(
+        (b) => b.name.toLowerCase().includes(search.trim().toLowerCase()) || String(b.id).includes(search.trim())
+      )
     : businesses
 
   return (
     <div className="mx-auto w-full max-w-screen-2xl space-y-6 p-4 sm:p-6 lg:p-8">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">{ts.businessesTitle}</h1>
-        <p className="text-sm text-muted-foreground mt-1">{ts.businessesSubtitle}</p>
-      </div>
+      <PageHeader title={copy.businesses} subtitle={copy.businessSubtitle}>
+        <Button
+          variant="outline"
+          className="gap-2 self-start"
+          disabled={isLoading}
+          onClick={() => setReload((value) => value + 1)}
+        >
+          <RefreshCw className="size-4" />
+          {copy.refresh}
+        </Button>
+      </PageHeader>
 
-      <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          className="pl-9 bg-muted border-border text-foreground placeholder:text-muted-foreground"
-          placeholder={ts.businessesSearch}
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-        />
-      </div>
-
-      <div className="rounded-xl border border-border bg-card overflow-hidden">
+      <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b p-4 sm:px-5">
+          <div className="relative w-full sm:max-w-sm">
+            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              className="bg-background pl-9"
+              aria-label={copy.businessSearch}
+              placeholder={copy.businessSearch}
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+            />
+          </div>
+          {!isLoading && !error && (
+            <span className="text-xs tabular-nums text-muted-foreground">
+              {filtered.length} / {businesses.length} {copy.results}
+            </span>
+          )}
+        </div>
         <Table>
-          <TableHeader>
+          <TableHeader className="bg-muted/40">
             <TableRow className="border-border hover:bg-transparent">
-              <TableHead className="pl-5 text-muted-foreground">{ts.businessesColName}</TableHead>
+              <TableHead className="pl-5 text-muted-foreground">{copy.businessName}</TableHead>
               <TableHead className="text-muted-foreground">{ts.businessesColPlan}</TableHead>
               <TableHead className="text-muted-foreground">{ts.businessesColStatus}</TableHead>
               <TableHead className="text-muted-foreground">{ts.businessesColExpiry}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={4} className="h-24 text-center">
-                  <Loader2 className="mx-auto size-5 animate-spin text-muted-foreground" />
-                </TableCell>
-              </TableRow>
-            ) : filtered.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={4} className="h-24 text-center text-sm text-muted-foreground">
-                  {ts.businessesNoData}
-                </TableCell>
-              </TableRow>
-            ) : filtered.map(b => (
-              <TableRow
-                key={b.id}
-                className="border-border hover:bg-muted/60 cursor-pointer"
-                onClick={() => openDetail(b)}
-              >
-                <TableCell className="pl-5">
-                  <div className="flex items-center gap-2.5">
-                    <div className="flex size-8 items-center justify-center rounded-lg bg-muted">
-                      <Building2 className="size-4 text-muted-foreground" />
+            {isLoading || error || filtered.length === 0 ? (
+              <AdminTableState
+                columns={4}
+                loading={isLoading}
+                error={error}
+                emptyMessage={ts.businessesNoData}
+                onRetry={() => setReload((value) => value + 1)}
+              />
+            ) : (
+              filtered.map((b) => (
+                <TableRow key={b.id} className="border-border hover:bg-muted/50">
+                  <TableCell className="py-4 pl-5">
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10">
+                        <Building2 className="size-4 text-primary" />
+                      </div>
+                      <div>
+                        <button
+                          type="button"
+                          onClick={() => openDetail(b)}
+                          className="flex items-center gap-2 rounded-sm text-left text-sm font-medium text-foreground hover:text-primary"
+                        >
+                          <span>{b.name}</span>
+                          <ArrowUpRight className="size-3.5 shrink-0 text-muted-foreground" />
+                        </button>
+                        <p className="text-xs text-muted-foreground">#{b.id}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{b.name}</p>
-                      <p className="text-xs text-muted-foreground">#{b.id}</p>
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  {b.sub ? (
-                    <Badge variant="secondary" className={planStyles[b.sub.plan]?.className}>
-                      {planStyles[b.sub.plan]?.label ?? b.sub.plan}
-                    </Badge>
-                  ) : <span className="text-xs text-muted-foreground">—</span>}
-                </TableCell>
-                <TableCell>
-                  {b.sub ? (
-                    <span className={`text-sm font-medium ${statusColor[b.sub.status] ?? 'text-muted-foreground'}`}>
-                      {b.sub.status}
-                    </span>
-                  ) : <span className="text-xs text-muted-foreground">—</span>}
-                </TableCell>
-                <TableCell className="text-sm text-muted-foreground">
-                  {b.sub?.expiresAt ? new Date(b.sub.expiresAt).toLocaleDateString() : '—'}
-                </TableCell>
-              </TableRow>
-            ))}
+                  </TableCell>
+                  <TableCell>
+                    {b.sub ? (
+                      <AdminPlanBadge plan={b.sub.plan} />
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {b.sub ? (
+                      <AdminSubscriptionStatus status={b.sub.status} />
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {b.sub?.expiresAt ? new Date(b.sub.expiresAt).toLocaleDateString(locale) : '—'}
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </div>
 
       {/* Detail Modal */}
-      <Dialog open={!!selected} onOpenChange={open => !open && setSelected(null)}>
-        <DialogContent className="sm:max-w-md bg-card border-border text-foreground">
+      <Dialog
+        open={!!selected}
+        onOpenChange={(open) => {
+          if (!open && !isChangingPlan) setSelected(null)
+        }}
+      >
+        <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Building2 className="size-4 text-muted-foreground" />
+              <Building2 className="size-4 text-primary" />
               {selected?.name}
             </DialogTitle>
+            <DialogDescription>
+              {copy.businessDetails} · #{selected?.id}
+            </DialogDescription>
           </DialogHeader>
 
           {isSubLoading ? (
@@ -208,25 +239,27 @@ export default function AdminBusinessesPage() {
               <div className="rounded-lg border border-border bg-muted/50 p-4 grid grid-cols-2 gap-3 text-sm">
                 <div>
                   <p className="text-xs text-muted-foreground mb-1">{ts.currentPlanLabel}</p>
-                  <Badge variant="secondary" className={planStyles[selected.sub.plan]?.className}>
-                    {planStyles[selected.sub.plan]?.label ?? selected.sub.plan}
-                  </Badge>
+                  <AdminPlanBadge plan={selected.sub.plan} />
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground mb-1">{ts.currentStatusLabel}</p>
-                  <p className={`font-medium ${statusColor[selected.sub.status] ?? ''}`}>
-                    {selected.sub.status}
-                  </p>
+                  <AdminSubscriptionStatus status={selected.sub.status} />
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground mb-1">{ts.expiresLabel}</p>
                   <p className="text-foreground">
-                    {selected.sub.expiresAt ? new Date(selected.sub.expiresAt).toLocaleDateString() : ts.never}
+                    {selected.sub.expiresAt ? new Date(selected.sub.expiresAt).toLocaleDateString(locale) : ts.never}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground mb-1">Billing cycle</p>
-                  <p className="text-foreground">{selected.sub.billingCycle ?? '—'}</p>
+                  <p className="text-xs text-muted-foreground mb-1">{ts.colCycle}</p>
+                  <p className="text-foreground">
+                    {selected.sub.billingCycle === 'MONTHLY'
+                      ? copy.monthly
+                      : selected.sub.billingCycle === 'YEARLY'
+                        ? copy.yearly
+                        : '—'}
+                  </p>
                 </div>
               </div>
 
@@ -238,30 +271,44 @@ export default function AdminBusinessesPage() {
                 <p className="text-xs text-amber-800 dark:text-amber-400">{ts.overrideWarning}</p>
               </div>
 
-              <div className="flex items-end gap-3">
-                <div className="flex-1 space-y-1.5">
-                  <Label className="text-foreground text-sm">{ts.newPlanLabel}</Label>
-                  <Select value={newPlan} onValueChange={setNewPlan}>
-                    <SelectTrigger className="bg-muted border-border text-foreground">
+              <div className="flex flex-wrap items-end gap-3">
+                <div className="min-w-32 flex-1 space-y-1.5">
+                  <Label htmlFor="business-plan" className="text-foreground text-sm">
+                    {ts.newPlanLabel}
+                  </Label>
+                  <Select value={newPlan} onValueChange={setNewPlan} disabled={isChangingPlan}>
+                    <SelectTrigger id="business-plan" className="w-full bg-background">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent className="bg-muted border-border">
-                      <SelectItem value="FREE" className="text-foreground">Free</SelectItem>
-                      <SelectItem value="BASIC" className="text-foreground">Basic</SelectItem>
-                      <SelectItem value="PRO" className="text-foreground">Pro</SelectItem>
+                    <SelectContent>
+                      <SelectItem value="FREE" className="text-foreground">
+                        Free
+                      </SelectItem>
+                      <SelectItem value="BASIC" className="text-foreground">
+                        Basic
+                      </SelectItem>
+                      <SelectItem value="PRO" className="text-foreground">
+                        Pro
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 {newPlan !== 'FREE' && (
-                  <div className="flex-1 space-y-1.5">
-                    <Label className="text-foreground text-sm">{ts.colCycle}</Label>
-                    <Select value={newCycle} onValueChange={setNewCycle}>
-                      <SelectTrigger className="bg-muted border-border text-foreground">
+                  <div className="min-w-32 flex-1 space-y-1.5">
+                    <Label htmlFor="business-cycle" className="text-foreground text-sm">
+                      {ts.colCycle}
+                    </Label>
+                    <Select value={newCycle} onValueChange={setNewCycle} disabled={isChangingPlan}>
+                      <SelectTrigger id="business-cycle" className="w-full bg-background">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="bg-muted border-border">
-                        <SelectItem value="MONTHLY" className="text-foreground">{ts.monthly}</SelectItem>
-                        <SelectItem value="YEARLY" className="text-foreground">{ts.yearly}</SelectItem>
+                      <SelectContent>
+                        <SelectItem value="MONTHLY" className="text-foreground">
+                          {copy.monthly}
+                        </SelectItem>
+                        <SelectItem value="YEARLY" className="text-foreground">
+                          {copy.yearly}
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -277,7 +324,12 @@ export default function AdminBusinessesPage() {
               </div>
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground py-4 text-center">{ts.noBusinessSelected}</p>
+            <div className="space-y-3 py-4 text-center" role="alert">
+              <p className="text-sm text-muted-foreground">{detailError || ts.loadError}</p>
+              <Button variant="outline" disabled={!selected} onClick={() => selected && openDetail(selected)}>
+                {t.common.retry}
+              </Button>
+            </div>
           )}
         </DialogContent>
       </Dialog>

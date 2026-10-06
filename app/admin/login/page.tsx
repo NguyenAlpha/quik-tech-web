@@ -5,23 +5,28 @@ import { useRouter } from 'next/navigation'
 import { loginUser } from '@/lib/api'
 import { errorMessage } from '@/lib/api-error'
 import { useLanguage } from '@/lib/language-context'
+import { useAdminCopy } from '@/lib/admin-copy'
 import { useRateLimitCooldown } from '@/hooks/use-rate-limit-cooldown'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { AlertCircle, Loader2, ShieldCheck } from 'lucide-react'
+import { LanguageSwitcher } from '@/components/language-switcher'
+import { ThemeToggle } from '@/components/theme-toggle'
+import { AlertCircle, ArrowRight, Building2, CreditCard, Eye, EyeOff, Loader2, ShieldCheck, Users } from 'lucide-react'
 
 export default function AdminLoginPage() {
   const router = useRouter()
   const { t } = useLanguage()
+  const copy = useAdminCopy()
   const cooldown = useRateLimitCooldown()
   const [usernameOrEmail, setUsernameOrEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault()
     if (isLoading || cooldown.isCoolingDown) return
     setError(null)
     setIsLoading(true)
@@ -30,7 +35,7 @@ export default function AdminLoginPage() {
       localStorage.setItem('admin_token', accessToken)
       localStorage.setItem('admin_user', JSON.stringify(user))
       document.cookie = `admin_token=${accessToken}; path=/admin; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`
-      router.push('/admin/stats')
+      router.replace('/admin/stats')
     } catch (err) {
       cooldown.record(err)
       setError(errorMessage(err, t))
@@ -40,75 +45,132 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-sm">
-        {/* Logo */}
-        <div className="flex flex-col items-center gap-3 mb-8">
-          <div className="flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary/80 shadow-sm">
-            <ShieldCheck className="size-7 text-primary-foreground" />
-          </div>
-          <div className="text-center">
-            <h1 className="text-xl font-bold text-foreground tracking-tight">QuikTech POS Admin</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">System administration portal</p>
+    <div className="grid min-h-svh bg-background lg:grid-cols-2">
+      {/* Logo */}
+      <aside className="hidden flex-col justify-between border-r bg-primary/5 p-10 lg:flex xl:p-16">
+        <div className="flex items-center gap-3">
+          <span className="flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+            <ShieldCheck className="size-5" />
+          </span>
+          <div>
+            <p className="font-semibold tracking-tight">QuikTech POS</p>
+            <p className="text-xs text-muted-foreground">{copy.workspace}</p>
           </div>
         </div>
-
-        {/* Card */}
-        <div className="rounded-2xl border border-border bg-card p-6 shadow-xl">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-              <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
-                <AlertCircle className="size-4 shrink-0" />
-                {error}
+        <div className="max-w-md space-y-8 py-16">
+          <div className="space-y-5">
+            <h1 className="text-4xl font-semibold leading-tight tracking-tight xl:text-5xl">{copy.loginWelcome}</h1>
+            <p className="text-base leading-relaxed text-muted-foreground">{copy.loginIntro}</p>
+          </div>
+          <div className="space-y-3">
+            {[
+              { icon: Building2, label: copy.businesses },
+              { icon: Users, label: copy.users },
+              { icon: CreditCard, label: copy.subscriptions }
+            ].map((item) => (
+              <div key={item.label} className="flex items-center gap-3 rounded-xl border bg-card/80 px-4 py-3 text-sm">
+                <item.icon className="size-4 text-primary" />
+                <span>{item.label}</span>
               </div>
-            )}
-
-            <div className="space-y-1.5">
-              <Label htmlFor="usernameOrEmail" className="text-foreground text-sm">
-                Username or Email
-              </Label>
-              <Input
-                id="usernameOrEmail"
-                type="text"
-                placeholder="admin@quiktech.vn"
-                value={usernameOrEmail}
-                onChange={e => setUsernameOrEmail(e.target.value)}
-                required
-                autoComplete="username"
-                className="bg-muted border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-ring"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="password" className="text-foreground text-sm">
-                Password
-              </Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                required
-                autoComplete="current-password"
-                className="bg-muted border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-ring"
-              />
-            </div>
-
-            <Button
-              type="submit"
-              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground mt-2"
-              disabled={isLoading || cooldown.isCoolingDown}
-            >
-              {isLoading && <Loader2 className="mr-2 size-4 animate-spin" />}
-              {cooldown.isCoolingDown ? t.common.retryIn.replace('{seconds}', String(cooldown.remainingSeconds)) : 'Sign in to Admin'}
-            </Button>
-          </form>
+            ))}
+          </div>
         </div>
-
-        <p className="text-center text-xs text-muted-foreground mt-6">
-          Restricted access — authorized personnel only
+        <p className="flex items-center gap-2 text-xs text-muted-foreground">
+          <ShieldCheck className="size-4" />
+          {copy.restrictedAccess}
         </p>
+      </aside>
+
+      <div className="flex min-w-0 flex-col">
+        <div className="flex items-center justify-end gap-2 px-4 py-4 sm:px-8">
+          <LanguageSwitcher />
+          <ThemeToggle />
+        </div>
+        <main className="flex flex-1 items-center justify-center px-4 py-8 sm:px-8">
+          <div className="w-full max-w-sm space-y-6">
+            <div className="flex items-center gap-3 lg:hidden">
+              <span className="flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+                <ShieldCheck className="size-5" />
+              </span>
+              <div>
+                <p className="font-semibold">QuikTech POS</p>
+                <p className="text-xs text-muted-foreground">{copy.workspace}</p>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-2xl font-semibold tracking-tight">{copy.loginTitle}</h2>
+              <p className="text-sm leading-relaxed text-muted-foreground">{copy.loginDescription}</p>
+            </div>
+
+            {/* Card */}
+            <div className="rounded-xl border bg-card p-5 shadow-sm sm:p-6">
+              <form onSubmit={handleSubmit} className="space-y-5">
+                {error && (
+                  <div
+                    role="alert"
+                    className="flex items-start gap-2 rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive"
+                  >
+                    <AlertCircle className="mt-0.5 size-4 shrink-0" />
+                    {error}
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <Label htmlFor="usernameOrEmail">{copy.usernameOrEmail}</Label>
+                  <Input
+                    id="usernameOrEmail"
+                    type="text"
+                    placeholder="admin@quiktech.vn"
+                    value={usernameOrEmail}
+                    onChange={(event) => setUsernameOrEmail(event.target.value)}
+                    required
+                    autoComplete="username"
+                    disabled={isLoading}
+                    className="h-10 bg-background"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">{t.auth.passwordLabel}</Label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder={t.auth.passwordPlaceholder}
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
+                      required
+                      autoComplete="current-password"
+                      disabled={isLoading}
+                      className="h-10 bg-background pr-10"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-1 top-1 size-8 text-muted-foreground"
+                      aria-label={showPassword ? t.auth.hidePassword : t.auth.showPassword}
+                      aria-pressed={showPassword}
+                      onClick={() => setShowPassword((value) => !value)}
+                    >
+                      {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                    </Button>
+                  </div>
+                </div>
+                <Button type="submit" className="h-10 w-full gap-2" disabled={isLoading || cooldown.isCoolingDown}>
+                  {isLoading ? <Loader2 className="size-4 animate-spin" /> : null}
+                  {cooldown.isCoolingDown
+                    ? t.common.retryIn.replace('{seconds}', String(cooldown.remainingSeconds))
+                    : copy.signIn}
+                  {!isLoading && !cooldown.isCoolingDown && <ArrowRight className="size-4" />}
+                </Button>
+              </form>
+            </div>
+            <p className="flex items-center justify-center gap-2 text-center text-xs text-muted-foreground">
+              <ShieldCheck className="size-3.5 shrink-0" />
+              {copy.restrictedAccess}
+            </p>
+          </div>
+        </main>
+        <p className="px-4 pb-6 text-center text-xs text-muted-foreground">QuikTech POS</p>
       </div>
     </div>
   )

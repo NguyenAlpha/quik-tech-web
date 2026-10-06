@@ -125,7 +125,7 @@ export default function AdminStatsPage() {
             {/* Revenue Chart */}
             <Card className="min-w-0 xl:col-span-2">
               <CardHeader>
-                <CardTitle className="text-base">{ts.statsRevenueChart}</CardTitle>
+                <CardTitle className="text-base">{copy.revenueTitle}</CardTitle>
                 <CardDescription>{copy.revenueDescription}</CardDescription>
               </CardHeader>
               <CardContent>
@@ -136,7 +136,7 @@ export default function AdminStatsPage() {
                 {stats.revenueLast6Months.length === 0 || !stats.revenueLast6Months.some(month => month.amount !== 0) ? (
                   <div className="flex h-64 items-center justify-center rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">{copy.noRevenue}</div>
                 ) : (
-                  <div className="h-64 w-full min-w-0" role="img" aria-label={ts.statsRevenueChart}>
+                  <div className="h-64 w-full min-w-0" role="img" aria-label={copy.revenueTitle}>
                     <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                       <BarChart data={stats.revenueLast6Months} margin={{ top: 8, right: 0, left: 0, bottom: 0 }} accessibilityLayer>
                         <CartesianGrid vertical={false} stroke="var(--border)" strokeDasharray="3 3" />
@@ -149,7 +149,7 @@ export default function AdminStatsPage() {
                   </div>
                 )}
                 <table className="sr-only">
-                  <caption>{ts.statsRevenueChart}</caption>
+                  <caption>{copy.revenueTitle}</caption>
                   <thead><tr><th scope="col">{t.common.date}</th><th scope="col">{t.common.amount}</th></tr></thead>
                   <tbody>{stats.revenueLast6Months.map(month => <tr key={month.month}><th scope="row">{monthLabel(month.month)}</th><td>{formatCurrency(month.amount)}</td></tr>)}</tbody>
                 </table>
@@ -180,7 +180,7 @@ export default function AdminStatsPage() {
                 )}
                 {/* Sub status */}
                 <div className="space-y-3 border-t pt-5">
-                  <p className="text-sm font-medium">{ts.statsSubStatus}</p>
+                  <p className="text-sm font-medium">{copy.subscriptionStatus}</p>
                   <div className="flex items-center justify-between gap-2 text-sm"><span className="flex items-center gap-2 text-muted-foreground"><span className="size-2 rounded-full bg-emerald-500" />{copy.active}</span><span className="font-medium tabular-nums">{stats.activeSubscriptions.toLocaleString(locale)}</span></div>
                   <div className="flex items-center justify-between gap-2 text-sm"><span className="flex items-center gap-2 text-muted-foreground"><span className="size-2 rounded-full bg-amber-500" />{copy.expired}</span><span className="font-medium tabular-nums">{stats.expiredSubscriptions.toLocaleString(locale)}</span></div>
                 </div>
