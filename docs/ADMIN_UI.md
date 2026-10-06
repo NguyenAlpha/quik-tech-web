@@ -71,6 +71,14 @@ are URL parameters. The adjustment link opens
 `/admin/subscriptions?tab=override&businessId={id}` with the business selected.
 Plan badges in the business list retain the existing quick adjustment dialog.
 
+The adjustment form uses a searchable business picker. Type a business name to
+filter the loaded business list; matching ignores case and Vietnamese accents.
+Each option also shows its ID to distinguish duplicate names. Keyboard selection,
+no-results messages and EN/VI labels are supported. Choosing a result keeps
+`businessId` in the URL, including preselection from the business detail page.
+Validated with TypeScript and Chromium fixtures: unaccented/case-insensitive name
+search, keyboard selection, empty results, duplicate names, URL/reload and 390px VI layout.
+
 The aggregate detail endpoint requires the Phase 5 backend. Invoice history uses
 the existing business endpoint, with loading/empty/retry states and pagination.
 

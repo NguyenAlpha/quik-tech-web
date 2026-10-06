@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, Suspense } from 'react'
 import { toast } from 'sonner'
-import { Check, X, AlertCircle, AlertTriangle, Loader2, RefreshCw, Building2 } from 'lucide-react'
+import { Check, X, AlertCircle, AlertTriangle, Loader2, RefreshCw, Building2, ChevronsUpDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -16,6 +16,8 @@ import {
   DialogDescription
 } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useLanguage } from '@/lib/language-context'
 import { PageHeader } from '@/components/page-header'
@@ -39,6 +41,10 @@ import { AdminInvoiceSearch } from '@/components/admin-invoice-search'
 import { useAdminPending } from '@/components/admin-pending-provider'
 import { formatCurrency } from '@/lib/utils'
 import type { SubscriptionInvoice, Business, BusinessSubscription } from '@/lib/types'
+
+function normalizeBusinessName(value: string) {
+  return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[đĐ]/g, 'd').toLowerCase().trim()
+}
 
 function AdminSubscriptionsContent() {
   const { params, update, page } = useAdminUrl()
@@ -65,6 +71,8 @@ function AdminSubscriptionsContent() {
   const [isActioning, setIsActioning] = useState(false)
 
   const [businesses, setBusinesses] = useState<Business[]>([])
+  const [isBusinessesLoading, setIsBusinessesLoading] = useState(true)
+  const [businessPickerOpen, setBusinessPickerOpen] = useState(false)
   const selectedBusinessId = params.get('businessId') || ''
   const setSelectedBusinessId = (id: string) => update({ businessId: id })
   const [currentSub, setCurrentSub] = useState<BusinessSubscription | null>(null)
@@ -95,11 +103,14 @@ function AdminSubscriptionsContent() {
   }, [page, t, ts.loadError, setPage])
 
   const loadBusinesses = useCallback(async () => {
+    setIsBusinessesLoading(true)
     setBusinessError(null)
     try {
       setBusinesses(await adminGetBusinesses())
     } catch (err) {
       setBusinessError(errorMessage(err, t, ts.businessesLoadError))
+    } finally {
+      setIsBusinessesLoading(false)
     }
   }, [t, ts.businessesLoadError])
 
@@ -388,18 +399,53 @@ function AdminSubscriptionsContent() {
             )}
             <div className="space-y-2">
               <Label htmlFor="subscription-business">{copy.selectBusiness}</Label>
-              <Select value={selectedBusinessId} onValueChange={setSelectedBusinessId} disabled={isChangingPlan}>
-                <SelectTrigger id="subscription-business" className="w-full bg-background">
-                  <SelectValue placeholder={copy.selectBusiness} />
-                </SelectTrigger>
-                <SelectContent>
-                  {businesses.map((b) => (
-                    <SelectItem key={b.id} value={String(b.id)} className="text-foreground">
-                      #{b.id} — {b.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={businessPickerOpen} onOpenChange={setBusinessPickerOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    id="subscription-business"
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={businessPickerOpen}
+                    disabled={isChangingPlan || isBusinessesLoading || !!businessError}
+                    className="w-full justify-between bg-background font-normal"
+                  >
+                    <span className="truncate">
+                      {isBusinessesLoading ? t.common.loading : selectedBusinessId
+                        ? `${businessName(Number(selectedBusinessId)) || copy.selectBusiness} · #${selectedBusinessId}`
+                        : copy.searchBusinessName}
+                    </span>
+                    <ChevronsUpDown className="size-4 shrink-0 text-muted-foreground" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="start" className="w-[var(--radix-popover-trigger-width)] p-0">
+                  <Command
+                    defaultValue={selectedBusinessId}
+                    filter={(_value, search, keywords) => normalizeBusinessName(keywords?.[0] || '').includes(normalizeBusinessName(search)) ? 1 : 0}
+                  >
+                    <CommandInput placeholder={copy.searchBusinessName} aria-label={copy.searchBusinessName} />
+                    <CommandList>
+                      <CommandEmpty>{copy.noMatchingBusinesses}</CommandEmpty>
+                      <CommandGroup>
+                        {businesses.map((b) => (
+                          <CommandItem
+                            key={b.id}
+                            value={String(b.id)}
+                            keywords={[b.name]}
+                            onSelect={() => {
+                              setSelectedBusinessId(String(b.id))
+                              setBusinessPickerOpen(false)
+                            }}
+                          >
+                            <Check className={selectedBusinessId === String(b.id) ? 'size-4' : 'size-4 opacity-0'} />
+                            <span className="min-w-0 flex-1 break-words">{b.name}</span>
+                            <span className="shrink-0 text-xs text-muted-foreground">#{b.id}</span>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
             {selectedBusinessId && (
