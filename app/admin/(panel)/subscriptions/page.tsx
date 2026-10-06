@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, Suspense } from 'react'
 import { toast } from 'sonner'
 import { Check, X, AlertCircle, AlertTriangle, Loader2, RefreshCw, Building2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -33,10 +33,12 @@ import {
   adminGetSubscription,
   adminChangePlan
 } from '@/lib/api'
+import { useAdminUrl } from '@/hooks/use-admin-url'
 import { formatCurrency } from '@/lib/utils'
 import type { SubscriptionInvoice, Business, BusinessSubscription } from '@/lib/types'
 
-export default function AdminSubscriptionsPage() {
+function AdminSubscriptionsContent() {
+  const { params, update } = useAdminUrl()
   const { t, language } = useLanguage()
   const copy = useAdminCopy()
   const locale = language === 'vi' ? 'vi-VN' : 'en-US'
@@ -57,7 +59,8 @@ export default function AdminSubscriptionsPage() {
   const [isActioning, setIsActioning] = useState(false)
 
   const [businesses, setBusinesses] = useState<Business[]>([])
-  const [selectedBusinessId, setSelectedBusinessId] = useState('')
+  const selectedBusinessId = params.get('businessId') || ''
+  const setSelectedBusinessId = (id: string) => update({ businessId: id })
   const [currentSub, setCurrentSub] = useState<BusinessSubscription | null>(null)
   const [isSubLoading, setIsSubLoading] = useState(false)
   const [newPlan, setNewPlan] = useState('')
@@ -215,7 +218,7 @@ export default function AdminSubscriptionsPage() {
   return (
     <div className="mx-auto w-full max-w-screen-2xl space-y-6 p-4 sm:p-6 lg:p-8">
       <PageHeader title={copy.subscriptions} subtitle={copy.subscriptionDescription} />
-      <Tabs defaultValue="invoices" className="gap-5">
+      <Tabs value={params.get('tab') === 'override' ? 'override' : 'invoices'} onValueChange={tab => update({ tab })} className="gap-5">
         <TabsList className="h-auto max-w-full flex-wrap">
           <TabsTrigger value="invoices" className="px-3 py-2">
             {copy.invoiceQueue}
@@ -599,4 +602,8 @@ export default function AdminSubscriptionsPage() {
       </Dialog>
     </div>
   )
+}
+
+export default function AdminSubscriptionsPage() {
+  return <Suspense><AdminSubscriptionsContent /></Suspense>
 }

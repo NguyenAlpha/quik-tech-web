@@ -51,9 +51,9 @@ export function AdminSidebar() {
             <SidebarMenu>
               {adminNavItems.map(item => (
                 <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton asChild isActive={pathname === item.href} tooltip={copy[item.key]}
+                  <SidebarMenuButton asChild isActive={(pathname === item.href || pathname.startsWith(`${item.href}/`))} tooltip={copy[item.key]}
                     className="data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground">
-                    <Link href={item.href} aria-current={pathname === item.href ? 'page' : undefined} onClick={() => setOpenMobile(false)}>
+                    <Link href={item.href} aria-current={(pathname === item.href || pathname.startsWith(`${item.href}/`)) ? 'page' : undefined} onClick={() => setOpenMobile(false)}>
                       <item.icon />
                       <span>{copy[item.key]}</span>
                     </Link>

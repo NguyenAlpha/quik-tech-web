@@ -1,5 +1,5 @@
 import { ApiError } from '@/lib/api'
-import type { AuthUser } from '@/lib/types'
+import type { AuthUser, Business, BusinessSubscription, PagedResult, SubscriptionInvoice } from '@/lib/types'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
 
@@ -28,4 +28,18 @@ export async function adminRequest<T>(path: string, init?: RequestInit, accessTo
 
 export function verifyAdminSession(accessToken?: string) {
   return adminRequest<AuthUser>('/api/admin/session', undefined, accessToken)
+}
+
+export interface AdminBusinessDetail {
+  business: Business
+  subscription: BusinessSubscription
+  stores: Business[]
+}
+
+export function getAdminBusiness(businessId: number) {
+  return adminRequest<AdminBusinessDetail>(`/api/admin/businesses/${businessId}`)
+}
+
+export function getAdminBusinessInvoices(businessId: number, page: number) {
+  return adminRequest<PagedResult<SubscriptionInvoice>>(`/api/businesses/${businessId}/subscription/invoices?page=${page}&size=20`)
 }

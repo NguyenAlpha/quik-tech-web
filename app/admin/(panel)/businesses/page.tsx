@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { toast } from 'sonner'
 import { Loader2, Search, Building2, AlertTriangle, RefreshCw, ArrowUpRight } from 'lucide-react'
 import { Input } from '@/components/ui/input'
@@ -175,21 +176,21 @@ export default function AdminBusinessesPage() {
                         <Building2 className="size-4 text-primary" />
                       </div>
                       <div>
-                        <button
-                          type="button"
-                          onClick={() => openDetail(b)}
+                        <Link
+                          href={`/admin/businesses/${b.id}`}
+
                           className="flex items-center gap-2 rounded-sm text-left text-sm font-medium text-foreground hover:text-primary"
                         >
                           <span>{b.name}</span>
                           <ArrowUpRight className="size-3.5 shrink-0 text-muted-foreground" />
-                        </button>
+                        </Link>
                         <p className="text-xs text-muted-foreground">#{b.id}</p>
                       </div>
                     </div>
                   </TableCell>
                   <TableCell>
                     {b.sub ? (
-                      <AdminPlanBadge plan={b.sub.plan} />
+                      <button type="button" onClick={() => openDetail(b)} aria-label={`${copy.overridePlan}: ${b.name}`} className="rounded-md"><AdminPlanBadge plan={b.sub.plan} /></button>
                     ) : (
                       <span className="text-xs text-muted-foreground">—</span>
                     )}

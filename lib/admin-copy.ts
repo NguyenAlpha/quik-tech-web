@@ -5,6 +5,13 @@ import { useLanguage } from '@/lib/language-context'
 // Admin-specific copy stays separate from merchant/store terminology.
 const adminCopy = {
   en: {
+    details: 'Details', stores: 'Stores', invoices: 'Invoice history', contact: 'Contact information',
+    address: 'Address', phone: 'Phone', email: 'Email', created: 'Created',
+    planLimits: 'Plan limits', products: 'Products', staff: 'Staff', warehouses: 'Warehouses', unlimited: 'Unlimited',
+    noStores: 'No stores for this business.', noInvoices: 'No invoices found.',
+    pending: 'Pending', paid: 'Paid', failed: 'Failed / rejected', note: 'Admin note',
+    backToBusinesses: 'All businesses', invalidBusiness: 'Invalid business ID.',
+
     monthly: 'Monthly',
     yearly: 'Yearly',
     selectBusiness: 'Select a business',
@@ -59,6 +66,13 @@ const adminCopy = {
     loginIntro: 'One workspace for the people and businesses behind QuikTech POS.'
   },
   vi: {
+    details: 'Chi tiết', stores: 'Cửa hàng', invoices: 'Lịch sử hóa đơn', contact: 'Thông tin liên hệ',
+    address: 'Địa chỉ', phone: 'Điện thoại', email: 'Email', created: 'Ngày tạo',
+    planLimits: 'Giới hạn gói', products: 'Sản phẩm', staff: 'Nhân viên', warehouses: 'Kho', unlimited: 'Không giới hạn',
+    noStores: 'Doanh nghiệp chưa có cửa hàng.', noInvoices: 'Không tìm thấy hóa đơn.',
+    pending: 'Chờ duyệt', paid: 'Đã thanh toán', failed: 'Thất bại / từ chối', note: 'Ghi chú quản trị',
+    backToBusinesses: 'Danh sách doanh nghiệp', invalidBusiness: 'Mã doanh nghiệp không hợp lệ.',
+
     monthly: 'Hàng tháng',
     yearly: 'Hàng năm',
     selectBusiness: 'Chọn doanh nghiệp',

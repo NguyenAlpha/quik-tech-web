@@ -59,3 +59,21 @@ integration server with its own PostgreSQL database and Redis DB 15.
 Live checks passed on 2026-10-06, including invoice confirm/reject and validation,
 plan changes, ordinary-user 403, missing/invalid token 401 and user lock/unlock/
 deletion. No real business records were mutated by these checks.
+
+Chromium also verified real login, the session gate, navigation and expired-token
+redirection while preserving merchant session storage.
+
+## Phase 5: business detail
+
+Business names link to `/admin/businesses/{id}`. The page shows contact details,
+subscription limits, business-scoped stores and invoice history. `tab` and `page`
+are URL parameters. The adjustment link opens
+`/admin/subscriptions?tab=override&businessId={id}` with the business selected.
+Plan badges in the business list retain the existing quick adjustment dialog.
+
+The aggregate detail endpoint requires the Phase 5 backend. Invoice history uses
+the existing business endpoint, with loading/empty/retry states and pagination.
+
+Phase 5 checks passed: TypeScript, production build, live aggregate/404/403 and
+business-scoped invoice history; Chromium tabs/reload, preselected adjustment,
+390px layout without page overflow and no JavaScript errors.
