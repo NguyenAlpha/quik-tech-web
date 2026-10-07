@@ -550,7 +550,7 @@ export default function SubscriptionPage() {
               </p>
             </div>
 
-            {/* QR code: the former fixed image is omitted because invoices can have different receiving accounts. */}
+            {/* QR code: PaymentBankDetails below displays the image saved with this invoice. */}
 
             {/* Transfer reference — most important */}
             <div className="rounded-lg border-2 border-primary/20 bg-primary/5 px-4 py-3">

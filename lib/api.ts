@@ -137,7 +137,7 @@ async function adminApiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   return readApiResponse<T>(res)
 }
 
-async function authenticatedFetch(path: string, init?: RequestInit): Promise<Response> {
+export async function authenticatedFetch(path: string, init?: RequestInit): Promise<Response> {
   const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null
   const send = (accessToken: string | null) => {
     const headers = new Headers(init?.headers)

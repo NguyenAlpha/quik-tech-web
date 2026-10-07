@@ -12,14 +12,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { AdminReasonField } from '@/components/admin-reason-field'
 import { PaymentBankDetails } from '@/components/payment-bank-details'
+import { PaymentQrImage } from '@/components/payment-qr-image'
 import { useLanguage } from '@/lib/language-context'
 import { useAdminCopy } from '@/lib/admin-copy'
 import { usePaymentAccountCopy } from '@/lib/payment-account-copy'
 import { ApiError } from '@/lib/api'
 import { errorMessage } from '@/lib/api-error'
-import { getPaymentAccounts, savePaymentAccount, changePaymentAccount, type PaymentAccount, type PaymentAccountInput } from '@/lib/payment-accounts'
+import { getPaymentAccounts, savePaymentAccount, changePaymentAccount, uploadPaymentQr, type PaymentAccount, type PaymentAccountInput } from '@/lib/payment-accounts'
 
-const emptyForm: PaymentAccountInput = { label: '', bankName: '', accountNumber: '', accountHolder: '', branch: '', reason: '' }
+const emptyForm: PaymentAccountInput = { label: '', bankName: '', accountNumber: '', accountHolder: '', branch: '', reason: '', qrImageKey: null, qrConfirmed: false }
 
 export default function PaymentAccountsPage() {
   const { t } = useLanguage()
@@ -34,6 +35,8 @@ export default function PaymentAccountsPage() {
   const [target, setTarget] = useState<{ account: PaymentAccount; action: 'activate' | 'archive' } | null>(null)
   const [reason, setReason] = useState('')
   const [saving, setSaving] = useState(false)
+  const [qrUploading, setQrUploading] = useState(false)
+  const qrRequestId = useRef(0)
   const requestId = useRef(0)
   const load = useCallback(async () => {
     const request = ++requestId.current
@@ -49,14 +52,31 @@ export default function PaymentAccountsPage() {
     }
   }, [t])
   useEffect(() => { void load(); return () => { requestId.current++ } }, [load])
+  useEffect(() => () => { qrRequestId.current++ }, [])
 
   const active = accounts.find(account => account.active)
   const visible = accounts.filter(account => filter === 'all' || (filter === 'archived' ? account.archived : !account.archived))
     .sort((a, b) => Number(b.active) - Number(a.active))
 
   const openEditor = (account?: PaymentAccount) => {
-    setForm(account ? { label: account.label, bankName: account.bankName, accountNumber: account.accountNumber, accountHolder: account.accountHolder, branch: account.branch, version: account.version, reason: '' } : { ...emptyForm })
+    setForm(account ? { label: account.label, bankName: account.bankName, accountNumber: account.accountNumber, accountHolder: account.accountHolder, branch: account.branch, version: account.version, reason: '', qrImageKey: account.qrImageKey, qrImageUrl: account.qrImageUrl, qrConfirmed: false } : { ...emptyForm })
     setEditor({ account })
+  }
+  const uploadQr = async (file: File) => {
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type) || file.size === 0 || file.size > 5 * 1024 * 1024) {
+      toast.error(copy.qrInvalid)
+      return
+    }
+    const request = ++qrRequestId.current
+    setQrUploading(true)
+    try {
+      const uploaded = await uploadPaymentQr(file)
+      if (request === qrRequestId.current) setForm(previous => ({ ...previous, ...uploaded, qrConfirmed: false }))
+    } catch (err) {
+      if (request === qrRequestId.current) toast.error(errorMessage(err, t))
+    } finally {
+      if (request === qrRequestId.current) setQrUploading(false)
+    }
   }
   const mutationError = (err: unknown) => {
     if (err instanceof ApiError && err.status === 409) {
@@ -68,7 +88,7 @@ export default function PaymentAccountsPage() {
   }
   const save = async (event: React.FormEvent) => {
     event.preventDefault()
-    if (!editor || saving) return
+    if (!editor || saving || qrUploading || (form.qrImageKey && !form.qrConfirmed)) return
     setSaving(true)
     try {
       await savePaymentAccount({ ...form, label: form.label.trim(), bankName: form.bankName.trim(), accountNumber: form.accountNumber.trim(), accountHolder: form.accountHolder.trim(), branch: form.branch.trim(), reason: form.reason?.trim() }, editor.account?.id)
@@ -112,12 +132,23 @@ export default function PaymentAccountsPage() {
           </section>)}</div>}
       </>}
 
-    <Dialog open={!!editor} onOpenChange={open => { if (!open && !saving) setEditor(null) }}><DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-xl">
+    <Dialog open={!!editor} onOpenChange={open => { if (!open && !saving && !qrUploading) setEditor(null) }}><DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-xl">
       <DialogHeader><DialogTitle>{editor?.account ? copy.edit : copy.add}</DialogTitle><DialogDescription>{copy.editHint}</DialogDescription></DialogHeader>
       <form onSubmit={save} className="space-y-4">
-        {([{ key: 'label', label: copy.label, max: 100 }, { key: 'bankName', label: copy.bankName, max: 150 }, { key: 'accountNumber', label: copy.accountNumber, max: 50 }, { key: 'accountHolder', label: copy.accountHolder, max: 150 }, { key: 'branch', label: copy.branch, max: 150 }] as const).map(field => <div key={field.key} className="space-y-2"><Label htmlFor={`account-${field.key}`}>{field.label}</Label><Input id={`account-${field.key}`} value={form[field.key]} onChange={event => setForm(previous => ({ ...previous, [field.key]: event.target.value }))} required={field.key !== 'branch'} maxLength={field.max} pattern={field.key === 'accountNumber' ? '[A-Za-z0-9]{4,50}' : undefined} disabled={saving} autoComplete="off" /></div>)}
+        {([{ key: 'label', label: copy.label, max: 100 }, { key: 'bankName', label: copy.bankName, max: 150 }, { key: 'accountNumber', label: copy.accountNumber, max: 50 }, { key: 'accountHolder', label: copy.accountHolder, max: 150 }, { key: 'branch', label: copy.branch, max: 150 }] as const).map(field => <div key={field.key} className="space-y-2"><Label htmlFor={`account-${field.key}`}>{field.label}</Label><Input id={`account-${field.key}`} value={form[field.key]} onChange={event => setForm(previous => ({ ...previous, [field.key]: event.target.value, qrConfirmed: field.key === 'label' ? previous.qrConfirmed : false }))} required={field.key !== 'branch'} maxLength={field.max} pattern={field.key === 'accountNumber' ? '[A-Za-z0-9]{4,50}' : undefined} disabled={saving || qrUploading} autoComplete="off" /></div>)}
+        <div className="space-y-3 rounded-xl border bg-muted/20 p-4">
+          <Label htmlFor="account-qr">{copy.qrOptional}</Label>
+          <p id="account-qr-hint" className="text-xs text-muted-foreground">{copy.qrHint}</p>
+          {form.qrImageUrl && <PaymentQrImage key={form.qrImageUrl} url={form.qrImageUrl} />}
+          <Input id="account-qr" type="file" accept="image/png,image/jpeg,image/webp" aria-label={copy.qrUpload} aria-describedby="account-qr-hint" disabled={saving || qrUploading} onChange={event => { const file = event.target.files?.[0]; event.target.value = ''; if (file) void uploadQr(file) }} />
+          {qrUploading && <p role="status" className="flex items-center gap-2 text-sm"><Loader2 className="size-4 animate-spin" />{copy.qrUploading}</p>}
+          {form.qrImageKey && <>
+            <Button type="button" size="sm" variant="outline" disabled={saving || qrUploading} onClick={() => setForm(previous => ({ ...previous, qrImageKey: null, qrImageUrl: null, qrConfirmed: false }))}>{copy.qrRemove}</Button>
+            <label className="flex items-start gap-2 text-sm"><input type="checkbox" className="mt-1 size-4 shrink-0 accent-primary" checked={form.qrConfirmed} required disabled={saving || qrUploading} onChange={event => setForm(previous => ({ ...previous, qrConfirmed: event.target.checked }))} /><span>{copy.qrConfirm}</span></label>
+          </>}
+        </div>
         <AdminReasonField value={form.reason || ''} onChange={value => setForm(previous => ({ ...previous, reason: value }))} disabled={saving} />
-        <DialogFooter><Button type="button" variant="outline" disabled={saving} onClick={() => setEditor(null)}>{t.common.cancel}</Button><Button type="submit" disabled={saving}>{saving && <Loader2 className="size-4 animate-spin" />}{copy.save}</Button></DialogFooter>
+        <DialogFooter><Button type="button" variant="outline" disabled={saving || qrUploading} onClick={() => setEditor(null)}>{t.common.cancel}</Button><Button type="submit" disabled={saving || qrUploading || (!!form.qrImageKey && !form.qrConfirmed)}>{saving && <Loader2 className="size-4 animate-spin" />}{copy.save}</Button></DialogFooter>
       </form>
     </DialogContent></Dialog>
 

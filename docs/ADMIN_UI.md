@@ -150,3 +150,14 @@ and transfer reference. No new QR generation or external banking service is adde
 If no default is configured, merchant upgrade/checkout submission is disabled with
 a retryable availability notice. Server validation remains authoritative if the
 configuration changes while the page is open. Free/downgrade flows remain available.
+
+## Receiving-account QR images
+
+`/admin/payment-accounts` supports optional QR upload, preview, replacement and
+removal in the account editor. PNG/JPG/WebP are accepted (5 MB, 4096 × 4096); WebP
+is converted to PNG in the browser. Saving with QR requires an explicit recipient
+confirmation. Account cards and the account-switch dialog show the selected QR.
+Checkout and invoice review use the immutable image saved with each invoice, and
+show retry/manual-transfer details if the image cannot load. Both admin and
+merchant image requests use their respective authenticated sessions. See
+[PAYMENT_ACCOUNTS.md](PAYMENT_ACCOUNTS.md) for API, storage and baseline rollout.

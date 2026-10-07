@@ -23,7 +23,7 @@ export async function adminRequest<T>(
 ): Promise<T> {
   const token = accessToken ?? localStorage.getItem('admin_token')
   const headers = new Headers(init?.headers)
-  headers.set('Content-Type', 'application/json')
+  if (!headers.has('Content-Type')) headers.set('Content-Type', 'application/json')
   if (token) headers.set('Authorization', `Bearer ${token}`)
   const response = await fetch(`${API_BASE}${path}`, { ...init, headers })
   const body = await response.json().catch(() => null)

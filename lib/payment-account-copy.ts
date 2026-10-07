@@ -4,6 +4,12 @@ import { useLanguage } from '@/lib/language-context'
 
 const copy = {
   en: {
+    qrImage: 'Account QR image', qrImageKey: 'QR image file', qrOptional: 'QR image (optional)',
+    qrHint: 'PNG, JPG or WebP, up to 5 MB and 4096 × 4096 pixels. Use a reusable account QR without a fixed amount or payment reference.',
+    qrRemove: 'Remove QR image', qrUpload: 'Upload or replace QR image', qrUploading: 'Uploading QR image…',
+    qrInvalid: 'Choose a PNG, JPG or WebP image up to 5 MB.', qrConfirm: 'I have scanned this QR and confirmed that it matches the bank, account number and holder above.',
+    qrPaymentHint: 'After scanning, verify the recipient and enter the exact amount and payment reference shown on this invoice.',
+    qrLoadError: 'Could not load the QR image. Retry or transfer using the bank details above.', qrRetry: 'Retry', qrLoading: 'Loading QR image…',
     title: 'Receiving accounts', description: 'Manage the bank accounts used to collect subscription payments.',
     add: 'Add account', edit: 'Edit account', save: 'Save account', activate: 'Use for new invoices', archive: 'Archive',
     active: 'In use', available: 'Available', archived: 'Archived', all: 'All accounts',
@@ -28,6 +34,12 @@ const copy = {
     copyNumber: 'Copy account number', copied: 'Account number copied', copyError: 'Could not copy. Please copy the account number manually.'
   },
   vi: {
+    qrImage: 'Ảnh QR tài khoản', qrImageKey: 'Tệp ảnh QR', qrOptional: 'Ảnh QR (không bắt buộc)',
+    qrHint: 'PNG, JPG hoặc WebP, tối đa 5 MB và 4096 × 4096 pixel. Dùng QR tài khoản có thể sử dụng lại, không cố định số tiền hoặc nội dung chuyển khoản.',
+    qrRemove: 'Gỡ ảnh QR', qrUpload: 'Tải lên hoặc thay ảnh QR', qrUploading: 'Đang tải ảnh QR…',
+    qrInvalid: 'Chọn ảnh PNG, JPG hoặc WebP có dung lượng tối đa 5 MB.', qrConfirm: 'Tôi đã quét QR và xác nhận đúng ngân hàng, số tài khoản và chủ tài khoản ở trên.',
+    qrPaymentHint: 'Sau khi quét, kiểm tra người nhận và nhập đúng số tiền, nội dung chuyển khoản hiển thị trên hóa đơn này.',
+    qrLoadError: 'Không tải được ảnh QR. Hãy thử lại hoặc chuyển khoản bằng thông tin tài khoản ở trên.', qrRetry: 'Thử lại', qrLoading: 'Đang tải ảnh QR…',
     title: 'Tài khoản nhận tiền', description: 'Quản lý các tài khoản ngân hàng nhận thanh toán gói dịch vụ.',
     add: 'Thêm tài khoản', edit: 'Sửa tài khoản', save: 'Lưu tài khoản', activate: 'Dùng cho hóa đơn mới', archive: 'Lưu trữ',
     active: 'Đang sử dụng', available: 'Có thể sử dụng', archived: 'Đã lưu trữ', all: 'Tất cả tài khoản',

@@ -376,6 +376,7 @@ export interface SubscriptionInvoice {
 }
 
 export interface BankTransferInfo {
+  qrImageUrl?: string | null
   bankName: string
   accountNumber: string
   accountHolder: string

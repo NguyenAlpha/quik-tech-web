@@ -120,6 +120,7 @@ function AuditContent() {
     accountHolder: bankCopy.accountHolder, branch: bankCopy.branch, active: bankCopy.active,
     archived: bankCopy.archived, version: bankCopy.version, bankInfo: bankCopy.bankInfo,
     paymentAccountId: bankCopy.paymentAccountId,
+    qrImageKey: bankCopy.qrImageKey, qrImageUrl: bankCopy.qrImage,
     invoice: copy.invoices,
     subscription: copy.subscriptions,
     id: 'ID',
