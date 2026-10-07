@@ -68,7 +68,9 @@ Header trên cùng. Chứa:
 - Ô tìm kiếm (UI)
 - Toggle ngôn ngữ EN/VI
 - Toggle dark/light mode
-- Chuông thông báo (UI tĩnh)
+- Chuông thông báo: badge chưa đọc, popover có lịch sử, cảnh báo hiện tại và thao tác đọc.
+  `NotificationProvider` chia sẻ summary trong dashboard; `NotificationPanel` dùng
+  chung cho chuông và trang `/notifications`. Xem [NOTIFICATIONS.md](NOTIFICATIONS.md).
 - Avatar + tên user thật (lấy từ `useAuth()`)
 - Dropdown: nút Logout hoạt động — gọi `logout()` từ `AuthContext`
 

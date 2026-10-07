@@ -159,7 +159,7 @@ export async function authenticatedFetch(path: string, init?: RequestInit): Prom
   return res
 }
 
-async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers)
   if (!headers.has('Content-Type')) headers.set('Content-Type', 'application/json')
   return readApiResponse<T>(await authenticatedFetch(path, { ...init, headers }))

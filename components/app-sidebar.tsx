@@ -15,6 +15,7 @@ import {
   FileText,
   Crown,
   HelpCircle,
+  Bell,
   Building2,
   UserCog,
   Store,
@@ -253,6 +254,11 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter className="border-t border-sidebar-border">
         <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild tooltip={t.header.notifications} isActive={pathname === '/notifications'} className="transition-colors">
+              <Link href="/notifications"><Bell className="size-4" /><span>{t.header.notifications}</span></Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton asChild tooltip="Help" isActive={pathname === '/help'} className="transition-colors">
               <Link href="/help">

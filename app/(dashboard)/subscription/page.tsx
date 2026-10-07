@@ -23,6 +23,7 @@ import {
 import { PageSkeleton } from '@/components/page-skeleton'
 import { PageError } from '@/components/page-error'
 import { PaymentBankDetails } from '@/components/payment-bank-details'
+import { NotificationInvoiceDialog } from '@/components/notification-invoice-dialog'
 import { usePaymentAccountCopy } from '@/lib/payment-account-copy'
 import { useAuth } from '@/lib/auth-context'
 import { useLanguage } from '@/lib/language-context'
@@ -269,6 +270,7 @@ export default function SubscriptionPage() {
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 sm:gap-6 sm:p-6 lg:gap-8 lg:p-10">
+      <NotificationInvoiceDialog />
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="space-y-1">

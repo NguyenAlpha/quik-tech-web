@@ -181,13 +181,19 @@ là khách vãng lai thì không được còn nợ > 0.
 
 | Tính năng | Trạng thái | Ghi chú |
 |:---|:---|:---|
-| Badge tổng số thông báo | Hoàn chỉnh | Số đỏ trên icon chuông, ẩn khi = 0 |
-| Polling tự động | Hoàn chỉnh | `GET /notifications/summary` mỗi 60s |
-| Cảnh báo hàng thấp | Hoàn chỉnh | Hiển thị số lượng + list top 10 sản phẩm khi mở dropdown |
-| Thông báo hóa đơn chờ duyệt | Hoàn chỉnh | Đếm PENDING invoices từ backend |
-| Trạng thái rỗng | Hoàn chỉnh | "Không có thông báo mới" khi count = 0 |
+| Badge chưa đọc | Đã triển khai | Trạng thái đọc riêng theo user; ẩn khi = 0, lỗi tải có chấm cảnh báo |
+| Polling tự động | Đã triển khai | Summary mỗi 60s khi tab hiển thị; tải lại khi focus/mở chuông |
+| Cảnh báo hàng thấp | Đã triển khai | Đếm tồn kho hiện tại, tách khỏi thông báo lịch sử/chưa đọc |
+| Hóa đơn chờ xử lý | Đã triển khai | PENDING invoices, chỉ OWNER thấy |
+| Lịch sử thông báo | Đã triển khai | `/notifications`, tất cả/chưa đọc, tải thêm bằng cursor |
+| Đánh dấu đã đọc | Đã triển khai | Từng mục hoặc tất cả đến mốc ID đã nhận |
+| Điều hướng | Đã triển khai | Lọc đúng mục tồn kho hoặc mở đúng hóa đơn, kể cả hóa đơn cũ |
+| Phân quyền/ngữ cảnh | Đã triển khai | Reset khi đổi user/business/store; thông báo gói chỉ OWNER |
+| Tải/rỗng/lỗi | Đã triển khai | Có trạng thái tải, retry; lỗi API không giả thành danh sách rỗng |
 
-Backend: `GET /api/stores/{storeId}/notifications/summary` + `GET /api/stores/{storeId}/notifications/low-stock` (JOIN FETCH, top 10, `@PreAuthorize isMember`).
+Backend: `/api/stores/{storeId}/notifications` (list, summary, read, read-all,
+low-stock). Sự kiện được lưu DB bởi bộ thu thập mỗi 60s. Chi tiết tại
+[NOTIFICATIONS.md](NOTIFICATIONS.md). Chưa chạy ứng dụng/build/test theo yêu cầu.
 
 ---
 

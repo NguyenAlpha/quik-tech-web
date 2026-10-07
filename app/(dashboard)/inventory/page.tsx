@@ -1,6 +1,8 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { Suspense, useState, useMemo, useEffect } from "react"
+import { useSearchParams, useRouter } from 'next/navigation'
+import { useNotificationCopy } from '@/lib/notification-copy'
 import { toast } from 'sonner'
 import { useLanguage } from "@/lib/language-context"
 import { getInventoryItems, getWarehouses, adjustInventory, transferInventory, exportInventoryExcel } from "@/lib/api"
@@ -46,6 +48,13 @@ function getStockStatus(item: InventoryItem) {
 }
 
 export default function InventoryPage() {
+  return <Suspense fallback={<PageSkeleton />}><InventoryPageContent /></Suspense>
+}
+
+function InventoryPageContent() {
+  const focusedItem = useSearchParams().get('item')
+  const router = useRouter()
+  const notificationCopy = useNotificationCopy()
   const { t } = useLanguage()
   const ti = t.inventory
   const [inventoryData, setInventoryData] = useState<InventoryItem[]>([])
@@ -88,6 +97,7 @@ export default function InventoryPage() {
   }
 
   useEffect(() => { init() }, [])
+  useEffect(() => { setSearchQuery(''); setWarehouseFilter('all') }, [focusedItem])
 
   const filteredInventory = useMemo(() => {
     return inventoryData.filter((item) => {
@@ -95,9 +105,9 @@ export default function InventoryPage() {
         item.productName.toLowerCase().includes(searchQuery.toLowerCase())
       const matchesWarehouse =
         warehouseFilter === "all" || item.warehouseName === warehouseFilter
-      return matchesSearch && matchesWarehouse
+      return matchesSearch && matchesWarehouse && (!focusedItem || item.id === focusedItem)
     })
-  }, [searchQuery, warehouseFilter, inventoryData])
+  }, [searchQuery, warehouseFilter, inventoryData, focusedItem])
 
   const openAdjustmentModal = (item: InventoryItem, type: "add" | "remove") => {
     setAdjustmentModal({ open: true, item, type })
@@ -229,6 +239,11 @@ export default function InventoryPage() {
           {ti.adjustStock}
         </Button>
       </PageHeader>
+
+      {focusedItem && <div role="status" className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/30 p-3 text-sm">
+        <p>{inventoryData.find(item => item.id === focusedItem)?.productName ?? notificationCopy.missingInventory}</p>
+        <Button variant="outline" size="sm" onClick={() => router.replace('/inventory', { scroll: false })}>{notificationCopy.clearFilter}</Button>
+      </div>}
 
       {/* Filters */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
