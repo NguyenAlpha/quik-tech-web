@@ -28,10 +28,12 @@ copyable. Dynamic bank QR generation is outside this change.
 
 ## Rollout
 
-Backend migrations V11/V12 and the new endpoints must be deployed first. Refer to
-backend `docs/api/PAYMENT_ACCOUNTS.md` for the one-time legacy import. On a fresh
-installation without legacy settings, an admin adds/selects the first account on
-the web. Nothing needs to be edited in ENV for later account changes.
+The receiving-account schema is part of the backend's V2 development baseline.
+Recreate an existing development database and clean/rebuild the backend before
+starting it; the former V11/V12 migrations and legacy import have been removed.
+Refer to backend `docs/api/PAYMENT_ACCOUNTS.md` for setup details. A fresh database
+has no receiving accounts: an admin adds/selects the first account on the web.
+Account setup and all later changes use the UI, with no ENV configuration.
 
 No app run, build, automated checks or tests were performed for this feature, per
 the user's instruction. No backend test code was added. The implementation is

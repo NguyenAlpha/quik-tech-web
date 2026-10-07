@@ -135,8 +135,9 @@ invoices keep their saved destination. If no account is selected, the page promp
 setup and explains that new subscription payments are unavailable. The four account
 actions appear in `/admin/audit`, including reasons and before/after values.
 
-Requires the backend payment-account API and migrations V11/V12; see backend
-`docs/api/PAYMENT_ACCOUNTS.md` for one-time import and deployment order.
+Requires the backend payment-account API and revised V2 development baseline; see
+backend `docs/api/PAYMENT_ACCOUNTS.md` for database recreation and setup. A fresh
+database has no receiving account: add and select the first account through the UI.
 This feature has not been run, built or tested, at the user's request.
 
 Invoice review dialogs, global/business invoice history and merchant history show
