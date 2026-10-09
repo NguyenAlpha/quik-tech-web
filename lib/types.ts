@@ -433,7 +433,9 @@ export interface CreateReturnOrderInput {
 export interface Payment {
   id: string   // publicId
   customerPublicId: string | null
+  customerName: string | null
   supplierPublicId: string | null
+  supplierName: string | null
   amount: number
   paymentMethod: string
   note: string

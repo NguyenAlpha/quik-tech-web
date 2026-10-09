@@ -1103,7 +1103,9 @@ function mapPayment(p: any): Payment {
   return {
     id: p.publicId,
     customerPublicId: p.customerPublicId ?? null,
+    customerName: p.customerName ?? null,
     supplierPublicId: p.supplierPublicId ?? null,
+    supplierName: p.supplierName ?? null,
     amount: Number(p.amount),
     paymentMethod: p.paymentMethod,
     note: p.note ?? "",

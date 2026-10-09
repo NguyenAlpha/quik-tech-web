@@ -101,7 +101,7 @@ export function PaymentsTable({ payments, onSelect, onDelete }: PaymentsTablePro
       <div className="flex flex-col overflow-hidden rounded-xl border sm:hidden">
         {payments.map((payment) => {
           const income = isIncome(payment)
-          const contact = payment.customerPublicId ?? payment.supplierPublicId ?? "—"
+          const contact = payment.customerName ?? payment.supplierName ?? "—"
           return (
             <div
               key={payment.id}
@@ -119,7 +119,7 @@ export function PaymentsTable({ payments, onSelect, onDelete }: PaymentsTablePro
                       <TrendingDown className="size-3" />{tp.expense}
                     </span>
                   )}
-                  <span className="font-mono text-xs text-muted-foreground">{contact}</span>
+                  <span className="truncate text-xs text-muted-foreground">{contact}</span>
                 </div>
                 <div className="mt-1 flex items-center gap-2">
                   <span className="text-xs text-muted-foreground">
@@ -176,7 +176,7 @@ export function PaymentsTable({ payments, onSelect, onDelete }: PaymentsTablePro
             <TableBody>
               {payments.map((payment) => {
                 const income = isIncome(payment)
-                const contact = payment.customerPublicId ?? payment.supplierPublicId ?? "—"
+                const contact = payment.customerName ?? payment.supplierName ?? "—"
                 return (
                   <TableRow
                     key={payment.id}

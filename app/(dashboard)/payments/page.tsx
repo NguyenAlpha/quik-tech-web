@@ -184,8 +184,8 @@ export default function PaymentsPage() {
     return payments.filter(p =>
       (p.note ?? "").toLowerCase().includes(q) ||
       (p.paymentMethod ?? "").toLowerCase().includes(q) ||
-      (p.customerPublicId ?? "").toLowerCase().includes(q) ||
-      (p.supplierPublicId ?? "").toLowerCase().includes(q)
+      (p.customerName ?? "").toLowerCase().includes(q) ||
+      (p.supplierName ?? "").toLowerCase().includes(q)
     )
   }, [searchQuery, payments])
 
@@ -444,7 +444,7 @@ export default function PaymentsPage() {
 
       {/* Payment Detail Modal */}
       <Dialog open={!!selectedPayment} onOpenChange={() => setSelectedPayment(null)}>
-        <DialogContent className="max-w-md p-0">
+        <DialogContent className="max-w-md p-0" showCloseButton={false}>
           {selectedPayment && (
             <>
               <DialogHeader className="border-b px-6 py-4">
@@ -502,13 +502,13 @@ export default function PaymentsPage() {
                   {selectedPayment.customerPublicId && (
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-muted-foreground">{tp.modalCustomer}</span>
-                      <span className="font-mono text-sm">{selectedPayment.customerPublicId}</span>
+                      <span className="max-w-[60%] text-right text-sm">{selectedPayment.customerName ?? "—"}</span>
                     </div>
                   )}
                   {selectedPayment.supplierPublicId && (
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-muted-foreground">{tp.modalSupplier}</span>
-                      <span className="font-mono text-sm">{selectedPayment.supplierPublicId}</span>
+                      <span className="max-w-[60%] text-right text-sm">{selectedPayment.supplierName ?? "—"}</span>
                     </div>
                   )}
                   {selectedPayment.note && (
