@@ -20,16 +20,20 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Loader2, Plus, Scan, Trash2 } from 'lucide-react'
+import { Loader2, PackageOpen, Plus, Scan, Trash2 } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import { useLanguage } from '@/lib/language-context'
 import { toast } from 'sonner'
 import { getProductBySku } from '@/lib/api'
 import { BarcodeScanner } from '@/components/barcode-scanner'
+import { ProductPicker } from '@/components/product-picker'
 import type { Customer, Warehouse, Product, CreateOrderInput } from '@/lib/types'
 
 interface ItemDraft {
   productPublicId: string
+  productName: string
+  sku: string
+  unitName: string
   quantity: number
   unitPrice: number
   discount: number
@@ -46,10 +50,13 @@ interface Props {
   products: Product[]
 }
 
-const newItem = (): ItemDraft => ({
-  productPublicId: '',
+const newItem = (product: Product): ItemDraft => ({
+  productPublicId: product.id,
+  productName: product.name,
+  sku: product.sku,
+  unitName: product.unitName,
   quantity: 1,
-  unitPrice: 0,
+  unitPrice: product.sellingPrice,
   discount: 0,
   discountType: 'FIXED',
 })
@@ -57,6 +64,7 @@ const newItem = (): ItemDraft => ({
 export function AddOrderModal({ open, onOpenChange, onSubmit, isLoading, customers, warehouses, products }: Props) {
   const { t } = useLanguage()
   const to = t.orders
+  const pickerLabels = t.purchaseOrders
 
   const [customerId, setCustomerId] = useState('none')
   const [warehouseId, setWarehouseId] = useState('')
@@ -66,9 +74,15 @@ export function AddOrderModal({ open, onOpenChange, onSubmit, isLoading, custome
   const [paidAmount, setPaidAmount] = useState(0)
   const [paymentMethod, setPaymentMethod] = useState('CASH')
   const [note, setNote] = useState('')
-  const [items, setItems] = useState<ItemDraft[]>([newItem()])
+  const [items, setItems] = useState<ItemDraft[]>([])
   const [isScannerOpen, setIsScannerOpen] = useState(false)
+  const [isProductPickerOpen, setIsProductPickerOpen] = useState(false)
   const isPaidManual = useRef(false)
+
+  const addedProductIds = useMemo(
+    () => new Set(items.map(item => item.productPublicId)),
+    [items]
+  )
 
   const summary = useMemo(() => {
     const subtotal = items.reduce((sum, it) => {
@@ -94,7 +108,8 @@ export function AddOrderModal({ open, onOpenChange, onSubmit, isLoading, custome
       setPaidAmount(0)
       setPaymentMethod('CASH')
       setNote('')
-      setItems([newItem()])
+      setItems([])
+      setIsProductPickerOpen(false)
       isPaidManual.current = false
     }
   }, [open, warehouses])
@@ -113,13 +128,7 @@ export function AddOrderModal({ open, onOpenChange, onSubmit, isLoading, custome
         if (existing >= 0) {
           return prev.map((it, idx) => idx === existing ? { ...it, quantity: it.quantity + 1 } : it)
         }
-        return [...prev.filter(it => it.productPublicId !== ''), {
-          productPublicId: product.id,
-          quantity: 1,
-          unitPrice: product.sellingPrice,
-          discount: 0,
-          discountType: 'FIXED',
-        }]
+        return [...prev, newItem(product)]
       })
     } catch {
       toast.error('Không tìm thấy sản phẩm với mã vạch này')
@@ -129,9 +138,13 @@ export function AddOrderModal({ open, onOpenChange, onSubmit, isLoading, custome
   const updateItem = (i: number, patch: Partial<ItemDraft>) =>
     setItems(prev => prev.map((it, idx) => idx === i ? { ...it, ...patch } : it))
 
-  const onProductSelect = (i: number, pid: string) => {
-    const p = products.find(p => p.id === pid)
-    if (p) updateItem(i, { productPublicId: p.id, unitPrice: p.sellingPrice })
+  const addSelectedProducts = (productsToAdd: Product[]) => {
+    setItems(previous => {
+      const existingIds = new Set(previous.map(item => item.productPublicId))
+      return [...previous, ...productsToAdd
+        .filter(product => !existingIds.has(product.id))
+        .map(newItem)]
+    })
   }
 
   const isWalkIn = customerId === 'none'
@@ -224,10 +237,10 @@ export function AddOrderModal({ open, onOpenChange, onSubmit, isLoading, custome
                   variant="outline"
                   size="sm"
                   className="gap-1.5"
-                  onClick={() => setItems(prev => [...prev, newItem()])}
+                  onClick={() => setIsProductPickerOpen(true)}
                 >
                   <Plus className="size-3.5" />
-                  {to.addItem}
+                  {pickerLabels.selectProducts}
                 </Button>
               </div>
             </div>
@@ -243,22 +256,26 @@ export function AddOrderModal({ open, onOpenChange, onSubmit, isLoading, custome
                   </TableRow>
                 </TableHeader>
                 <TableBody>
+                  {items.length === 0 && (
+                    <TableRow className="hover:bg-transparent">
+                      <TableCell colSpan={5} className="h-28 text-center">
+                        <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                          <PackageOpen className="size-6 opacity-50" />
+                          <span className="text-sm">{pickerLabels.noItemsSelected}</span>
+                          <Button type="button" variant="link" size="sm" onClick={() => setIsProductPickerOpen(true)}>
+                            {pickerLabels.selectProducts}
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
                   {items.map((item, i) => (
-                    <TableRow key={i} className="hover:bg-transparent">
+                    <TableRow key={item.productPublicId} className="hover:bg-transparent">
                       <TableCell className="pl-4">
-                        <Select
-                          value={item.productPublicId || '__none__'}
-                          onValueChange={v => v !== '__none__' && onProductSelect(i, v)}
-                        >
-                          <SelectTrigger className="h-8 text-xs">
-                            <SelectValue placeholder={to.selectProduct} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {products.map(p => (
-                              <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <div className="min-w-[8rem] max-w-[16rem]">
+                          <p className="truncate text-sm font-medium" title={item.productName}>{item.productName}</p>
+                          <p className="truncate text-xs text-muted-foreground">{item.sku} · {item.unitName}</p>
+                        </div>
                       </TableCell>
                       <TableCell>
                         <Input
@@ -303,17 +320,16 @@ export function AddOrderModal({ open, onOpenChange, onSubmit, isLoading, custome
                         </div>
                       </TableCell>
                       <TableCell className="pr-4 text-right">
-                        {items.length > 1 && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="size-8"
-                            onClick={() => setItems(prev => prev.filter((_, idx) => idx !== i))}
-                          >
-                            <Trash2 className="size-3.5 text-red-500" />
-                          </Button>
-                        )}
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="size-8"
+                          aria-label={`${pickerLabels.removeItem}: ${item.productName}`}
+                          onClick={() => setItems(prev => prev.filter((_, idx) => idx !== i))}
+                        >
+                          <Trash2 className="size-3.5 text-red-500" />
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -447,6 +463,15 @@ export function AddOrderModal({ open, onOpenChange, onSubmit, isLoading, custome
         onScan={handleBarcodeScan}
         onClose={() => setIsScannerOpen(false)}
       />
+      {open && isProductPickerOpen && (
+        <ProductPicker
+          products={products}
+          addedProductIds={addedProductIds}
+          priceField="sellingPrice"
+          onOpenChange={setIsProductPickerOpen}
+          onAdd={addSelectedProducts}
+        />
+      )}
     </Dialog>
   )
 }
