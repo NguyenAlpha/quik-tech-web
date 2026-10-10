@@ -196,48 +196,50 @@ function InventoryPageContent() {
     <div className="flex flex-1 flex-col gap-4 p-4 sm:gap-6 sm:p-6 lg:gap-8 lg:p-10">
       {/* Page Header */}
       <PageHeader title={ti.title} subtitle={ti.subtitle}>
-        <Button
-          variant="outline"
-          className="gap-2 shadow-sm"
-          disabled={isExporting || exportCooldown.isCoolingDown}
-          onClick={async () => {
-            if (isExporting || exportCooldown.isCoolingDown) return
-            setIsExporting(true)
-            try {
-              await exportInventoryExcel()
-              toast.success(ti.exportSuccess)
-            } catch (err) {
-              exportCooldown.record(err)
-              toast.error(errorMessage(err, t, ti.exportError))
-            } finally {
-              setIsExporting(false)
-            }
-          }}
-        >
-          <Download className="size-4" />
-          {isExporting ? ti.exporting : exportCooldown.isCoolingDown ? t.common.retryIn.replace('{seconds}', String(exportCooldown.remainingSeconds)) : ti.exportExcel}
-        </Button>
-        <Button
-          variant="outline"
-          className="gap-2 shadow-sm"
-          onClick={() => {
-            if (filteredInventory.length > 0) openTransferModal(filteredInventory[0])
-          }}
-        >
-          <ArrowRightLeft className="size-4" />
-          {ti.transferStock}
-        </Button>
-        <Button
-          className="gap-2 shadow-sm"
-          onClick={() => {
-            if (filteredInventory.length > 0) {
-              openAdjustmentModal(filteredInventory[0], "add")
-            }
-          }}
-        >
-          <ArrowUpCircle className="size-4" />
-          {ti.adjustStock}
-        </Button>
+        <div className="flex flex-wrap items-center gap-3">
+          <Button
+            variant="outline"
+            className="gap-2 shadow-sm"
+            disabled={isExporting || exportCooldown.isCoolingDown}
+            onClick={async () => {
+              if (isExporting || exportCooldown.isCoolingDown) return
+              setIsExporting(true)
+              try {
+                await exportInventoryExcel()
+                toast.success(ti.exportSuccess)
+              } catch (err) {
+                exportCooldown.record(err)
+                toast.error(errorMessage(err, t, ti.exportError))
+              } finally {
+                setIsExporting(false)
+              }
+            }}
+          >
+            <Download className="size-4" />
+            {isExporting ? ti.exporting : exportCooldown.isCoolingDown ? t.common.retryIn.replace('{seconds}', String(exportCooldown.remainingSeconds)) : ti.exportExcel}
+          </Button>
+          <Button
+            variant="outline"
+            className="gap-2 shadow-sm"
+            onClick={() => {
+              if (filteredInventory.length > 0) openTransferModal(filteredInventory[0])
+            }}
+          >
+            <ArrowRightLeft className="size-4" />
+            {ti.transferStock}
+          </Button>
+          <Button
+            className="gap-2 shadow-sm"
+            onClick={() => {
+              if (filteredInventory.length > 0) {
+                openAdjustmentModal(filteredInventory[0], "add")
+              }
+            }}
+          >
+            <ArrowUpCircle className="size-4" />
+            {ti.adjustStock}
+          </Button>
+        </div>
       </PageHeader>
 
       {focusedItem && <div role="status" className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/30 p-3 text-sm">
