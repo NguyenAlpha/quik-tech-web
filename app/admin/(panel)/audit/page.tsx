@@ -34,6 +34,7 @@ import { useAdminUrl } from '@/hooks/use-admin-url'
 import { useLanguage } from '@/lib/language-context'
 import { useAdminCopy } from '@/lib/admin-copy'
 import { usePaymentAccountCopy } from '@/lib/payment-account-copy'
+import { usePlanCopy } from '@/lib/plan-copy'
 import { errorMessage } from '@/lib/api-error'
 import {
   adminRequest,
@@ -59,6 +60,7 @@ function AuditContent() {
   const { params, update } = useAdminUrl()
   const copy = useAdminCopy()
   const bankCopy = usePaymentAccountCopy()
+  const planCopy = usePlanCopy()
   const { t, language } = useLanguage()
   const action = params.get('action') || 'ALL'
   const businessId = params.get('businessId') || ''
@@ -80,7 +82,8 @@ function AuditContent() {
     ADMIN_PAYMENT_ACCOUNT_CREATED: bankCopy.accountCreated,
     ADMIN_PAYMENT_ACCOUNT_UPDATED: bankCopy.accountUpdated,
     ADMIN_PAYMENT_ACCOUNT_ACTIVATED: bankCopy.accountActivated,
-    ADMIN_PAYMENT_ACCOUNT_ARCHIVED: bankCopy.accountArchived
+    ADMIN_PAYMENT_ACCOUNT_ARCHIVED: bankCopy.accountArchived,
+    ADMIN_PLAN_CONFIG_UPDATED: planCopy.planConfigUpdated
   }
   useEffect(() => {
     setBusinessInput(businessId)

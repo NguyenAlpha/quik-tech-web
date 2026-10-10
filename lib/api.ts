@@ -12,7 +12,7 @@ import type {
   Payment, CreatePaymentInput,
   LoginInput, RegisterInput, AuthResponse,
   PagedResult,
-  Business, BusinessSubscription, UpdateBusinessInput,
+  Business, BusinessSubscription, UpdateBusinessInput, Plan,
   SubscriptionInvoice, BankTransferInfo, UpgradeResponse,
   DashboardData,
   AdminUser,
@@ -419,6 +419,13 @@ function mapInvoice(i: any): SubscriptionInvoice {
     createdAt: i.createdAt ?? '',
     updatedAt: i.updatedAt ?? '',
   }
+}
+
+// ─── Plans (công khai) ───────────────────────────────────────────────────────
+
+// Không gửi token: landing gọi khi chưa đăng nhập, và 401 ở apiFetch sẽ redirect về /login
+export async function getPlans(): Promise<Plan[]> {
+  return readApiResponse<Plan[]>(await fetch(`${API_BASE}/api/plans`))
 }
 
 // ─── Auth ────────────────────────────────────────────────────────────────────

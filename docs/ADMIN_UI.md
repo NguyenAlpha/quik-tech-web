@@ -151,6 +151,17 @@ If no default is configured, merchant upgrade/checkout submission is disabled wi
 a retryable availability notice. Server validation remains authoritative if the
 configuration changes while the page is open. Free/downgrade flows remain available.
 
+## Plans & limits
+
+`/admin/plans` shows one card per plan (Free, Basic, Pro) with monthly/yearly price,
+the four resource limits and how many businesses use the plan. Editing opens a
+dialog with price fields (disabled for Free, which is always 0), a value or
+"Unlimited" toggle per limit, an optional reason and a warning when a limit is
+lowered. Saving sends the plan `version`; a 409 refreshes the list. Price changes
+apply to new invoices; limit changes apply immediately to every business on the
+plan. Updates appear in `/admin/audit` as "Plan pricing/limits updated".
+Backed by `GET/PUT /api/admin/plans` — see backend `docs/api/SUBSCRIPTION.md`.
+
 ## Receiving-account QR images
 
 `/admin/payment-accounts` supports optional QR upload, preview, replacement and

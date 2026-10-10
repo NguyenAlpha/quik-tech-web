@@ -95,6 +95,17 @@ export interface Business {
   updatedAt: string
 }
 
+// Giá và giới hạn của gói, lấy từ GET /api/plans (admin sửa được). max* null = không giới hạn
+export interface Plan {
+  code: 'FREE' | 'BASIC' | 'PRO'
+  monthlyPrice: number
+  yearlyPrice: number
+  maxStores: number | null
+  maxStaff: number | null
+  maxProducts: number | null
+  maxWarehouses: number | null
+}
+
 export interface BusinessSubscription {
   id: number
   businessId: number

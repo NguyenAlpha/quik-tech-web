@@ -221,6 +221,7 @@ export async function loginUser(data: LoginInput): Promise<AuthResponse> {
 |:---|:---|:---|
 | `getBusiness` | GET | `/api/businesses/{id}` |
 | `updateBusiness` | PATCH | `/api/businesses/{id}` |
+| `getPlans` | GET | `/api/plans` — công khai, không gửi token (landing + trang subscription) |
 | `getBusinessSubscription` | GET | `/api/businesses/{id}/subscription` |
 | `createStore` | POST | `/api/businesses/{id}/stores` |
 | `requestUpgrade` | POST | `/api/businesses/{id}/subscription/upgrade` |
@@ -272,6 +273,8 @@ export async function loginUser(data: LoginInput): Promise<AuthResponse> {
 | `adminGetBusinesses` | GET | `/api/businesses` |
 | `adminGetSubscription` | GET | `/api/admin/subscriptions/{businessId}` |
 | `adminChangePlan` | PATCH | `/api/admin/subscriptions/{businessId}/plan` |
+| `getAdminPlans` (`lib/plans.ts`) | GET | `/api/admin/plans` |
+| `updateAdminPlan` (`lib/plans.ts`) | PUT | `/api/admin/plans/{code}` |
 | `adminGetPendingInvoices` | GET | `/api/admin/subscriptions/invoices/pending` |
 | `adminConfirmInvoice` | POST | `/api/admin/subscriptions/invoices/{id}/confirm` |
 | `adminRejectInvoice` | POST | `/api/admin/subscriptions/invoices/{id}/reject` |

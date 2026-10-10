@@ -1,8 +1,12 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useLanguage } from "@/lib/language-context"
 import { useAuth } from "@/lib/auth-context"
+import { getPlans } from "@/lib/api"
+import { planLimitLines } from "@/lib/plan-limits"
+import type { Plan } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import {
@@ -31,11 +35,18 @@ export default function LandingPage() {
     { icon: LayoutDashboard, title: tl.fAnalyticsTitle, desc: tl.fAnalyticsDesc },
   ]
 
+  // Giới hạn gói lấy từ API (admin sửa được); lỗi tải thì chỉ hiện tên gói
+  const [planData, setPlanData] = useState<Plan[]>([])
+  useEffect(() => { getPlans().then(setPlanData).catch(() => {}) }, [])
+
   const plans = [
-    { name: tl.planFree, desc: tl.planFreeDesc, highlight: false },
-    { name: tl.planBasic, desc: tl.planBasicDesc, highlight: true },
-    { name: tl.planPro, desc: tl.planProDesc, highlight: false },
-  ]
+    { code: "FREE", name: tl.planFree, highlight: false },
+    { code: "BASIC", name: tl.planBasic, highlight: true },
+    { code: "PRO", name: tl.planPro, highlight: false },
+  ].map(p => {
+    const data = planData.find(d => d.code === p.code)
+    return { ...p, limits: data ? planLimitLines(data, t) : [] }
+  })
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
@@ -135,10 +146,14 @@ export default function LandingPage() {
                 <Card key={p.name} className={p.highlight ? "border-primary shadow-md" : "border-muted"}>
                   <CardContent className="space-y-4 p-6">
                     <h3 className="text-lg font-semibold">{p.name}</h3>
-                    <p className="flex items-start gap-2 text-sm text-muted-foreground">
-                      <Check className="mt-0.5 size-4 shrink-0 text-primary" />
-                      {p.desc}
-                    </p>
+                    <ul className="space-y-2">
+                      {p.limits.map(limit => (
+                        <li key={limit} className="flex items-start gap-2 text-sm text-muted-foreground">
+                          <Check className="mt-0.5 size-4 shrink-0 text-primary" />
+                          {limit}
+                        </li>
+                      ))}
+                    </ul>
                     <Button asChild variant={p.highlight ? "default" : "outline"} className="w-full">
                       <Link href={user ? "/dashboard" : "/register"}>
                         {user ? tl.goToDashboard : tl.getStarted}

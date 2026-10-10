@@ -28,21 +28,17 @@ import { usePaymentAccountCopy } from '@/lib/payment-account-copy'
 import { useAuth } from '@/lib/auth-context'
 import { useLanguage } from '@/lib/language-context'
 import { errorMessage } from '@/lib/api-error'
+import { planLimitLines } from '@/lib/plan-limits'
 import {
   getBusinessSubscription, requestUpgrade, getInvoicesPage,
   scheduleDowngrade, cancelScheduledDowngrade,
-  cancelInvoice, getSubscriptionBankInfo,
+  cancelInvoice, getSubscriptionBankInfo, getPlans,
   ApiError,
 } from '@/lib/api'
 import { formatCurrency } from '@/lib/utils'
 import type {
-  BusinessSubscription, SubscriptionInvoice, BankTransferInfo,
+  BusinessSubscription, SubscriptionInvoice, BankTransferInfo, Plan,
 } from '@/lib/types'
-
-const PLAN_PRICES: Record<string, Record<string, number>> = {
-  BASIC: { MONTHLY: 199000, YEARLY: 1990000 },
-  PRO:   { MONTHLY: 499000, YEARLY: 4990000 },
-}
 
 const planStyles: Record<string, { className: string }> = {
   FREE:  { className: 'bg-gray-100 text-gray-700 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300' },
@@ -71,10 +67,20 @@ export default function SubscriptionPage() {
     PAID: ts.statusPaid,
     FAILED: ts.statusFailed,
   }
+  // Giá và giới hạn lấy từ API (admin sửa được); số tiền thật của invoice vẫn do backend tính
+  const [planData, setPlanData] = useState<Plan[]>([])
+  const planPrice = (code: string, cycle: string) => {
+    const plan = planData.find(p => p.code === code)
+    return plan ? (cycle === 'YEARLY' ? plan.yearlyPrice : plan.monthlyPrice) : 0
+  }
+  const planFeatures = (code: string, extras: readonly string[]) => {
+    const plan = planData.find(p => p.code === code)
+    return [...(plan ? planLimitLines(plan, t) : []), ...extras]
+  }
   const plans = [
-    { id: 'FREE', name: ts.planFree, description: ts.freePlanDescription, features: ts.freePlanFeatures },
-    { id: 'BASIC', name: ts.planBasic, description: ts.basicPlanDescription, features: ts.basicPlanFeatures, popular: true },
-    { id: 'PRO', name: ts.planPro, description: ts.proPlanDescription, features: ts.proPlanFeatures },
+    { id: 'FREE', name: ts.planFree, description: ts.freePlanDescription, features: planFeatures('FREE', ts.freePlanExtras) },
+    { id: 'BASIC', name: ts.planBasic, description: ts.basicPlanDescription, features: planFeatures('BASIC', ts.basicPlanExtras), popular: true },
+    { id: 'PRO', name: ts.planPro, description: ts.proPlanDescription, features: planFeatures('PRO', ts.proPlanExtras) },
   ]
   const locale = language === 'vi' ? 'vi-VN' : 'en-US'
 
@@ -128,12 +134,14 @@ export default function SubscriptionPage() {
     setIsPageLoading(true)
     setPageError(null)
     try {
-      const [sub, inv] = await Promise.all([
+      const [sub, inv, planList] = await Promise.all([
         getBusinessSubscription(businessId),
         getInvoicesPage(businessId, { page: 0, size: 10 }),
+        getPlans(),
       ])
       setSubscription(sub)
       setInvoices(inv.content)
+      setPlanData(planList)
     } catch (err) {
       setPageError(errorMessage(err, t, ts.loadError))
     } finally {
@@ -336,7 +344,7 @@ export default function SubscriptionPage() {
                   ) : (
                     <div className="flex items-baseline gap-1">
                       <span className="text-3xl font-bold">
-                        {formatCurrency(PLAN_PRICES[plan.id][billingCycle])}
+                        {formatCurrency(planPrice(plan.id, billingCycle))}
                       </span>
                       <span className="text-sm text-muted-foreground">
                         /{billingCycle === 'MONTHLY' ? ts.month : ts.year}
@@ -488,10 +496,10 @@ export default function SubscriptionPage() {
                 <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {upgradeablePlans.includes('BASIC') && (
-                    <SelectItem value="BASIC">{ts.planBasic} — {formatCurrency(PLAN_PRICES.BASIC.MONTHLY)}/{ts.month}</SelectItem>
+                    <SelectItem value="BASIC">{ts.planBasic} — {formatCurrency(planPrice('BASIC', 'MONTHLY'))}/{ts.month}</SelectItem>
                   )}
                   {upgradeablePlans.includes('PRO') && (
-                    <SelectItem value="PRO">{ts.planPro} — {formatCurrency(PLAN_PRICES.PRO.MONTHLY)}/{ts.month}</SelectItem>
+                    <SelectItem value="PRO">{ts.planPro} — {formatCurrency(planPrice('PRO', 'MONTHLY'))}/{ts.month}</SelectItem>
                   )}
                 </SelectContent>
               </Select>
@@ -506,11 +514,11 @@ export default function SubscriptionPage() {
                 </SelectContent>
               </Select>
             </div>
-            {(PLAN_PRICES[upgradeForm.plan]?.[upgradeForm.billingCycle] ?? 0) > 0 && (
+            {planPrice(upgradeForm.plan, upgradeForm.billingCycle) > 0 && (
               <div className="rounded-lg bg-muted px-4 py-3">
                 <p className="text-xs text-muted-foreground">{ts.total}</p>
                 <p className="text-2xl font-semibold">
-                  {formatCurrency(PLAN_PRICES[upgradeForm.plan][upgradeForm.billingCycle])}
+                  {formatCurrency(planPrice(upgradeForm.plan, upgradeForm.billingCycle))}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {upgradeForm.billingCycle === 'YEARLY' ? ts.perYear : ts.perMonth}

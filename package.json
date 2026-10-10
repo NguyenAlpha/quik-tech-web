@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "test": "vitest run lib/utils.test.ts"
+    "test": "vitest run lib"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
