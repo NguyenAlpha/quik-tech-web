@@ -11,7 +11,7 @@ import { AddProductModal } from '@/components/add-product-modal'
 import { EditProductModal } from '@/components/edit-product-modal'
 import { ProductsTable } from '@/components/products-table'
 import { Product, Category, Unit, CreateProductInput } from '@/lib/types'
-import { searchProducts, getCategories, getUnits, createProduct, updateProduct, setProductStatus, deleteProduct, importProducts, ApiError } from '@/lib/api'
+import { searchProducts, getCategories, getUnits, getProductLimit, createProduct, updateProduct, setProductStatus, deleteProduct, importProducts, ApiError } from '@/lib/api'
 import {
   Select,
   SelectContent,
@@ -48,6 +48,7 @@ export default function ProductsPage() {
   const [sortBy, setSortBy] = useState<'name' | 'updatedAt'>('updatedAt')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isCheckingLimit, setIsCheckingLimit] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isEditLoading, setIsEditLoading] = useState(false)
@@ -101,6 +102,25 @@ export default function ProductsPage() {
     }
     load()
   }, [debouncedQuery, categoryFilter, statusFilter, page, sortBy, sortDir, refreshKey])
+
+  // Kiểm tra giới hạn sản phẩm của gói trước khi mở form; API create vẫn chặn lại nếu vượt
+  const handleOpenAddModal = async () => {
+    setIsCheckingLimit(true)
+    try {
+      const limit = await getProductLimit()
+      if (limit.canCreate) {
+        setIsModalOpen(true)
+      } else {
+        toast.error(tp.productLimitReached
+          .replace('{current}', String(limit.currentProducts))
+          .replace('{max}', String(limit.maxProducts)))
+      }
+    } catch (error) {
+      toast.error(errorMessage(error, t))
+    } finally {
+      setIsCheckingLimit(false)
+    }
+  }
 
   const handleAddProduct = async (data: CreateProductInput) => {
     setIsLoading(true)
@@ -207,8 +227,8 @@ export default function ProductsPage() {
           <Upload className="size-4" />
           {tp.importProducts}
         </Button>
-        <Button onClick={() => setIsModalOpen(true)} className="gap-2 shadow-sm">
-          <Plus className="size-4" />
+        <Button onClick={handleOpenAddModal} disabled={isCheckingLimit} className="gap-2 shadow-sm">
+          {isCheckingLimit ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
           {tp.addProduct}
         </Button>
       </PageHeader>

@@ -1,7 +1,7 @@
 import type {
   Category, CreateCategoryInput,
   Unit, CreateUnitInput,
-  Product, ProductDetail, PriceHistory, CreateProductInput,
+  Product, ProductDetail, PriceHistory, CreateProductInput, ProductLimit,
   Supplier, CreateSupplierInput,
   Customer, CreateCustomerInput,
   Warehouse,
@@ -488,6 +488,10 @@ export async function deleteUnit(id: string): Promise<void> {
 export async function getProducts(): Promise<Product[]> {
   const data = await apiFetch<any[]>(businessUrl("/products"))
   return data.map(mapProduct)
+}
+
+export async function getProductLimit(): Promise<ProductLimit> {
+  return apiFetch<ProductLimit>(businessUrl("/products/limit"))
 }
 
 export async function createProduct(input: CreateProductInput): Promise<Product> {

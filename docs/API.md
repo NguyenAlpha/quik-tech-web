@@ -235,6 +235,7 @@ export async function loginUser(data: LoginInput): Promise<AuthResponse> {
 | `getCategories` | GET | `/categories` |
 | `getUnits` | GET | `/units` |
 | `getProducts` / `searchProducts` | GET | `/products` / `/products/search` |
+| `getProductLimit` | GET | `/products/limit` |
 | `createProduct` | POST | `/products` |
 | `updateProduct` | PUT | `/products/{id}` |
 | `deleteProduct` | DELETE | `/products/{id}` |

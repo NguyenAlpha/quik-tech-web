@@ -144,6 +144,12 @@ export interface CreateUnitInput {
   abbreviation: string
 }
 
+export interface ProductLimit {
+  canCreate: boolean
+  currentProducts: number
+  maxProducts: number | null   // null = không giới hạn
+}
+
 export interface Product {
   id: string   // publicId
   sku: string

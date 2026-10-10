@@ -118,6 +118,7 @@ Dropdown Actions → **View Detail** điều hướng sang `/products/{id}`.
 | GET | `/api/businesses/{businessId}/products/search` | Lấy danh sách (có phân trang, filter, sort) |
 | GET | `/api/businesses/{businessId}/categories` | Load danh sách category cho filter |
 | GET | `/api/businesses/{businessId}/units` | Load danh sách unit cho modal |
+| GET | `/api/businesses/{businessId}/products/limit` | Kiểm tra giới hạn sản phẩm của gói trước khi mở modal thêm |
 | POST | `/api/businesses/{businessId}/products` | Thêm sản phẩm |
 | PUT | `/api/businesses/{businessId}/products/{publicId}` | Sửa sản phẩm |
 | PATCH | `/api/businesses/{businessId}/products/{publicId}/status` | Đổi trạng thái |
