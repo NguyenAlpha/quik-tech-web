@@ -275,6 +275,8 @@ export async function loginUser(data: LoginInput): Promise<AuthResponse> {
 | `adminChangePlan` | PATCH | `/api/admin/subscriptions/{businessId}/plan` |
 | `getAdminPlans` (`lib/plans.ts`) | GET | `/api/admin/plans` |
 | `updateAdminPlan` (`lib/plans.ts`) | PUT | `/api/admin/plans/{code}` |
+| `getTrafficReport` (`lib/traffic.ts`) | GET | `/api/admin/traffic?range=1h\|24h\|7d\|30d` |
+| `getSystemHealth` (`lib/traffic.ts`) | GET | `/api/admin/traffic/system` |
 | `adminGetPendingInvoices` | GET | `/api/admin/subscriptions/invoices/pending` |
 | `adminConfirmInvoice` | POST | `/api/admin/subscriptions/invoices/{id}/confirm` |
 | `adminRejectInvoice` | POST | `/api/admin/subscriptions/invoices/{id}/reject` |

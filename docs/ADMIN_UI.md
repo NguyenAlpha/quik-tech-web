@@ -151,6 +151,25 @@ If no default is configured, merchant upgrade/checkout submission is disabled wi
 a retryable availability notice. Server validation remains authoritative if the
 configuration changes while the page is open. Free/downgrade flows remain available.
 
+## API traffic
+
+`/admin/traffic` (sidebar "API traffic") shows API usage for the last hour, 24 hours,
+7 days or 30 days; the 1h/24h views refresh every 30 seconds. Stat tiles show requests
+(with average per minute), 5xx, 4xx (with 429 count) and p95 response time (with p50,
+p99 and max). Charts: stacked requests over time split into successful / 4xx / 5xx, and
+p95 response time as a separate single-axis line. A status-code bar list, the top 50
+endpoints (sortable by requests, slowness or errors; `(unmatched)` is labelled as
+rejected before reaching an endpoint) and the top 20 businesses with their share follow.
+The "System health" card shows live health per component, uptime, heap, CPU, threads and
+the database connection pool of the instance that answered.
+
+Chart colours were checked with the dataviz palette validator: success uses `#0066cc`
+(light) / `#3d8ef0` (dark); 4xx/5xx use the fixed status colours `#fab219` / `#d03b3b`
+and are always paired with a text legend, tooltips and tables (the warning colour has low
+contrast on light surfaces). Data lags by about 1–2 minutes because the backend writes
+statistics once a minute. Backed by `GET /api/admin/traffic` and
+`GET /api/admin/traffic/system` — see backend `docs/api/ADMIN_OPERATIONS.md`.
+
 ## Plans & limits
 
 `/admin/plans` shows one card per plan (Free, Basic, Pro) with monthly/yearly price,
