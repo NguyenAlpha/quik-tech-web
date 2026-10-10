@@ -10,7 +10,6 @@ export interface PagedResult<T> {
 
 export interface AuthUser {
   id: number
-  publicId: string
   username: string
   email: string
   fullName: string
