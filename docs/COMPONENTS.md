@@ -258,8 +258,8 @@ Nếu cần dùng component chưa có (ví dụ: Calendar, Tabs):
 
 ```bash
 # Trong thư mục apps/web
-npx shadcn@latest add calendar
-npx shadcn@latest add tabs
+pnpm dlx shadcn@latest add calendar
+pnpm dlx shadcn@latest add tabs
 ```
 
 Component sẽ được thêm vào `components/ui/` — có thể dùng ngay.

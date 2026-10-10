@@ -74,8 +74,8 @@ xác thực bằng **JWT**.
 
 ```bash
 cd apps/web
-npm install
-npm run dev
+pnpm install
+pnpm dev
 # Mở http://localhost:3000
 ```
 

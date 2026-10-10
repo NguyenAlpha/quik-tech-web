@@ -55,7 +55,7 @@ response hiện không chỉ rõ quota nào đã chặn request.
 
 ```powershell
 node node_modules/typescript/bin/tsc --noEmit --incremental false
-npm run build
+pnpm build
 ```
 
 Build Next.js hiện cấu hình `ignoreBuildErrors`, vì vậy cần chạy TypeScript riêng.
