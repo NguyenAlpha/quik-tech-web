@@ -85,3 +85,15 @@ Cấu hình URL backend trong `apps/web/.env.local`:
 ```
 NEXT_PUBLIC_API_URL=http://localhost:8080
 ```
+
+### Kiểm tra code
+
+```bash
+pnpm exec tsc --noEmit   # type-check (next build bỏ qua lỗi type: ignoreBuildErrors)
+pnpm test                # vitest (lib/)
+pnpm lint                # ESLint 9 flat config: eslint.config.mjs (next/core-web-vitals + next/typescript)
+```
+
+> `pnpm lint` hiện còn ~178 lỗi/cảnh báo có sẵn từ trước khi thêm config (chủ yếu
+> `no-explicit-any` trong `lib/api.ts` và `react-hooks/set-state-in-effect`) — chưa dọn.
+> Code mới không nên thêm lỗi lint.

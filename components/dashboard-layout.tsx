@@ -22,6 +22,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   // dashboard nên chỉ chạy 1 lần) — lỗi thì giữ dữ liệu cũ, 401 đã được apiFetch xử lý
   useEffect(() => {
     if (!isLoading && storeId) refreshMemberships().catch(() => {})
+    // Chỉ chạy khi auth nạp xong: refreshMemberships tạo mới mỗi render, thêm vào deps sẽ gọi API liên tục
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoading])
 
   if (isLoading || !storeId) return null
