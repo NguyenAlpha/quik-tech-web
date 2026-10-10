@@ -10,7 +10,7 @@ import type { DashboardSalesMonth } from "@/lib/types"
 const chartConfig = {
   revenue: {
     label: "Revenue",
-    color: "hsl(var(--chart-1))",
+    color: "var(--chart-1)",
   },
 } satisfies ChartConfig
 
@@ -43,7 +43,7 @@ export function SalesChart({ data }: SalesChartProps) {
           </div>
           <div className="flex items-center gap-4 text-sm">
             <div className="flex items-center gap-2">
-              <span className="size-2.5 rounded-full bg-[hsl(var(--chart-1))]" />
+              <span className="size-2.5 rounded-full bg-chart-1" />
               <span className="text-muted-foreground">{t.salesChart.revenue}</span>
             </div>
           </div>
@@ -64,7 +64,7 @@ export function SalesChart({ data }: SalesChartProps) {
             <CartesianGrid
               strokeDasharray="3 3"
               vertical={false}
-              stroke="hsl(var(--border))"
+              stroke="var(--border)"
               strokeOpacity={0.5}
             />
             <XAxis
@@ -72,13 +72,13 @@ export function SalesChart({ data }: SalesChartProps) {
               tickLine={false}
               axisLine={false}
               tickMargin={12}
-              tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
+              tick={{ fontSize: 12, fill: "var(--muted-foreground)" }}
             />
             <YAxis
               tickLine={false}
               axisLine={false}
               tickMargin={12}
-              tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
+              tick={{ fontSize: 12, fill: "var(--muted-foreground)" }}
               tickFormatter={(value) => {
                 const n = Number(value)
                 if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(0)}tr`
@@ -87,7 +87,7 @@ export function SalesChart({ data }: SalesChartProps) {
               }}
             />
             <ChartTooltip
-              cursor={{ stroke: "hsl(var(--border))", strokeDasharray: "4 4" }}
+              cursor={{ stroke: "var(--border)", strokeDasharray: "4 4" }}
               content={
                 <ChartTooltipContent
                   formatter={(value) => (
