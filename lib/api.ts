@@ -18,6 +18,7 @@ import type {
   AdminUser,
   AdminStats,
   BusinessMember, UserLookup,
+  AuthUser, UpdateProfileInput, ChangePasswordInput, BusinessMembership,
 } from "./types"
 import { PurchaseOrderStatus } from "./types"
 
@@ -249,6 +250,22 @@ export async function updateBusiness(businessId: number, input: UpdateBusinessIn
 
 export async function createStore(businessId: number, input: { name: string; address?: string; phone?: string; email?: string }): Promise<{ id: number; name: string }> {
   return apiFetch(`/api/businesses/${businessId}/stores`, { method: "POST", body: JSON.stringify(input) })
+}
+
+// ─── Current user (profile) ─────────────────────────────────────────────────────
+
+// Memberships mới nhất (cùng format response login) — dùng để đồng bộ store switcher
+export async function getMyMemberships(): Promise<BusinessMembership[]> {
+  return apiFetch<BusinessMembership[]>("/api/users/me/memberships")
+}
+
+export async function updateMyProfile(input: UpdateProfileInput): Promise<AuthUser> {
+  return apiFetch<AuthUser>("/api/users/me", { method: "PATCH", body: JSON.stringify(input) })
+}
+
+// Backend thu hồi toàn bộ refresh token sau khi đổi — caller nên logout để đăng nhập lại
+export async function changeMyPassword(input: ChangePasswordInput): Promise<void> {
+  return apiFetch<void>("/api/users/me/password", { method: "PATCH", body: JSON.stringify(input) })
 }
 
 // ─── Business Members (trợ lý cấp business) ─────────────────────────────────────

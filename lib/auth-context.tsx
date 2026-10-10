@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import type { AuthUser, BusinessMembership } from './types'
+import { getMyMemberships } from './api'
 
 interface AuthContextValue {
   user: AuthUser | null
@@ -15,6 +16,8 @@ interface AuthContextValue {
   logout: () => void
   selectStore: (storeId: number, businessId?: number) => void
   updateMemberships: (memberships: BusinessMembership[]) => void
+  refreshMemberships: () => Promise<void>
+  updateUser: (user: AuthUser) => void
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -102,8 +105,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setMemberships(m)
   }
 
+  // memberships lưu từ lúc login có thể đã cũ (tạo store mới, được thêm/bỏ khỏi store, đổi role,
+  // store bị xóa...) → nạp lại từ server. Store đang chọn không còn quyền → chuyển sang store đầu
+  // tiên còn lại và hard-navigate về /dashboard (trang hiện tại đã fetch theo store cũ); không còn
+  // store nào → bỏ chọn, DashboardLayout tự chuyển sang /setup.
+  const refreshMemberships = async () => {
+    const fresh = await getMyMemberships()
+    updateMemberships(fresh)
+    const currentStoreId = Number(localStorage.getItem('auth_store_id'))
+    if (fresh.some(b => b.stores.some(s => s.storeId === currentStoreId))) return
+    const first = fresh.find(b => b.stores.length > 0)
+    if (first) {
+      selectStore(first.stores[0].storeId, first.businessId)
+      window.location.href = '/dashboard'
+    } else {
+      localStorage.removeItem('auth_store_id')
+      localStorage.removeItem('auth_business_id')
+      setStoreId(null)
+      setBusinessId(null)
+    }
+  }
+
+  // Ghi đè user sau khi tự sửa profile (PATCH /api/users/me) để header/avatar đồng bộ ngay
+  const updateUser = (u: AuthUser) => {
+    localStorage.setItem('auth_user', JSON.stringify(u))
+    setUser(u)
+  }
+
   return (
-    <AuthContext.Provider value={{ user, token, businessId, storeId, memberships, isLoading, login, logout, selectStore, updateMemberships }}>
+    <AuthContext.Provider value={{ user, token, businessId, storeId, memberships, isLoading, login, logout, selectStore, updateMemberships, refreshMemberships, updateUser }}>
       {children}
     </AuthContext.Provider>
   )

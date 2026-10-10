@@ -130,6 +130,19 @@ export interface UpdateBusinessInput {
   email?: string
 }
 
+// Backend bắt buộc gửi đủ username — UI không cho sửa nên luôn gửi username hiện tại
+export interface UpdateProfileInput {
+  username: string
+  email: string
+  fullName: string
+  phone: string | null
+}
+
+export interface ChangePasswordInput {
+  currentPassword: string
+  newPassword: string
+}
+
 // ─── Catalog ─────────────────────────────────────────────────────────────────
 
 export interface Category {

@@ -207,6 +207,7 @@ low-stock). Sự kiện được lưu DB bởi bộ thu thập mỗi 60s. Chi ti
 | Responsive layout | Hoàn chỉnh | Sidebar collapse; tất cả table có mobile card view (sm:hidden/hidden sm:block); modal có max-width responsive; date input, detail grid co giãn theo màn hình |
 | Loading states | Một phần | Có ở page load, thiếu ở một số chỗ |
 | Error messages | Hoàn chỉnh | PageError component với retry button ở tất cả các trang |
+| Store switcher (sidebar) | Hoàn chỉnh | Hiện khi user có ≥ 2 store; đổi store → hard-navigate `/dashboard`. Danh sách đồng bộ với server mỗi lần tải trang qua `refreshMemberships()` (`GET /api/users/me/memberships`) — store bị mất quyền thì tự chuyển store khác |
 | Toast notifications | Hoàn chỉnh | Sonner, `richColors`, `top-right` — dùng nhất quán toàn app |
 | Skeleton loading | Hoàn chỉnh | Dashboard có DashboardSkeleton riêng; modal detail dùng skeleton rows |
 
@@ -218,9 +219,11 @@ low-stock). Sự kiện được lưu DB bởi bộ thu thập mỗi 60s. Chi ti
 |:---|:---|:---|
 | Xem thông tin business | Hoàn chỉnh | Hiển thị tên, email, phone, address |
 | Chỉnh sửa business | Hoàn chỉnh | Modal PATCH `/api/businesses/{id}` |
-| Tạo store mới | Hoàn chỉnh | Modal POST `/api/businesses/{id}/stores` |
+| Tạo store mới | Hoàn chỉnh | Modal POST `/api/businesses/{id}/stores` — tạo xong gọi `refreshMemberships()` để store mới hiện ngay trong store switcher ở sidebar (không cần login lại) |
 | Tóm tắt gói subscription | Hoàn chỉnh | Compact card: plan badge + expiry + link "Manage Subscription" → `/subscription` |
 | Thông tin user profile | Hoàn chỉnh | Username, email, phone, role badge |
+| Chỉnh sửa hồ sơ cá nhân | Hoàn chỉnh | Modal PATCH `/api/users/me` — sửa họ tên, email, phone; username chỉ hiển thị (không cho sửa, vẫn gửi giá trị hiện tại vì backend bắt buộc). Lưu xong gọi `updateUser()` để header/avatar đồng bộ. Email trùng → `EMAIL_TAKEN` (đã dịch trong `t.errors`) |
+| Đổi mật khẩu | Hoàn chỉnh | Modal PATCH `/api/users/me/password` — mật khẩu hiện tại + mới (6–72 ký tự) + nhập lại. Thành công → `logout()` vì backend đã thu hồi mọi refresh token. Sai mật khẩu hiện tại → `INVALID_CURRENT_PASSWORD` (đã dịch) |
 
 ---
 

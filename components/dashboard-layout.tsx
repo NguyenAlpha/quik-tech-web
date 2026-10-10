@@ -9,7 +9,7 @@ import { useAuth } from "@/lib/auth-context"
 import { NotificationProvider } from "@/lib/notification-context"
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { storeId, businessId, user, isLoading } = useAuth()
+  const { storeId, businessId, user, isLoading, refreshMemberships } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
@@ -17,6 +17,12 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       router.replace('/setup')
     }
   }, [isLoading, storeId])
+
+  // Đồng bộ memberships với server mỗi lần tải trang (layout giữ nguyên khi chuyển trang trong
+  // dashboard nên chỉ chạy 1 lần) — lỗi thì giữ dữ liệu cũ, 401 đã được apiFetch xử lý
+  useEffect(() => {
+    if (!isLoading && storeId) refreshMemberships().catch(() => {})
+  }, [isLoading])
 
   if (isLoading || !storeId) return null
 

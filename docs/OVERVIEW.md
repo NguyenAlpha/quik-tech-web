@@ -52,7 +52,7 @@ xác thực bằng **JWT**.
 | `/customers` | Khách hàng | Xem, thêm, xem chi tiết, tìm kiếm, lọc |
 | `/inventory` | Tồn kho | Xem tồn kho theo warehouse, tìm kiếm, lọc |
 | `/payments` | Thanh toán | Xem danh sách, tìm kiếm |
-| `/settings` | Cài đặt | Thông tin business, subscription + invoice history, tạo store |
+| `/settings` | Cài đặt | Thông tin business, subscription + invoice history, tạo store, sửa hồ sơ cá nhân + đổi mật khẩu |
 | `/admin` | Admin | Quản lý subscription — duyệt/từ chối hóa đơn (SUPER_ADMIN) |
 
 ---

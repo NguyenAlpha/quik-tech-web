@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import {
   Building2, User, Mail, Phone, MapPin, Pencil, Check, Plus,
-  Crown, ShieldCheck, Shield, ExternalLink, UserCog,
+  Crown, ShieldCheck, Shield, ExternalLink, UserCog, KeyRound,
 } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -25,6 +25,7 @@ import { useAuth } from '@/lib/auth-context'
 import { useLanguage } from '@/lib/language-context'
 import {
   getBusiness, getBusinessSubscription, updateBusiness, createStore,
+  updateMyProfile, changeMyPassword,
 } from '@/lib/api'
 import { errorMessage } from '@/lib/api-error'
 import type { Business, BusinessSubscription, UpdateBusinessInput } from '@/lib/types'
@@ -47,7 +48,7 @@ const roleStyles: Record<string, { className: string; icon: React.ElementType }>
 }
 
 export default function SettingsPage() {
-  const { user, businessId, memberships } = useAuth()
+  const { user, businessId, memberships, updateUser, logout, refreshMemberships } = useAuth()
   const { t } = useLanguage()
   const ts = t.subscription
   const tset = t.settings
@@ -71,6 +72,16 @@ export default function SettingsPage() {
   const [isStoreSaving, setIsStoreSaving] = useState(false)
   const [storeForm, setStoreForm] = useState({ name: '', address: '', phone: '', email: '' })
   const [storeFormError, setStoreFormError] = useState<string | null>(null)
+
+  const [isProfileOpen, setIsProfileOpen] = useState(false)
+  const [isProfileSaving, setIsProfileSaving] = useState(false)
+  const [profileForm, setProfileForm] = useState({ fullName: '', email: '', phone: '' })
+  const [profileFormError, setProfileFormError] = useState<string | null>(null)
+
+  const [isPasswordOpen, setIsPasswordOpen] = useState(false)
+  const [isPasswordSaving, setIsPasswordSaving] = useState(false)
+  const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' })
+  const [passwordFormError, setPasswordFormError] = useState<string | null>(null)
 
   const currentMembership = memberships.find(m => m.businessId === businessId)
   const userRole = currentMembership?.stores[0]?.role ?? ''
@@ -145,12 +156,75 @@ export default function SettingsPage() {
         phone: storeForm.phone.trim() || undefined,
         email: storeForm.email.trim() || undefined,
       })
+      // Nạp lại memberships để store mới hiện ngay trong store switcher ở sidebar.
+      // Lỗi ở bước này không ảnh hưởng việc tạo store — lần tải trang sau sẽ đồng bộ lại.
+      refreshMemberships().catch(() => {})
       setIsNewStoreOpen(false)
       toast.success(tset.storeCreated)
     } catch (err) {
       setStoreFormError(errorMessage(err, t))
     } finally {
       setIsStoreSaving(false)
+    }
+  }
+
+  const openEditProfile = () => {
+    if (!user) return
+    setProfileForm({ fullName: user.fullName, email: user.email, phone: user.phone ?? '' })
+    setProfileFormError(null)
+    setIsProfileOpen(true)
+  }
+
+  const handleSaveProfile = async () => {
+    if (!user) return
+    const fullName = profileForm.fullName.trim()
+    const email = profileForm.email.trim()
+    if (!fullName) { setProfileFormError(tset.fullNameRequired); return }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setProfileFormError(tset.emailInvalid); return }
+    setIsProfileSaving(true)
+    setProfileFormError(null)
+    try {
+      // Username không cho sửa — gửi lại giá trị hiện tại vì backend bắt buộc field này
+      const updated = await updateMyProfile({
+        username: user.username,
+        email,
+        fullName,
+        phone: profileForm.phone.trim() || null,
+      })
+      updateUser(updated)
+      setIsProfileOpen(false)
+      toast.success(tset.profileUpdated)
+    } catch (err) {
+      setProfileFormError(errorMessage(err, t))
+    } finally {
+      setIsProfileSaving(false)
+    }
+  }
+
+  const openChangePassword = () => {
+    setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
+    setPasswordFormError(null)
+    setIsPasswordOpen(true)
+  }
+
+  const handleChangePassword = async () => {
+    const { currentPassword, newPassword, confirmPassword } = passwordForm
+    if (!currentPassword) { setPasswordFormError(tset.currentPasswordRequired); return }
+    if (newPassword.length < 6 || newPassword.length > 72) { setPasswordFormError(tset.passwordLength); return }
+    if (newPassword !== confirmPassword) { setPasswordFormError(tset.passwordMismatch); return }
+    setIsPasswordSaving(true)
+    setPasswordFormError(null)
+    try {
+      await changeMyPassword({ currentPassword, newPassword })
+      // Backend đã thu hồi refresh token của mọi phiên (kể cả phiên này) → đăng nhập lại
+      // ngay thay vì để user bị đá ra bất ngờ khi access token hết hạn
+      setIsPasswordOpen(false)
+      toast.success(tset.passwordChanged)
+      logout()
+    } catch (err) {
+      setPasswordFormError(errorMessage(err, t))
+    } finally {
+      setIsPasswordSaving(false)
     }
   }
 
@@ -259,9 +333,21 @@ export default function SettingsPage() {
         {/* ── Profile Tab ── */}
         <TabsContent value="profile" className="space-y-6">
           <Card>
-            <CardHeader className="pb-6">
-              <CardTitle className="text-xl font-semibold">{tset.userProfile}</CardTitle>
-              <CardDescription className="text-sm">{tset.userProfileDesc}</CardDescription>
+            <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-6">
+              <div className="space-y-1.5">
+                <CardTitle className="text-xl font-semibold">{tset.userProfile}</CardTitle>
+                <CardDescription className="text-sm">{tset.userProfileDesc}</CardDescription>
+              </div>
+              <div className="flex flex-wrap justify-end gap-2">
+                <Button variant="outline" size="sm" className="gap-2" onClick={openChangePassword}>
+                  <KeyRound className="size-3.5" />
+                  {tset.changePassword}
+                </Button>
+                <Button variant="outline" size="sm" className="gap-2" onClick={openEditProfile}>
+                  <Pencil className="size-3.5" />
+                  {tset.edit}
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="flex items-center gap-6">
@@ -380,6 +466,74 @@ export default function SettingsPage() {
             <Button variant="outline" onClick={() => setIsEditOpen(false)} disabled={isSaving}>{t.common.cancel}</Button>
             <Button onClick={handleSave} disabled={isSaving} className="gap-2">
               {isSaving ? tset.saving : <><Check className="size-4" />{tset.saveChanges}</>}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Edit Profile Modal ── */}
+      <Dialog open={isProfileOpen} onOpenChange={open => { if (!open) { setIsProfileOpen(false); setProfileFormError(null) } }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-semibold">{tset.editProfile}</DialogTitle>
+            <DialogDescription>{tset.editProfileDesc}</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-5 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="profile-username">{tset.username}</Label>
+              <Input id="profile-username" value={user?.username ?? ''} disabled className="h-10" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="profile-fullname">{tset.fullName}</Label>
+              <Input id="profile-fullname" maxLength={200} value={profileForm.fullName} onChange={e => setProfileForm(p => ({ ...p, fullName: e.target.value }))} className="h-10" />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="profile-email">{tset.email}</Label>
+                <Input id="profile-email" type="email" maxLength={100} value={profileForm.email} onChange={e => setProfileForm(p => ({ ...p, email: e.target.value }))} className="h-10" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="profile-phone">{tset.phone}</Label>
+                <Input id="profile-phone" maxLength={20} value={profileForm.phone} onChange={e => setProfileForm(p => ({ ...p, phone: e.target.value }))} className="h-10" />
+              </div>
+            </div>
+            {profileFormError && <p className="text-sm text-red-500">{profileFormError}</p>}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsProfileOpen(false)} disabled={isProfileSaving}>{t.common.cancel}</Button>
+            <Button onClick={handleSaveProfile} disabled={isProfileSaving} className="gap-2">
+              {isProfileSaving ? tset.saving : <><Check className="size-4" />{tset.saveChanges}</>}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Change Password Modal ── */}
+      <Dialog open={isPasswordOpen} onOpenChange={open => { if (!open) { setIsPasswordOpen(false); setPasswordFormError(null) } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-semibold">{tset.changePassword}</DialogTitle>
+            <DialogDescription>{tset.changePasswordDesc}</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-5 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="pwd-current">{tset.currentPassword}</Label>
+              <Input id="pwd-current" type="password" autoComplete="current-password" value={passwordForm.currentPassword} onChange={e => setPasswordForm(p => ({ ...p, currentPassword: e.target.value }))} className="h-10" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="pwd-new">{tset.newPassword}</Label>
+              <Input id="pwd-new" type="password" autoComplete="new-password" value={passwordForm.newPassword} onChange={e => setPasswordForm(p => ({ ...p, newPassword: e.target.value }))} className="h-10" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="pwd-confirm">{tset.confirmPassword}</Label>
+              <Input id="pwd-confirm" type="password" autoComplete="new-password" value={passwordForm.confirmPassword} onChange={e => setPasswordForm(p => ({ ...p, confirmPassword: e.target.value }))} className="h-10" />
+            </div>
+            {passwordFormError && <p className="text-sm text-red-500">{passwordFormError}</p>}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsPasswordOpen(false)} disabled={isPasswordSaving}>{t.common.cancel}</Button>
+            <Button onClick={handleChangePassword} disabled={isPasswordSaving} className="gap-2">
+              {isPasswordSaving ? tset.saving : <><Check className="size-4" />{tset.changePassword}</>}
             </Button>
           </DialogFooter>
         </DialogContent>

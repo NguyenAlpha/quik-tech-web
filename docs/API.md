@@ -216,6 +216,14 @@ export async function loginUser(data: LoginInput): Promise<AuthResponse> {
 | `loginUser` | POST | `/api/auth/login` |
 | `registerUser` | POST | `/api/auth/register` |
 
+### Current user (path tuyệt đối)
+| Hàm | Method | Path |
+|:---|:---|:---|
+| `lookupUser` | GET | `/api/users/lookup?username=` |
+| `getMyMemberships` | GET | `/api/users/me/memberships` — dùng bởi `refreshMemberships()` |
+| `updateMyProfile` | PATCH | `/api/users/me` — trả `AuthUser` mới |
+| `changeMyPassword` | PATCH | `/api/users/me/password` — backend thu hồi mọi refresh token, caller nên `logout()` |
+
 ### Business (dùng businessUrl)
 | Hàm | Method | Path |
 |:---|:---|:---|

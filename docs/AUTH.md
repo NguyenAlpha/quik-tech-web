@@ -87,11 +87,48 @@ logout() => void
 3. Reset React state về null
 4. Redirect về `/login`
 
+### Hàm updateMemberships()
+```ts
+updateMemberships(memberships: BusinessMembership[]) => void
+```
+
+Ghi đè `localStorage("auth_memberships")` + state `memberships` bằng dữ liệu có sẵn ở client.
+Dùng ở `/setup`: vừa tạo business mặc định (login lúc đăng ký trả memberships rỗng).
+
+### Hàm refreshMemberships()
+```ts
+refreshMemberships() => Promise<void>
+```
+
+Nạp lại `memberships` từ server (`GET /api/users/me/memberships`) — vì danh sách lưu từ lúc login
+có thể đã cũ (tạo store mới, được thêm/bỏ khỏi store, đổi role, store bị xóa, thay đổi từ thiết bị khác).
+
+- Store đang chọn vẫn còn quyền → chỉ cập nhật danh sách (store switcher ở sidebar hiện/ẩn theo).
+- Store đang chọn **không còn quyền** → chọn store đầu tiên còn lại và hard-navigate về `/dashboard`
+  (trang hiện tại đã fetch theo store cũ).
+- **Không còn store nào** → bỏ chọn store/business → `DashboardLayout` tự chuyển sang `/setup`.
+
+Được gọi ở:
+- `DashboardLayout` — mỗi lần tải trang trong dashboard (layout giữ nguyên khi chuyển trang nên chỉ
+  chạy 1 lần / lần tải). Lỗi thì giữ dữ liệu cũ; 401 đã được `apiFetch` xử lý.
+- `/settings` — sau khi tạo store mới, để store vừa tạo hiện ngay trong store switcher.
+
+### Hàm updateUser()
+```ts
+updateUser(user: AuthUser) => void
+```
+
+Ghi đè `localStorage("auth_user")` + state `user` — gọi sau khi user tự sửa hồ sơ (`updateMyProfile`)
+để header/avatar hiển thị thông tin mới ngay, không cần đăng nhập lại.
+
+> Đổi mật khẩu (`changeMyPassword`) không dùng hàm này: backend thu hồi mọi refresh token nên
+> trang Settings gọi `logout()` ngay sau khi đổi thành công.
+
 ### Hook useAuth()
 ```tsx
 import { useAuth } from '@/lib/auth-context'
 
-const { user, token, storeId, memberships, isLoading, login, logout } = useAuth()
+const { user, token, storeId, memberships, isLoading, login, logout, refreshMemberships, updateUser } = useAuth()
 
 // Ví dụ: hiển thị tên user trong header
 <span>{user?.fullName}</span>
