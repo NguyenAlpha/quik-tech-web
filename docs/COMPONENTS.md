@@ -126,6 +126,19 @@ Props: `items: InventoryItem[]`, `onAdjust: (item, type) => void`
 Hiển thị: tên sản phẩm, warehouse, số lượng, lần cập nhật cuối.
 Dropdown menu: Add Stock / Remove Stock → gọi `onAdjust` để mở modal ở trang cha.
 
+### BulkAdjustModal (components/bulk-adjust-modal.tsx)
+Props: `warehouses: Warehouse[]`, `inventory: InventoryItem[]`, `onOpenChange`, `onAdjusted: () => Promise<void>`
+
+Chỉ mount khi mở (state reset mỗi lần). Tự load `getProducts()`, chọn sản phẩm qua `ProductPicker`.
+Hai chế độ nhập: cộng/trừ (delta) hoặc số đếm thực tế (delta = số đếm − tồn hiện tại của kho đang chọn).
+Dòng để trống hoặc thay đổi = 0 bị bỏ qua; dòng làm tồn kho âm chặn nút lưu.
+
+### BulkTransferModal (components/bulk-transfer-modal.tsx)
+Props: `warehouses: Warehouse[]`, `inventory: InventoryItem[]`, `onOpenChange`, `onTransferred: () => Promise<void>`
+
+Chỉ mount khi mở. Kho đích chỉ liệt kê kho active, khác kho nguồn. `ProductPicker` chỉ hiện sản phẩm còn tồn ở kho nguồn.
+Mỗi dòng hiện tồn kho nguồn và tồn kho đích sau chuyển; số lượng vượt tồn kho nguồn chặn nút lưu.
+
 ### OrdersTable (components/orders-table.tsx)
 Props: `orders: Order[]`, `onSelect: (order: Order) => void`
 

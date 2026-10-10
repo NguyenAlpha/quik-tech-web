@@ -149,7 +149,8 @@ là khách vãng lai thì không được còn nợ > 0.
 | Tìm kiếm theo tên sản phẩm | Hoàn chỉnh | Client-side |
 | Lọc theo warehouse | Hoàn chỉnh | Client-side, warehouses load từ API |
 | Điều chỉnh tồn kho (Add/Remove) | Hoàn chỉnh | Modal → POST `/inventory/adjust`, reload sau khi thành công |
-| Chuyển kho | Hoàn chỉnh | Nút "Transfer Stock" → modal chọn kho nguồn/đích + số lượng → `POST /inventory/transfer`, atomic transaction |
+| Điều chỉnh tồn kho hàng loạt | Hoàn chỉnh | Nút "Điều chỉnh kho" → `BulkAdjustModal`: chọn kho, chọn nhiều sản phẩm, nhập cộng/trừ hoặc số đếm thực tế → POST `/inventory/adjust/bulk` (all-or-nothing) |
+| Chuyển kho hàng loạt | Hoàn chỉnh | Nút "Chuyển kho" → `BulkTransferModal`: chọn kho nguồn/đích, chọn nhiều sản phẩm còn tồn ở kho nguồn, nhập số lượng → `POST /inventory/transfer/bulk` (all-or-nothing) |
 | Xuất Excel | Hoàn chỉnh | Nút "Export Excel" → `GET /export/inventory`, download file xlsx |
 
 ---

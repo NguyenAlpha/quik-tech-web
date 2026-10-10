@@ -5,10 +5,12 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { useNotificationCopy } from '@/lib/notification-copy'
 import { toast } from 'sonner'
 import { useLanguage } from "@/lib/language-context"
-import { getInventoryItems, getWarehouses, adjustInventory, transferInventory, exportInventoryExcel } from "@/lib/api"
+import { getInventoryItems, getWarehouses, adjustInventory, exportInventoryExcel } from "@/lib/api"
 import { errorMessage } from '@/lib/api-error'
 import { useRateLimitCooldown } from '@/hooks/use-rate-limit-cooldown'
 import { InventoryTable } from "@/components/inventory-table"
+import { BulkAdjustModal } from "@/components/bulk-adjust-modal"
+import { BulkTransferModal } from "@/components/bulk-transfer-modal"
 import { PageSkeleton } from "@/components/page-skeleton"
 import { PageError } from "@/components/page-error"
 import {
@@ -70,13 +72,8 @@ function InventoryPageContent() {
   const [adjustmentReason, setAdjustmentReason] = useState("")
   const [adjusting, setAdjusting] = useState(false)
   const [adjustError, setAdjustError] = useState<string | null>(null)
-  const [transferModal, setTransferModal] = useState<{ open: boolean; item: InventoryItem | null }>({ open: false, item: null })
-  const [transferFromId, setTransferFromId] = useState('')
-  const [transferToId, setTransferToId] = useState('')
-  const [transferQty, setTransferQty] = useState('')
-  const [transferNote, setTransferNote] = useState('')
-  const [transferring, setTransferring] = useState(false)
-  const [transferError, setTransferError] = useState<string | null>(null)
+  const [isBulkTransferOpen, setIsBulkTransferOpen] = useState(false)
+  const [isBulkAdjustOpen, setIsBulkAdjustOpen] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
   const exportCooldown = useRateLimitCooldown()
   const [isPageLoading, setIsPageLoading] = useState(true)
@@ -121,47 +118,6 @@ function InventoryPageContent() {
     setAdjustmentQuantity("")
     setAdjustmentReason("")
     setAdjustError(null)
-  }
-
-  const openTransferModal = (item: InventoryItem) => {
-    setTransferModal({ open: true, item })
-    setTransferFromId(item.warehousePublicId)
-    setTransferToId('')
-    setTransferQty('')
-    setTransferNote('')
-    setTransferError(null)
-  }
-
-  const closeTransferModal = () => {
-    setTransferModal({ open: false, item: null })
-    setTransferError(null)
-  }
-
-  const handleTransfer = async () => {
-    if (!transferModal.item || !transferToId || !transferQty || Number(transferQty) <= 0) return
-    if (transferFromId === transferToId) {
-      setTransferError(ti.sameWarehouseError)
-      return
-    }
-    setTransferring(true)
-    setTransferError(null)
-    try {
-      await transferInventory(
-        transferModal.item.productPublicId,
-        transferFromId,
-        transferToId,
-        Number(transferQty),
-        transferNote.trim() || undefined,
-      )
-      const updated = await getInventoryItems()
-      setInventoryData(updated)
-      closeTransferModal()
-      toast.success(ti.transferSuccess)
-    } catch (err) {
-      setTransferError(errorMessage(err, t, ti.transferError))
-    } finally {
-      setTransferring(false)
-    }
   }
 
   const handleAdjustment = async () => {
@@ -221,20 +177,14 @@ function InventoryPageContent() {
           <Button
             variant="outline"
             className="gap-2 shadow-sm"
-            onClick={() => {
-              if (filteredInventory.length > 0) openTransferModal(filteredInventory[0])
-            }}
+            onClick={() => setIsBulkTransferOpen(true)}
           >
             <ArrowRightLeft className="size-4" />
             {ti.transferStock}
           </Button>
           <Button
             className="gap-2 shadow-sm"
-            onClick={() => {
-              if (filteredInventory.length > 0) {
-                openAdjustmentModal(filteredInventory[0], "add")
-              }
-            }}
+            onClick={() => setIsBulkAdjustOpen(true)}
           >
             <ArrowUpCircle className="size-4" />
             {ti.adjustStock}
@@ -287,96 +237,23 @@ function InventoryPageContent() {
         </div>
       </TableFooter>
 
-      {/* Transfer Modal */}
-      <Dialog open={transferModal.open} onOpenChange={closeTransferModal}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <ArrowRightLeft className="size-5 text-blue-600" />
-              {ti.modalTransferTitle}
-            </DialogTitle>
-            <DialogDescription>{ti.modalTransferDesc}</DialogDescription>
-          </DialogHeader>
+      {isBulkAdjustOpen && (
+        <BulkAdjustModal
+          warehouses={warehouses}
+          inventory={inventoryData}
+          onOpenChange={setIsBulkAdjustOpen}
+          onAdjusted={async () => setInventoryData(await getInventoryItems())}
+        />
+      )}
 
-          {transferModal.item && (
-            <div className="space-y-4 py-4">
-              <div className="rounded-lg border bg-muted/30 p-4">
-                <p className="font-medium">{transferModal.item.productName}</p>
-                <p className="text-xs text-muted-foreground font-mono">{transferModal.item.productPublicId}</p>
-              </div>
-
-              <div className="space-y-2">
-                <Label>{ti.fromWarehouse}</Label>
-                <Select value={transferFromId} onValueChange={setTransferFromId}>
-                  <SelectTrigger className="h-10">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {warehouses.map(w => (
-                      <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>{ti.toWarehouse}</Label>
-                <Select value={transferToId} onValueChange={setTransferToId}>
-                  <SelectTrigger className="h-10">
-                    <SelectValue placeholder="Select warehouse" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {warehouses.filter(w => w.id !== transferFromId).map(w => (
-                      <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>{ti.quantityToTransfer}</Label>
-                <Input
-                  type="number"
-                  min="1"
-                  value={transferQty}
-                  onChange={e => setTransferQty(e.target.value)}
-                  className="h-10"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>{ti.reason}</Label>
-                <Input
-                  value={transferNote}
-                  onChange={e => setTransferNote(e.target.value)}
-                  placeholder={ti.reasonAddPlaceholder}
-                  className="h-10"
-                />
-              </div>
-
-              {transferError && <p className="text-sm text-red-500">{transferError}</p>}
-            </div>
-          )}
-
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={closeTransferModal} disabled={transferring}>
-              {t.common.cancel}
-            </Button>
-            <Button
-              onClick={handleTransfer}
-              disabled={!transferToId || !transferQty || Number(transferQty) <= 0 || transferring}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              {transferring ? ti.transferring : (
-                <>
-                  <ArrowRightLeft className="mr-2 size-4" />
-                  {ti.transferStock}
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {isBulkTransferOpen && (
+        <BulkTransferModal
+          warehouses={warehouses}
+          inventory={inventoryData}
+          onOpenChange={setIsBulkTransferOpen}
+          onTransferred={async () => setInventoryData(await getInventoryItems())}
+        />
+      )}
 
       {/* Stock Adjustment Modal */}
       <Dialog open={adjustmentModal.open} onOpenChange={closeAdjustmentModal}>

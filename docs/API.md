@@ -248,6 +248,8 @@ export async function loginUser(data: LoginInput): Promise<AuthResponse> {
 | `getWarehouses` | GET | `/warehouses` |
 | `getInventoryItems` | GET | `/inventory` |
 | `adjustInventory` | POST | `/inventory/adjust` |
+| `bulkAdjustInventory` | POST | `/inventory/adjust/bulk` |
+| `bulkTransferInventory` | POST | `/inventory/transfer/bulk` |
 | `getOrdersPage` | GET | `/orders` |
 | `createOrder` | POST | `/orders` |
 | `completeOrder` | PUT | `/orders/{id}/complete` |

@@ -780,16 +780,28 @@ export async function adjustInventory(
   })
 }
 
-export async function transferInventory(
-  productPublicId: string,
-  fromWarehousePublicId: string,
-  toWarehousePublicId: string,
-  quantity: number,
+// All-or-nothing: một dòng lỗi thì không dòng nào được lưu. quantity = delta có dấu
+export async function bulkAdjustInventory(
+  warehousePublicId: string,
+  items: { productPublicId: string; quantity: number }[],
   note?: string,
 ): Promise<void> {
-  await apiFetch<void>(storeUrl('/inventory/transfer'), {
+  await apiFetch<void>(storeUrl('/inventory/adjust/bulk'), {
     method: 'POST',
-    body: JSON.stringify({ productPublicId, fromWarehousePublicId, toWarehousePublicId, quantity, note: note || null }),
+    body: JSON.stringify({ warehousePublicId, items, note: note || null }),
+  })
+}
+
+// All-or-nothing: một dòng không đủ tồn kho nguồn thì không dòng nào được chuyển. quantity > 0
+export async function bulkTransferInventory(
+  fromWarehousePublicId: string,
+  toWarehousePublicId: string,
+  items: { productPublicId: string; quantity: number }[],
+  note?: string,
+): Promise<void> {
+  await apiFetch<void>(storeUrl('/inventory/transfer/bulk'), {
+    method: 'POST',
+    body: JSON.stringify({ fromWarehousePublicId, toWarehousePublicId, items, note: note || null }),
   })
 }
 
