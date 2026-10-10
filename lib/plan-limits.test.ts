@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { planLimitLines } from './plan-limits'
-import { translations } from './translations'
+import { translations, type Translations } from './translations'
 import type { Plan } from './types'
 
 const plan = (limits: Partial<Plan>): Plan => ({
@@ -15,7 +15,7 @@ describe('planLimitLines', () => {
   })
 
   it('treats null as unlimited and 0 staff as owner only', () => {
-    expect(planLimitLines(plan({ maxStaff: 0, maxProducts: null, maxWarehouses: null }), translations.vi))
+    expect(planLimitLines(plan({ maxStaff: 0, maxProducts: null, maxWarehouses: null }), translations.vi as unknown as Translations))
       .toEqual(['2 cửa hàng', 'Chỉ chủ sở hữu (không có nhân viên)', 'Sản phẩm không giới hạn', 'Kho hàng không giới hạn'])
   })
 })
