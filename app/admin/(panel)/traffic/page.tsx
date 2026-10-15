@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Activity, AlertTriangle, Ban, Clock, Cpu, Database, HardDrive, RefreshCw, ServerCrash, Timer } from 'lucide-react'
-import { Area, AreaChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { PageHeader } from '@/components/page-header'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -201,16 +201,17 @@ export default function AdminTrafficPage() {
               ]} />
               <div className="h-72 w-full min-w-0" role="img" aria-label={copy.volumeTitle}>
                 <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-                  <AreaChart data={series} margin={{ top: 8, right: 8, left: 0, bottom: 0 }} accessibilityLayer>
+                  {/* Cột chồng: mỗi khoảng là một số đếm rời rạc — vùng nối/làm mượt sẽ vẽ lưu lượng vào khoảng không có request */}
+                  <BarChart data={series} margin={{ top: 8, right: 8, left: 0, bottom: 0 }} accessibilityLayer>
                     <CartesianGrid vertical={false} stroke="var(--border)" strokeDasharray="3 3" />
                     <XAxis dataKey="time" tickFormatter={timeLabel} tickLine={false} axisLine={false} tick={AXIS_TICK} tickMargin={10} minTickGap={32} />
                     <YAxis width={48} allowDecimals={false} tickFormatter={value => compact.format(value)} tickLine={false} axisLine={false} tick={AXIS_TICK} />
                     <Tooltip contentStyle={TOOLTIP_STYLE} labelFormatter={label => timeLabel(String(label))}
                       formatter={(value, name) => [number.format(Number(value)), String(name)]} />
-                    <Area type="monotone" dataKey="success" name={copy.success} stackId="requests" stroke="var(--traffic-ok)" strokeWidth={2} fill="var(--traffic-ok)" fillOpacity={0.18} isAnimationActive={false} />
-                    <Area type="monotone" dataKey="clientErrors" name={copy.clientErrors} stackId="requests" stroke="var(--traffic-warn)" strokeWidth={2} fill="var(--traffic-warn)" fillOpacity={0.3} isAnimationActive={false} />
-                    <Area type="monotone" dataKey="serverErrors" name={copy.serverErrors} stackId="requests" stroke="var(--traffic-critical)" strokeWidth={2} fill="var(--traffic-critical)" fillOpacity={0.3} isAnimationActive={false} />
-                  </AreaChart>
+                    <Bar dataKey="success" name={copy.success} stackId="requests" fill="var(--traffic-ok)" isAnimationActive={false} />
+                    <Bar dataKey="clientErrors" name={copy.clientErrors} stackId="requests" fill="var(--traffic-warn)" isAnimationActive={false} />
+                    <Bar dataKey="serverErrors" name={copy.serverErrors} stackId="requests" fill="var(--traffic-critical)" isAnimationActive={false} />
+                  </BarChart>
                 </ResponsiveContainer>
               </div>
               <table className="sr-only">
