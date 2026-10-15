@@ -9,6 +9,7 @@ import { planLimitLines } from "@/lib/plan-limits"
 import type { Plan } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { SiteHeader } from "@/components/site-header"
 import {
   ShoppingCart,
   Warehouse,
@@ -16,13 +17,12 @@ import {
   Users,
   Building2,
   LayoutDashboard,
-  Globe,
   ArrowRight,
   Check,
 } from "lucide-react"
 
 export default function LandingPage() {
-  const { t, language, setLanguage } = useLanguage()
+  const { t } = useLanguage()
   const tl = t.landing
   const { user } = useAuth()
 
@@ -51,41 +51,7 @@ export default function LandingPage() {
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       {/* Nav */}
-      <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur">
-        <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
-          <div className="flex items-center gap-2">
-            <div className="flex size-8 items-center justify-center rounded-lg bg-primary">
-              <span className="text-sm font-bold text-primary-foreground">Q</span>
-            </div>
-            <span className="text-lg font-semibold">QuikTech POS</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-1.5"
-              onClick={() => setLanguage(language === "vi" ? "en" : "vi")}
-            >
-              <Globe className="size-4" />
-              {language === "vi" ? "EN" : "VI"}
-            </Button>
-            {user ? (
-              <Button asChild size="sm">
-                <Link href="/dashboard">{tl.goToDashboard}</Link>
-              </Button>
-            ) : (
-              <>
-                <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
-                  <Link href="/login">{tl.signIn}</Link>
-                </Button>
-                <Button asChild size="sm">
-                  <Link href="/register">{tl.getStarted}</Link>
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
-      </header>
+      <SiteHeader />
 
       <main className="flex-1">
         {/* Hero */}
