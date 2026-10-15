@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react'
+import { BrandLogo } from '@/components/brand-logo'
 
 export default function LoginPage() {
   const { login } = useAuth()
@@ -48,9 +49,7 @@ export default function LoginPage() {
       <CardHeader className="space-y-1 text-center">
         <div className="flex justify-center mb-2">
           <Link href="/" className="flex items-center gap-2 transition-opacity hover:opacity-80">
-            <div className="size-8 rounded-lg bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-sm">Q</span>
-            </div>
+            <BrandLogo className="size-8" />
             <span className="font-semibold text-lg">QuikTech POS</span>
           </Link>
         </div>

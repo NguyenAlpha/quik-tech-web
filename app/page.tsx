@@ -10,6 +10,7 @@ import type { Plan } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { SiteHeader } from "@/components/site-header"
+import { BrandLogo } from "@/components/brand-logo"
 import {
   ShoppingCart,
   Warehouse,
@@ -151,9 +152,7 @@ export default function LandingPage() {
       <footer className="border-t">
         <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-3 px-4 py-8 text-sm text-muted-foreground sm:flex-row sm:px-6">
           <div className="flex items-center gap-2">
-            <div className="flex size-6 items-center justify-center rounded bg-primary">
-              <span className="text-xs font-bold text-primary-foreground">Q</span>
-            </div>
+            <BrandLogo className="size-6" />
             <span className="font-medium text-foreground">QuikTech POS</span>
           </div>
           <p>© {new Date().getFullYear()} QuikTech POS. {tl.footerRights}</p>

@@ -8,6 +8,7 @@ import { useLanguage } from '@/lib/language-context'
 import { createDefaultBusiness } from '@/lib/api'
 import { errorMessage } from '@/lib/api-error'
 import { Store, Layers, Loader2 } from 'lucide-react'
+import { BrandLogo } from '@/components/brand-logo'
 
 export default function SetupPage() {
   const { storeId, isLoading, selectStore, updateMemberships } = useAuth()
@@ -62,9 +63,7 @@ export default function SetupPage() {
       {/* Logo */}
       <div className="flex flex-col items-center gap-2 text-center">
         <Link href="/" className="flex items-center gap-2 transition-opacity hover:opacity-80">
-          <div className="size-9 rounded-lg bg-primary flex items-center justify-center">
-            <span className="text-primary-foreground font-bold">Q</span>
-          </div>
+          <BrandLogo className="size-9" />
           <span className="font-semibold text-xl">QuikTech POS</span>
         </Link>
         <h1 className="text-2xl font-semibold tracking-tight mt-4">{ta.setupTitle}</h1>
