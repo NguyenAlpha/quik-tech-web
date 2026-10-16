@@ -54,16 +54,16 @@ export function DashboardHeader() {
                   {user ? getInitials(user.fullName) : 'U'}
                 </AvatarFallback>
               </Avatar>
-              <span className="hidden text-sm font-medium sm:inline-block">
+              <span className="hidden max-w-40 truncate text-sm font-medium sm:inline-block">
                 {user?.fullName ?? ''}
               </span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel className="font-normal">
-              <div className="flex flex-col gap-1">
-                <span className="text-sm font-medium">{user?.fullName}</span>
-                <span className="text-xs text-muted-foreground">{user?.email}</span>
+              <div className="flex min-w-0 flex-col gap-1">
+                <span className="truncate text-sm font-medium">{user?.fullName}</span>
+                <span className="truncate text-xs text-muted-foreground">{user?.email}</span>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />

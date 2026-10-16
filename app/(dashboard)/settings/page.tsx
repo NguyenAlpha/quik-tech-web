@@ -356,8 +356,8 @@ export default function SettingsPage() {
                     {user ? getInitials(user.fullName) : '?'}
                   </AvatarFallback>
                 </Avatar>
-                <div className="space-y-1.5">
-                  <h3 className="text-lg font-semibold">{user?.fullName}</h3>
+                <div className="min-w-0 space-y-1.5">
+                  <h3 className="truncate text-lg font-semibold" title={user?.fullName}>{user?.fullName}</h3>
                   {roleStyle && (() => {
                     const RoleIcon = roleStyle.icon
                     return (
