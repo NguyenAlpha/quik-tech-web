@@ -30,7 +30,8 @@ export function DashboardHeader() {
       <Separator orientation="vertical" className="h-5" />
 
       <div className="flex flex-1 items-center gap-4">
-        <button className="group hidden h-9 w-full max-w-sm items-center gap-2 rounded-lg border bg-muted/40 px-3 text-sm text-muted-foreground transition-colors hover:bg-muted/60 sm:flex">
+        {/* Tạm ẩn: tìm kiếm chưa hoạt động. Thêm lại `sm:flex` để hiện. */}
+        <button className="group hidden h-9 w-full max-w-sm items-center gap-2 rounded-lg border bg-muted/40 px-3 text-sm text-muted-foreground transition-colors hover:bg-muted/60">
           <Search className="size-4" />
           <span className="flex-1 text-left">{t.header.search}</span>
           <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-background px-1.5 font-mono text-[10px] font-medium text-muted-foreground sm:flex">
