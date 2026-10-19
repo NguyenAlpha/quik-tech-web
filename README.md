@@ -1,97 +1,101 @@
 # QuikTech POS — Web
 
-Giao diện web cho **QuikTech POS**: phần mềm bán hàng, quản lý kho và công nợ cho doanh nghiệp nhỏ, nhiều cửa hàng, hỗ trợ tiếng Việt và tiếng Anh.
+**English** | [Tiếng Việt](README.vi.md)
+
+Web frontend for **QuikTech POS**: sales, inventory and debt tracking for small businesses with one or many stores, in English and Vietnamese.
 
 - Demo: [pos.nhatnguyenhuynh.com](https://pos.nhatnguyenhuynh.com)
 - Backend: [NguyenAlpha/omniflow-backend](https://github.com/NguyenAlpha/omniflow-backend)
 
-![Bảng điều khiển QuikTech POS](public/landing/app-dashboard.png)
+![QuikTech POS dashboard](public/landing/app-dashboard.png)
 
 ## Tech stack
 
 - **Next.js 16** (App Router), **React 19**, **TypeScript**
 - **Tailwind CSS 4**, shadcn/ui (Radix UI), lucide-react
-- Recharts (biểu đồ), react-hook-form + zod (form), @zxing/browser (quét mã vạch)
-- Vitest (unit test), ESLint 9
-- **pnpm** (npm bị chặn trong `package.json`)
+- Recharts (charts), react-hook-form + zod (forms), @zxing/browser (barcode scanning)
+- Vitest (unit tests), ESLint 9
+- **pnpm** (npm is blocked in `package.json`)
 
-## Chức năng
+## Features
 
-- **Landing page** và đăng ký / đăng nhập, tạo doanh nghiệp lần đầu (`/setup`)
-- **Bán hàng:** tạo đơn, quét mã vạch, thanh toán, trả hàng
-- **Kho:** sản phẩm, danh mục, đơn vị tính, nhiều kho, chuyển kho, điều chỉnh tồn, import CSV
-- **Nhập hàng** từ nhà cung cấp
-- **Khách hàng & nhà cung cấp:** theo dõi công nợ, ghi nhận thanh toán
-- **Dashboard** doanh thu, đơn hàng; xuất Excel
-- **Đội ngũ:** thành viên và vai trò theo cửa hàng
-- **Gói dịch vụ** Free / Basic / Pro, nâng cấp bằng chuyển khoản QR
-- **Trang quản trị hệ thống** tại `/admin` (đăng nhập riêng)
-- Song ngữ VI / EN, giao diện sáng / tối
+- **Landing page**, sign up / sign in, first-time business setup (`/setup`)
+- **Sales:** create orders, barcode scanning, payments, returns
+- **Inventory:** products, categories, units, multiple warehouses, transfers, stock adjustments, CSV import
+- **Purchasing** from suppliers
+- **Customers & suppliers:** debt tracking, recording payments
+- **Dashboard** for revenue and orders; Excel export
+- **Team:** members and roles per store
+- **Plans** Free / Basic / Pro, upgrade via QR bank transfer
+- **System admin panel** at `/admin` (separate sign-in)
+- English / Vietnamese, light / dark theme
 
-## Chạy local
+## Running locally
 
-**Yêu cầu:** Node.js 20.9+ và pnpm.
+**Requirements:** Node.js 20.9+ and pnpm.
 
 ```bash
 pnpm install
 pnpm dev
 ```
 
-Mở http://localhost:3000.
+Open http://localhost:3000.
 
-Web gọi backend qua biến `NEXT_PUBLIC_API_URL`, mặc định là `http://localhost:8080`. Hãy chạy backend local theo README của [repo backend](https://github.com/NguyenAlpha/omniflow-backend), hoặc trỏ tới backend khác bằng file `.env.local`:
+The app calls the backend through `NEXT_PUBLIC_API_URL`, which defaults to `http://localhost:8080`. Run the backend locally by following the [backend README](https://github.com/NguyenAlpha/omniflow-backend), or point to another backend in `.env.local`:
 
 ```bash
 # .env.local (gitignored)
 NEXT_PUBLIC_API_URL=https://quiktech-pos-api-8217b2.azurewebsites.net
 ```
 
-> Giữ port **3000**. Backend chỉ cho phép CORS từ các origin trong `CORS_ORIGINS`, mặc định là `http://localhost:3000`.
+> Keep port **3000**. The backend only allows CORS from origins listed in `CORS_ORIGINS`, which defaults to `http://localhost:3000`.
 
-Với dữ liệu mẫu của backend, đăng nhập bằng `user1` / `password` để có sẵn sản phẩm, đơn hàng và khách hàng.
+With the backend's sample data, sign in as `user1` / `password` to get products, orders and customers out of the box.
 
 ## Scripts
 
-| Lệnh | Mô tả |
+| Command | Description |
 |:--|:--|
-| `pnpm dev` | Chạy dev server |
-| `pnpm build` | Build production |
-| `pnpm start` | Chạy bản đã build |
+| `pnpm dev` | Start the dev server |
+| `pnpm build` | Production build |
+| `pnpm start` | Serve the production build |
 | `pnpm lint` | ESLint |
-| `pnpm test` | Unit test (Vitest) cho `lib/` |
+| `pnpm test` | Unit tests (Vitest) for `lib/` |
 
-## Deploy
+## Deployment
 
-Bản demo deploy trên **Vercel** từ nhánh `main`:
+The demo is deployed on **Vercel** from the `main` branch:
 
-1. Đặt biến môi trường `NEXT_PUBLIC_API_URL` trỏ tới backend.
-2. Thêm domain của web vào `CORS_ORIGINS` của backend, nếu không trình duyệt sẽ chặn mọi request.
+1. Set the `NEXT_PUBLIC_API_URL` environment variable to the backend URL.
+2. Add the web domain to the backend's `CORS_ORIGINS`; otherwise the browser blocks every request.
 
-## Cấu trúc thư mục
+## Project structure
 
 ```text
 app/
 ├── page.tsx         landing page
-├── (auth)/          đăng nhập, đăng ký, setup
-├── (dashboard)/     các trang quản lý cửa hàng
-└── admin/           trang quản trị hệ thống
-components/          component dùng chung (ui/ là shadcn/ui)
-lib/                 API client, auth, i18n (translations.ts), tiện ích
+├── (auth)/          sign in, sign up, setup
+├── (dashboard)/     store management pages
+└── admin/           system admin panel
+components/          shared components (ui/ is shadcn/ui)
+lib/                 API client, auth, i18n (translations.ts), utilities
 hooks/               React hooks
-public/              logo, ảnh landing page
-docs/                tài liệu
+public/              logo, landing page images
+docs/                documentation
 ```
 
-## Tài liệu
+## Documentation
 
-| Tài liệu | Nội dung |
+The docs are written in Vietnamese.
+
+| Doc | Topic |
 |:--|:--|
-| [OVERVIEW](docs/OVERVIEW.md) · [ARCHITECTURE](docs/ARCHITECTURE.md) | Tổng quan, kiến trúc |
-| [FEATURES](docs/FEATURES.md) | Danh sách tính năng |
-| [API](docs/API.md) · [DATA_FLOW](docs/DATA_FLOW.md) | Gọi API, luồng dữ liệu |
-| [AUTH](docs/AUTH.md) | Xác thực, phiên đăng nhập |
-| [COMPONENTS](docs/COMPONENTS.md) | Component |
-| [I18N](docs/I18N.md) | Đa ngôn ngữ |
-| [ADMIN_UI](docs/ADMIN_UI.md) | Trang quản trị |
-| [PRODUCTS](docs/PRODUCTS.md) · [NOTIFICATIONS](docs/NOTIFICATIONS.md) · [PAYMENT_ACCOUNTS](docs/PAYMENT_ACCOUNTS.md) | Tính năng cụ thể |
-| [RATE_LIMITING](docs/RATE_LIMITING.md) | Xử lý giới hạn request |
+| [OVERVIEW](docs/OVERVIEW.md) · [ARCHITECTURE](docs/ARCHITECTURE.md) | Overview, architecture |
+| [FEATURES](docs/FEATURES.md) | Feature list |
+| [API](docs/API.md) · [DATA_FLOW](docs/DATA_FLOW.md) | API calls, data flow |
+| [AUTH](docs/AUTH.md) | Authentication, sessions |
+| [COMPONENTS](docs/COMPONENTS.md) | Components |
+| [I18N](docs/I18N.md) | Internationalization |
+| [ADMIN_UI](docs/ADMIN_UI.md) | Admin panel |
+| [PRODUCTS](docs/PRODUCTS.md) · [NOTIFICATIONS](docs/NOTIFICATIONS.md) · [PAYMENT_ACCOUNTS](docs/PAYMENT_ACCOUNTS.md) | Specific features |
+| [RATE_LIMITING](docs/RATE_LIMITING.md) | Handling rate limits |
