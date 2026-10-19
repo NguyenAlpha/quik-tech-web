@@ -28,6 +28,7 @@ import {
   updateMyProfile, changeMyPassword,
 } from '@/lib/api'
 import { errorMessage } from '@/lib/api-error'
+import { FIELD_LIMITS } from '@/lib/field-limits'
 import type { Business, BusinessSubscription, UpdateBusinessInput } from '@/lib/types'
 
 function getInitials(name: string) {
@@ -407,16 +408,16 @@ export default function SettingsPage() {
           <div className="grid gap-5 py-4">
             <div className="space-y-2">
               <Label htmlFor="store-name">{tset.storeName}</Label>
-              <Input id="store-name" value={storeForm.name} onChange={e => setStoreForm(p => ({ ...p, name: e.target.value }))} className="h-10" />
+              <Input id="store-name" maxLength={FIELD_LIMITS.store.name} value={storeForm.name} onChange={e => setStoreForm(p => ({ ...p, name: e.target.value }))} className="h-10" />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="store-email">{tset.email}</Label>
-                <Input id="store-email" type="email" value={storeForm.email} onChange={e => setStoreForm(p => ({ ...p, email: e.target.value }))} className="h-10" />
+                <Input id="store-email" type="email" maxLength={FIELD_LIMITS.store.email} value={storeForm.email} onChange={e => setStoreForm(p => ({ ...p, email: e.target.value }))} className="h-10" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="store-phone">{tset.phone}</Label>
-                <Input id="store-phone" value={storeForm.phone} onChange={e => setStoreForm(p => ({ ...p, phone: e.target.value }))} className="h-10" />
+                <Input id="store-phone" maxLength={FIELD_LIMITS.store.phone} value={storeForm.phone} onChange={e => setStoreForm(p => ({ ...p, phone: e.target.value }))} className="h-10" />
               </div>
             </div>
             <div className="space-y-2">
@@ -444,16 +445,16 @@ export default function SettingsPage() {
           <div className="grid gap-5 py-4">
             <div className="space-y-2">
               <Label htmlFor="biz-name">{tset.businessName}</Label>
-              <Input id="biz-name" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} className="h-10" />
+              <Input id="biz-name" maxLength={FIELD_LIMITS.business.name} value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} className="h-10" />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="biz-email">{tset.email}</Label>
-                <Input id="biz-email" type="email" value={form.email ?? ''} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} className="h-10" />
+                <Input id="biz-email" type="email" maxLength={FIELD_LIMITS.business.email} value={form.email ?? ''} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} className="h-10" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="biz-phone">{tset.phone}</Label>
-                <Input id="biz-phone" value={form.phone ?? ''} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} className="h-10" />
+                <Input id="biz-phone" maxLength={FIELD_LIMITS.business.phone} value={form.phone ?? ''} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} className="h-10" />
               </div>
             </div>
             <div className="space-y-2">
@@ -485,16 +486,16 @@ export default function SettingsPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="profile-fullname">{tset.fullName}</Label>
-              <Input id="profile-fullname" maxLength={200} value={profileForm.fullName} onChange={e => setProfileForm(p => ({ ...p, fullName: e.target.value }))} className="h-10" />
+              <Input id="profile-fullname" maxLength={FIELD_LIMITS.profile.fullName} value={profileForm.fullName} onChange={e => setProfileForm(p => ({ ...p, fullName: e.target.value }))} className="h-10" />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="profile-email">{tset.email}</Label>
-                <Input id="profile-email" type="email" maxLength={100} value={profileForm.email} onChange={e => setProfileForm(p => ({ ...p, email: e.target.value }))} className="h-10" />
+                <Input id="profile-email" type="email" maxLength={FIELD_LIMITS.profile.email} value={profileForm.email} onChange={e => setProfileForm(p => ({ ...p, email: e.target.value }))} className="h-10" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="profile-phone">{tset.phone}</Label>
-                <Input id="profile-phone" maxLength={20} value={profileForm.phone} onChange={e => setProfileForm(p => ({ ...p, phone: e.target.value }))} className="h-10" />
+                <Input id="profile-phone" maxLength={FIELD_LIMITS.profile.phone} value={profileForm.phone} onChange={e => setProfileForm(p => ({ ...p, phone: e.target.value }))} className="h-10" />
               </div>
             </div>
             {profileFormError && <p className="text-sm text-red-500">{profileFormError}</p>}

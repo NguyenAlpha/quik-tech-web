@@ -8,11 +8,13 @@ import { useAdminCopy } from '@/lib/admin-copy'
 export function AdminReasonField({
   value,
   onChange,
-  disabled
+  disabled,
+  maxLength = 500
 }: {
   value: string
   onChange: (value: string) => void
   disabled?: boolean
+  maxLength?: number
 }) {
   const id = useId()
   const copy = useAdminCopy()
@@ -23,7 +25,7 @@ export function AdminReasonField({
         id={id}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        maxLength={500}
+        maxLength={maxLength}
         disabled={disabled}
         rows={2}
         placeholder={copy.reasonPlaceholder}

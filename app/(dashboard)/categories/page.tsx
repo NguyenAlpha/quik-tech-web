@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useLanguage } from '@/lib/language-context'
 import { errorMessage } from '@/lib/api-error'
+import { FIELD_LIMITS } from '@/lib/field-limits'
 import { PageSkeleton } from '@/components/page-skeleton'
 import { PageError } from '@/components/page-error'
 import { getCategories, createCategory, updateCategory, deleteCategory, ApiError } from '@/lib/api'
@@ -194,6 +195,7 @@ export default function CategoriesPage() {
               <Label htmlFor="cat-name">{tc.nameLabel}</Label>
               <Input
                 id="cat-name"
+                maxLength={FIELD_LIMITS.category.name}
                 placeholder={tc.namePlaceholder}
                 value={form.name}
                 onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
@@ -203,6 +205,7 @@ export default function CategoriesPage() {
               <Label htmlFor="cat-desc">{tc.descriptionLabel}</Label>
               <Textarea
                 id="cat-desc"
+                maxLength={FIELD_LIMITS.category.description}
                 placeholder={tc.descriptionPlaceholder}
                 value={form.description}
                 onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}

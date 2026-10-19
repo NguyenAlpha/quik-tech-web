@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/auth-context'
 import { useLanguage } from '@/lib/language-context'
 import { registerUser } from '@/lib/api'
 import { errorMessage } from '@/lib/api-error'
+import { FIELD_LIMITS } from '@/lib/field-limits'
 import { useRateLimitCooldown } from '@/hooks/use-rate-limit-cooldown'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -101,6 +102,7 @@ export default function RegisterPage() {
             <Label htmlFor="fullName">{ta.fullNameLabel}</Label>
             <Input
               id="fullName"
+              maxLength={FIELD_LIMITS.register.fullName}
               placeholder={ta.fullNamePlaceholder}
               value={form.fullName}
               onChange={set('fullName')}
@@ -112,6 +114,7 @@ export default function RegisterPage() {
             <Label htmlFor="username">{ta.usernameLabel}</Label>
             <Input
               id="username"
+              maxLength={FIELD_LIMITS.register.username}
               placeholder={ta.usernamePlaceholder}
               value={form.username}
               onChange={set('username')}
@@ -124,6 +127,7 @@ export default function RegisterPage() {
             <Label htmlFor="email">{ta.emailLabel}</Label>
             <Input
               id="email"
+              maxLength={FIELD_LIMITS.register.email}
               type="email"
               placeholder={ta.emailPlaceholder}
               value={form.email}

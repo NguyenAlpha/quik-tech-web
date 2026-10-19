@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { FIELD_LIMITS } from '@/lib/field-limits'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
@@ -70,6 +71,7 @@ export function AddSupplierModal({ open, onOpenChange, onSubmit, isLoading = fal
             <Label htmlFor="code">{t.suppliers.code}</Label>
             <Input
               id="code"
+              maxLength={FIELD_LIMITS.partner.code}
               value={formData.code}
               onChange={(e) => setFormData({ ...formData, code: e.target.value })}
               placeholder="SUP-001"
@@ -81,6 +83,7 @@ export function AddSupplierModal({ open, onOpenChange, onSubmit, isLoading = fal
             <Label htmlFor="name">{t.suppliers.supplierName}</Label>
             <Input
               id="name"
+              maxLength={FIELD_LIMITS.partner.name}
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               placeholder="Supplier name"
@@ -92,6 +95,7 @@ export function AddSupplierModal({ open, onOpenChange, onSubmit, isLoading = fal
             <Label htmlFor="phone">{t.suppliers.phone}</Label>
             <Input
               id="phone"
+              maxLength={FIELD_LIMITS.partner.phone}
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
               placeholder="+84 28 1234 5678"
@@ -103,6 +107,7 @@ export function AddSupplierModal({ open, onOpenChange, onSubmit, isLoading = fal
             <Label htmlFor="email">{t.suppliers.email}</Label>
             <Input
               id="email"
+              maxLength={FIELD_LIMITS.partner.email}
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -115,6 +120,7 @@ export function AddSupplierModal({ open, onOpenChange, onSubmit, isLoading = fal
             <Label htmlFor="address">{t.suppliers.address}</Label>
             <Input
               id="address"
+              maxLength={FIELD_LIMITS.partner.address}
               value={formData.address ?? ''}
               onChange={(e) => setFormData({ ...formData, address: e.target.value })}
               placeholder="Street address"

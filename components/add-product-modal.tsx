@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { FIELD_LIMITS } from '@/lib/field-limits'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -90,6 +91,7 @@ export function AddProductModal({ open, onOpenChange, onSubmit, isLoading, categ
             <Label htmlFor="sku">SKU</Label>
             <Input
               id="sku"
+              maxLength={FIELD_LIMITS.product.sku}
               placeholder="e.g., PROD-001"
               value={formData.sku}
               onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
@@ -101,6 +103,7 @@ export function AddProductModal({ open, onOpenChange, onSubmit, isLoading, categ
             <Label htmlFor="name">{t.products.productName}</Label>
             <Input
               id="name"
+              maxLength={FIELD_LIMITS.product.name}
               placeholder="e.g., Wireless Mouse"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -114,6 +117,7 @@ export function AddProductModal({ open, onOpenChange, onSubmit, isLoading, categ
             <Label htmlFor="description">{t.products.description}</Label>
             <Textarea
               id="description"
+              maxLength={FIELD_LIMITS.product.description}
               placeholder="Product description..."
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}

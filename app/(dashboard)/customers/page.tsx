@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react"
 import { toast } from 'sonner'
+import { FIELD_LIMITS } from '@/lib/field-limits'
 import { useLanguage } from "@/lib/language-context"
 import { errorMessage } from '@/lib/api-error'
 import { formatCurrency } from "@/lib/utils"
@@ -476,6 +477,7 @@ export default function CustomersPage() {
                 <Label htmlFor="c-name">{tc.nameLabel} *</Label>
                 <Input
                   id="c-name"
+                  maxLength={FIELD_LIMITS.partner.name}
                   value={formData.name}
                   onChange={e => setFormData(d => ({ ...d, name: e.target.value }))}
                   required
@@ -485,6 +487,7 @@ export default function CustomersPage() {
                 <Label htmlFor="c-code">{tc.codeLabel}</Label>
                 <Input
                   id="c-code"
+                  maxLength={FIELD_LIMITS.partner.code}
                   value={formData.code}
                   onChange={e => setFormData(d => ({ ...d, code: e.target.value }))}
                 />
@@ -493,6 +496,7 @@ export default function CustomersPage() {
                 <Label htmlFor="c-phone">{tc.phoneLabel}</Label>
                 <Input
                   id="c-phone"
+                  maxLength={FIELD_LIMITS.partner.phone}
                   value={formData.phone}
                   onChange={e => setFormData(d => ({ ...d, phone: e.target.value }))}
                 />
@@ -501,6 +505,7 @@ export default function CustomersPage() {
                 <Label htmlFor="c-email">{tc.emailLabel}</Label>
                 <Input
                   id="c-email"
+                  maxLength={FIELD_LIMITS.partner.email}
                   type="email"
                   value={formData.email}
                   onChange={e => setFormData(d => ({ ...d, email: e.target.value }))}
@@ -510,6 +515,7 @@ export default function CustomersPage() {
                 <Label htmlFor="c-address">{tc.addressLabel}</Label>
                 <Textarea
                   id="c-address"
+                  maxLength={FIELD_LIMITS.partner.address}
                   value={formData.address}
                   onChange={e => setFormData(d => ({ ...d, address: e.target.value }))}
                   rows={2}

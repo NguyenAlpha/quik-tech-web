@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useLanguage } from '@/lib/language-context'
 import { errorMessage } from '@/lib/api-error'
+import { FIELD_LIMITS } from '@/lib/field-limits'
 import { PageSkeleton } from '@/components/page-skeleton'
 import { getUnits, createUnit, updateUnit, deleteUnit, ApiError } from '@/lib/api'
 import type { Unit, CreateUnitInput } from '@/lib/types'
@@ -185,6 +186,7 @@ export default function UnitsPage() {
               <Label htmlFor="unit-name">{tu.nameLabel}</Label>
               <Input
                 id="unit-name"
+                maxLength={FIELD_LIMITS.unit.name}
                 placeholder={tu.namePlaceholder}
                 value={form.name}
                 onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
@@ -194,6 +196,7 @@ export default function UnitsPage() {
               <Label htmlFor="unit-abbr">{tu.abbreviationLabel}</Label>
               <Input
                 id="unit-abbr"
+                maxLength={FIELD_LIMITS.unit.abbreviation}
                 placeholder={tu.abbreviationPlaceholder}
                 value={form.abbreviation}
                 onChange={(e) => setForm((p) => ({ ...p, abbreviation: e.target.value }))}

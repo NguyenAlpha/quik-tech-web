@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
+import { FIELD_LIMITS } from '@/lib/field-limits'
 import { toast } from 'sonner'
 import { Plus, Search, Building2, AlertCircle, Mail, Phone, MapPin, X, Loader2 } from 'lucide-react'
 import { PageHeader } from '@/components/page-header'
@@ -30,7 +31,7 @@ import { errorMessage } from '@/lib/api-error'
 import { PageSkeleton } from '@/components/page-skeleton'
 import { PageError } from '@/components/page-error'
 import { SuppliersTable } from '@/components/suppliers-table'
-import { Supplier, CreateSupplierInput, PurchaseOrder } from '@/lib/types'
+import { Supplier, PurchaseOrder } from '@/lib/types'
 import { getSuppliers, createSupplier, updateSupplier, deleteSupplier, paySupplier, getPurchaseOrdersPage, ApiError } from '@/lib/api'
 import { formatCurrency } from '@/lib/utils'
 
@@ -471,6 +472,7 @@ export default function SuppliersPage() {
                 <Label htmlFor="s-name">{ts.nameLabel} *</Label>
                 <Input
                   id="s-name"
+                  maxLength={FIELD_LIMITS.partner.name}
                   value={formData.name}
                   onChange={(e) => setFormData((d) => ({ ...d, name: e.target.value }))}
                   required
@@ -480,6 +482,7 @@ export default function SuppliersPage() {
                 <Label htmlFor="s-code">{ts.codeLabel}</Label>
                 <Input
                   id="s-code"
+                  maxLength={FIELD_LIMITS.partner.code}
                   value={formData.code}
                   onChange={(e) => setFormData((d) => ({ ...d, code: e.target.value }))}
                 />
@@ -488,6 +491,7 @@ export default function SuppliersPage() {
                 <Label htmlFor="s-phone">{ts.phoneLabel}</Label>
                 <Input
                   id="s-phone"
+                  maxLength={FIELD_LIMITS.partner.phone}
                   value={formData.phone}
                   onChange={(e) => setFormData((d) => ({ ...d, phone: e.target.value }))}
                 />
@@ -496,6 +500,7 @@ export default function SuppliersPage() {
                 <Label htmlFor="s-email">{ts.emailLabel}</Label>
                 <Input
                   id="s-email"
+                  maxLength={FIELD_LIMITS.partner.email}
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData((d) => ({ ...d, email: e.target.value }))}
@@ -505,6 +510,7 @@ export default function SuppliersPage() {
                 <Label htmlFor="s-address">{ts.addressLabel}</Label>
                 <Textarea
                   id="s-address"
+                  maxLength={FIELD_LIMITS.partner.address}
                   value={formData.address}
                   onChange={(e) => setFormData((d) => ({ ...d, address: e.target.value }))}
                   rows={2}

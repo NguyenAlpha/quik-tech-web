@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { FIELD_LIMITS } from '@/lib/field-limits'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -94,6 +95,7 @@ export function EditProductModal({ open, onOpenChange, product, categories, unit
             <Label htmlFor="edit-sku">SKU</Label>
             <Input
               id="edit-sku"
+              maxLength={FIELD_LIMITS.product.sku}
               value={formData.sku}
               onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
             />
@@ -103,6 +105,7 @@ export function EditProductModal({ open, onOpenChange, product, categories, unit
             <Label htmlFor="edit-name">{t.products.productName}</Label>
             <Input
               id="edit-name"
+              maxLength={FIELD_LIMITS.product.name}
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               className={errors.name ? 'border-red-500' : ''}
@@ -114,6 +117,7 @@ export function EditProductModal({ open, onOpenChange, product, categories, unit
             <Label htmlFor="edit-description">{t.products.description}</Label>
             <Textarea
               id="edit-description"
+              maxLength={FIELD_LIMITS.product.description}
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={3}

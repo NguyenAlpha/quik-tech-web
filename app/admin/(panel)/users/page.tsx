@@ -25,6 +25,7 @@ import { errorMessage } from '@/lib/api-error'
 import { adminGetUsers } from '@/lib/api'
 import { adminSetUserStatus, adminDeleteUser } from '@/lib/admin-client'
 import { AdminReasonField } from '@/components/admin-reason-field'
+import { FIELD_LIMITS } from '@/lib/field-limits'
 import { getInitials } from '@/lib/utils'
 import type { AdminUser } from '@/lib/types'
 
@@ -233,7 +234,7 @@ export default function AdminUsersPage() {
               <p className="mt-3 font-medium">{statusTarget.isActive ? ts.userMgmtDeactivate : ts.userMgmtActivate}</p>
             </div>
           )}
-          <AdminReasonField value={reason} onChange={setReason} disabled={isChangingStatus} />
+          <AdminReasonField value={reason} onChange={setReason} disabled={isChangingStatus} maxLength={FIELD_LIMITS.userActionReason} />
           <DialogFooter>
             <Button variant="outline" disabled={isChangingStatus} onClick={() => setStatusTarget(null)}>
               {t.common.cancel}
@@ -268,7 +269,7 @@ export default function AdminUsersPage() {
               <p className="break-all text-muted-foreground">{deleteTarget.email}</p>
             </div>
           )}
-          <AdminReasonField value={reason} onChange={setReason} disabled={isDeletingUser} />
+          <AdminReasonField value={reason} onChange={setReason} disabled={isDeletingUser} maxLength={FIELD_LIMITS.userActionReason} />
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={isDeletingUser}>
               {t.common.cancel}

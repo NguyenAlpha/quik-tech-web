@@ -15,6 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Switch } from '@/components/ui/switch'
 import { useLanguage } from '@/lib/language-context'
 import { errorMessage } from '@/lib/api-error'
+import { FIELD_LIMITS } from '@/lib/field-limits'
 import { PageSkeleton } from '@/components/page-skeleton'
 import { PageError } from '@/components/page-error'
 import { getWarehouses, createWarehouse, updateWarehouse, deleteWarehouse } from '@/lib/api'
@@ -192,6 +193,7 @@ export default function WarehousesPage() {
               <Label htmlFor="wh-name">{tw.nameLabel}</Label>
               <Input
                 id="wh-name"
+                maxLength={FIELD_LIMITS.warehouse.name}
                 placeholder={tw.namePlaceholder}
                 value={form.name}
                 onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
