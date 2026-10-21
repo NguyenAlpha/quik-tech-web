@@ -325,7 +325,7 @@ export default function PurchaseOrdersPage() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Từ</span>
+            <span className="text-sm text-muted-foreground">{t.common.dateFrom}</span>
             <Input
               type="date"
               value={dateFrom}
@@ -334,7 +334,7 @@ export default function PurchaseOrdersPage() {
             />
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Đến</span>
+            <span className="text-sm text-muted-foreground">{t.common.dateTo}</span>
             <Input
               type="date"
               value={dateTo}
@@ -343,9 +343,9 @@ export default function PurchaseOrdersPage() {
             />
           </div>
           <div className="flex items-center gap-1">
-            <Button variant="outline" size="sm" onClick={() => applyPreset(3)}>3 tháng</Button>
-            <Button variant="outline" size="sm" onClick={() => applyPreset(6)}>6 tháng</Button>
-            <Button variant="outline" size="sm" onClick={() => applyPreset(12)}>1 năm</Button>
+            <Button variant="outline" size="sm" onClick={() => applyPreset(3)}>{t.common.last3Months}</Button>
+            <Button variant="outline" size="sm" onClick={() => applyPreset(6)}>{t.common.last6Months}</Button>
+            <Button variant="outline" size="sm" onClick={() => applyPreset(12)}>{t.common.last1Year}</Button>
           </div>
         </div>
       </div>

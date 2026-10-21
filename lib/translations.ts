@@ -26,6 +26,11 @@ export const translations = {
       retry: "Try again",
       retryIn: "Try again in {seconds}s",
       pageLoadError: "Failed to load data",
+      dateFrom: "From",
+      dateTo: "To",
+      last3Months: "3 months",
+      last6Months: "6 months",
+      last1Year: "1 year",
     },
     navigation: {
       overview: "Overview",
@@ -1160,6 +1165,11 @@ export const translations = {
       retry: "Thử lại",
       retryIn: "Thử lại sau {seconds} giây",
       pageLoadError: "Không thể tải dữ liệu",
+      dateFrom: "Từ",
+      dateTo: "Đến",
+      last3Months: "3 tháng",
+      last6Months: "6 tháng",
+      last1Year: "1 năm",
     },
     navigation: {
       overview: "Tổng quan",
