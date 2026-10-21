@@ -85,6 +85,9 @@ Component tiêu đề dùng chung ở đầu mỗi trang dashboard:
 
 Props: `title: string`, `subtitle: string`, `children?: React.ReactNode`
 
+`children` được bọc sẵn trong `flex flex-wrap items-center gap-3` → nhiều nút action truyền trực tiếp
+vẫn nằm sát nhau ở bên phải (không cần tự bọc `<div>`).
+
 ### TableFooter (components/table-footer.tsx)
 Component hiển thị số lượng bản ghi ở cuối mỗi bảng:
 
